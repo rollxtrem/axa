@@ -115,6 +115,48 @@ fusion-starter/
 └── dist/                  # Build de producción (generado)
 ```
 
+## 📬 Envío de Correos vía API
+
+El backend incluye un endpoint para enviar correos electrónicos utilizando los gateways SMTP corporativos con STARTTLS (TLS 1.2).
+
+### Endpoint
+
+- **POST** `/api/email/send`
+
+### Payload
+
+```json
+{
+  "to": "destinatario@dominio.com",
+  "subject": "Asunto del correo",
+  "text": "Contenido en texto plano",
+  "html": "<p>Contenido en HTML</p>",
+  "from": "opcional@dominio.com",
+  "cc": ["cc1@dominio.com"],
+  "bcc": ["bcc1@dominio.com"]
+}
+```
+
+- `to` acepta un string con correos separados por coma o un arreglo de strings.
+- Debes enviar al menos `text` o `html`.
+- `from` es opcional si configuraste `SMTP_DEFAULT_FROM` en el archivo `.env`.
+
+### Respuesta Exitosa
+
+```json
+{
+  "messageId": "<...>",
+  "envelope": {
+    "from": "remitente@dominio.com",
+    "to": ["destinatario@dominio.com"]
+  }
+}
+```
+
+### Configuración
+
+Configura las variables del archivo `.env` (ver `.env.example`) para elegir entre los gateways de producción o pre-producción y ajustar credenciales, host o políticas TLS según el ambiente.
+
 ## 🔧 Scripts Disponibles
 
 | Comando              | Descripción                                  |

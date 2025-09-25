@@ -10,3 +10,21 @@
 export interface DemoResponse {
   message: string;
 }
+
+export interface SendEmailRequestBody {
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+  from?: string;
+  cc?: string | string[];
+  bcc?: string | string[];
+}
+
+export interface SendEmailResponse {
+  messageId: string;
+  envelope: {
+    from: string;
+    to: string[];
+  };
+}
