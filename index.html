@@ -22,7 +22,15 @@
         },
       };
 
-      const mode = import.meta.env.MODE === "production" ? "production" : "test";
+      const env = (() => {
+        try {
+          return import.meta.env ?? {};
+        } catch (_error) {
+          return {};
+        }
+      })();
+
+      const mode = env.MODE === "production" ? "production" : "test";
       const config = oneTrustConfigs[mode];
 
       function appendScript(options) {
