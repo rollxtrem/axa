@@ -4,6 +4,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AXA - Registro e Inicio de Sesión</title>
+
+    <!-- Inicio del aviso de consentimiento de cookies de OneTrust para axabeneficios.axa-assistance.com.co -->
+    <script type="module">
+      const oneTrustConfigs = {
+        production: {
+          autoBlockSrc:
+            "https://cdn.cookielaw.org/consent/019919c8-d3e1-7da5-99ad-fc914e5c7449/OtAutoBlock.js",
+          stubSrc: "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
+          domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449",
+        },
+        test: {
+          autoBlockSrc:
+            "https://cdn.cookielaw.org/consent/019919c8-d3e1-7da5-99ad-fc914e5c7449-test/OtAutoBlock.js",
+          stubSrc: "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
+          domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449-test",
+        },
+      };
+
+      const mode = import.meta.env.MODE === "production" ? "production" : "test";
+      const config = oneTrustConfigs[mode];
+
+      function appendScript(options) {
+        const script = document.createElement("script");
+        script.type = "text/javascript";
+        script.src = options.src;
+
+        const attributes = options.attributes ?? {};
+        Object.entries(attributes).forEach(([key, value]) => {
+          script.setAttribute(key, value);
+        });
+
+        document.head.appendChild(script);
+        return script;
+      }
+
+      appendScript({ src: config.autoBlockSrc });
+      appendScript({
+        src: config.stubSrc,
+        attributes: {
+          charset: "UTF-8",
+          "data-domain-script": config.domainScript,
+        },
+      });
+
+      window.OptanonWrapper = window.OptanonWrapper || function OptanonWrapper() {};
+    </script>
+    <!-- Fin del aviso de consentimiento de cookies de OneTrust para axabeneficios.axa-assistance.com.co -->
   </head>
 
   <body>
