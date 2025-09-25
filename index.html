@@ -9,15 +9,9 @@
     <script type="module">
       const oneTrustConfigs = {
         production: {
-          autoBlockSrc:
-            "https://cdn.cookielaw.org/consent/019919c8-d3e1-7da5-99ad-fc914e5c7449/OtAutoBlock.js",
-          stubSrc: "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
           domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449",
         },
         test: {
-          autoBlockSrc:
-            "https://cdn.cookielaw.org/consent/019919c8-d3e1-7da5-99ad-fc914e5c7449-test/OtAutoBlock.js",
-          stubSrc: "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js",
           domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449-test",
         },
       };
@@ -32,6 +26,9 @@
 
       const mode = env.MODE === "production" ? "production" : "test";
       const config = oneTrustConfigs[mode];
+      const baseAutoBlockUrl = "https://cdn.cookielaw.org/consent/";
+      const autoBlockSrc = `${baseAutoBlockUrl}${config.domainScript}/OtAutoBlock.js`;
+      const stubSrc = "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js";
 
       function appendScript(options) {
         const script = document.createElement("script");
@@ -47,9 +44,9 @@
         return script;
       }
 
-      appendScript({ src: config.autoBlockSrc });
+      appendScript({ src: autoBlockSrc });
       appendScript({
-        src: config.stubSrc,
+        src: stubSrc,
         attributes: {
           charset: "UTF-8",
           "data-domain-script": config.domainScript,
