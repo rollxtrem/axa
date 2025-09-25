@@ -12,9 +12,10 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "npm run build:client && npm run build:server",
+    "build": "npm run build:client && npm run build:server && npm run build:bundle",
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
+    "build:bundle": "node scripts/copy-spa-to-server.mjs",
     "start": "node dist/server/production.mjs",
     "test": "vitest --run",
     "format.fix": "prettier --write .",

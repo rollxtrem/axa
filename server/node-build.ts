@@ -1,3 +1,4 @@
+import fs from "fs";
 import path from "path";
 import { createServer } from "./index";
 import * as express from "express";
@@ -7,15 +8,32 @@ const port = process.env.PORT || 3000;
 
 // In production, serve the built SPA files
 const __dirname = import.meta.dirname;
-const distPath = path.join(__dirname, "../spa");
+const staticCandidates = [
+  path.join(__dirname, "../spa"),
+  path.join(__dirname, "spa"),
+];
+
+const distPath = staticCandidates.find((candidate) => fs.existsSync(candidate)) ?? staticCandidates[0];
+
+if (!fs.existsSync(distPath)) {
+  console.warn(
+    "⚠️ No se encontraron los archivos estáticos de la SPA. Asegúrate de ejecutar 'npm run build' antes de iniciar el servidor.",
+  );
+}
 
 // Serve static files
-app.use(express.static(distPath));
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
 
-// Handle React Router - serve index.html for all non-API routes
-app.get(/^\/(?!api\/|health).*/, (_req, res) => {
-  res.sendFile(path.join(distPath, "index.html"));
-});
+  // Handle React Router - serve index.html for all non-API routes
+  app.get(/^\/(?!api\/|health).*/, (_req, res) => {
+    res.sendFile(path.join(distPath, "index.html"));
+  });
+} else {
+  console.warn(
+    "⚠️ Los archivos estáticos no están disponibles; las rutas del cliente devolverán 404 hasta que se genere la compilación.",
+  );
+}
 
 app.listen(port, () => {
   console.log(`🚀 Fusion Starter server running on port ${port}`);
