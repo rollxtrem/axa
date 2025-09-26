@@ -3,7 +3,8 @@ import path from "path";
 
 const rootDir = process.cwd();
 const spaDir = path.resolve(rootDir, "dist", "spa");
-const serverDir = path.resolve(rootDir, "dist", "server");
+const distDir = path.resolve(rootDir, "dist");
+const serverDir = path.join(distDir, "server");
 const targetSpaDir = path.join(serverDir, "spa");
 
 if (!fs.existsSync(spaDir)) {
@@ -26,4 +27,19 @@ if (fs.existsSync(targetSpaDir)) {
 
 fs.cpSync(spaDir, targetSpaDir, { recursive: true });
 
+// Además de copiar los archivos para el bundle del servidor, duplicamos la SPA
+// en la raíz de dist/ para que plataformas de hosting estático (como Azure
+// Static Web Apps) encuentren un index.html en el directorio esperado.
+for (const entry of fs.readdirSync(spaDir)) {
+  const sourcePath = path.join(spaDir, entry);
+  const targetPath = path.join(distDir, entry);
+
+  if (fs.existsSync(targetPath)) {
+    fs.rmSync(targetPath, { recursive: true, force: true });
+  }
+
+  fs.cpSync(sourcePath, targetPath, { recursive: true });
+}
+
 console.log("✅ Archivos de la SPA copiados dentro de dist/server/spa");
+console.log("✅ Archivos de la SPA preparados en dist/ para despliegues estáticos");
