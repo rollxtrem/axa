@@ -183,6 +183,8 @@ npm run start
 
 La aplicación estará disponible en `http://localhost:3000` (o el puerto configurado en .env)
 
+> ℹ️ **Nota sobre despliegues**: Para entornos administrados (como Netlify, Vercel o Azure Static Web Apps) no es necesario incluir un archivo `web.config`. La aplicación funciona correctamente con la configuración estándar generada por Vite.
+
 ## 🎨 Personalización
 
 ### Colores y Estilos
