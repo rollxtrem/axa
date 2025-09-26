@@ -88,6 +88,8 @@ stages:
               Contents: |
                 package.json
                 package-lock.json
+                azure-server.js
+                web.config
               TargetFolder: "$(Build.ArtifactStagingDirectory)/website"
 
           - task: ArchiveFiles@2

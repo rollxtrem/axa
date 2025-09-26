@@ -16,7 +16,7 @@
     "build:client": "vite build",
     "build:server": "vite build --config vite.config.server.ts",
     "build:bundle": "node scripts/copy-spa-to-server.mjs",
-    "start": "node dist/server/production.mjs",
+    "start": "node azure-server.js",
     "test": "vitest --run",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
