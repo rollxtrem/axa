@@ -59,11 +59,13 @@ stages:
           - script: npm prune --omit=dev
             displayName: "Prune dev dependencies"
 
-          - task: DeleteFiles@1
+          - pwsh: |
+              $path = "$(Build.ArtifactStagingDirectory)/website"
+              if (Test-Path $path) {
+                Remove-Item -Path $path -Recurse -Force
+              }
             displayName: "Clean staging directory"
-            condition: and(succeeded(), exists('$(Build.ArtifactStagingDirectory)/website'))
-            inputs:
-              SourceFolder: "$(Build.ArtifactStagingDirectory)/website"
+            condition: succeeded()
 
           - task: CopyFiles@2
             displayName: "Copy dist to staging"
