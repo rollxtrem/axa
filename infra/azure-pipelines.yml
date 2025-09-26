@@ -1,0 +1,112 @@
+trigger:
+   - main
+   - dev 
+   - IaC/Add-pipeline
+
+pool:
+  vmImage: 'windows-latest'
+
+resources:
+  repositories:  
+  - repository: 'infrastructure_as_code'
+    name: aa_americas_co_partner_service/infrastructure_as_code
+    type: git
+    ref: master
+
+variables:
+  nodeVersion: '22.16.0'
+  artifactName: 'node-app'
+  infrastructureAsCodeRepositoryName: 'infrastructure_as_code'
+  projectName: 'aa_americas_co_partner_service'
+  #DEV
+  # devAzureServiceConnection: 'SVC_AAS_BR-VISA-OCR_DV'
+  # devWebAppName: 'z-aas-visa-ocr-dva-nc1-aap'
+  # devResourceGroupName: 'z-aas-visa-ocr-dva-nc1-rgp01'
+  # devSubscriptionId: '3964b3cf-33e0-46e6-a067-b26e05604f09'
+  #PROD
+  prodWebAppName: 'z-aas-pser-col-pra-nc1-wap'
+  prodResourceGroupName: 'z-aas-pser-col-pra-nc1-rgp01'
+  prodSubscriptionId: '7664c688-b067-4462-be3f-7f2f9fa9557d'
+  prodAzureServiceConnection: 'SVC_AAS_AZDO-PSER-COL_PR'
+  #PPD
+  ppdWebAppName: 'z-aas-pser-col-ppa-nc1-wap'
+  ppdResourceGroupName: 'z-aas-pser-col-ppa-nc1-rgp01'
+  ppdSubscriptionId: 'b7cd5e4b-3d4e-4468-aaf8-d0459893304c'
+  ppdAzureServiceConnection: 'SVC_AAS_AZDO-PSER-COL_PP'
+  #AGENTPOOL
+  preProdAgentPool: 'AXA-AmericasPartners.CanadaCentral.Windows-latest.PPA'
+  prodAgentPool: 'AXA-AmericasPartners.CanadaCentral.Windows-latest.PRD'
+  drAgentPool: 'AXA-AmericasPartners.CanadaEast.Windows-latest.PRD'
+
+stages:
+  - stage: Build
+    displayName: Build
+    jobs:
+      - job: API
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: "$(nodeVersion)"
+              checkLatest: true
+            displayName: "Install Node.js"
+
+          - script: npm install
+            displayName: "npm install"
+
+          - script: npm run build
+            displayName: "npm build"
+
+          - task: ArchiveFiles@2
+            displayName: "Zip package"
+            condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              rootFolderOrFile: "$(Build.SourcesDirectory)"
+              includeRootFolder: false
+              archiveType: "zip"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/website/package.zip"
+              replaceExistingArchive: true
+
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Artifact package"
+            condition: or(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)/website/package.zip"
+              ArtifactName: "$(artifactName)"
+
+      - job: InfrastructureAsCode
+        displayName: IaC
+        steps:
+          - task: DownloadPipelineArtifact@2
+            displayName: 'Get last infra code artifact'
+            inputs:
+              artifactName: 'infra-arm-PSER'
+              buildType: 'specific'
+              project: '$(projectName)'
+              pipeline: '$(infrastructureAsCodeRepositoryName)'
+              branchName: 'refs/heads/master'
+              targetPath: '$(Build.SourcesDirectory)/IaC/'
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Infra artifact '
+            inputs:
+              PathtoPublish: '$(Build.SourcesDirectory)/IaC/'
+              ArtifactName: 'infra-arm-PSER'
+
+  # - template: 'deploy-template/travel-deployment.yml@${{variables.infrastructureAsCodeRepositoryName}}'
+  #   parameters:
+  #     stageName: 'PROD'
+  #     deploySubscriptionName: '$(prodAzureServiceConnection)'
+  #     deployBranchTrigger: 'main'
+  #     deploySubscriptionId: '$(prodSubscriptionId)'
+  #     deployResourceGroupName: '$(prodResourceGroupName)'
+  #     deployWebAppName: '$(prodWebAppName)'
+
+  - template: 'deploy-template/pser-deploy.yml@${{variables.infrastructureAsCodeRepositoryName}}'
+    parameters:
+      stageName: 'PPD'
+      deploySubscriptionName: '$(ppdAzureServiceConnection)'
+      deployBranchTrigger: 'dev'
+      deploySubscriptionId: '$(ppdSubscriptionId)'
+      deployResourceGroupName: '$(ppdResourceGroupName)'
+      deployWebAppName: '$(ppdWebAppName)'
+      agentPool: '$(preProdAgentPool)'
