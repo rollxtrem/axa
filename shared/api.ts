@@ -28,3 +28,50 @@ export interface SendEmailResponse {
     to: string[];
   };
 }
+
+export interface ApiErrorResponse {
+  message: string;
+  errors?: unknown;
+  details?: unknown;
+}
+
+export interface RegisterRequestBody {
+  fullName: string;
+  email: string;
+  password: string;
+  documentNumber: string;
+}
+
+export interface RegisterResponseBody {
+  user: Auth0UserProfile;
+  message?: string;
+}
+
+export interface LoginRequestBody {
+  email: string;
+  password: string;
+}
+
+export interface AuthTokens {
+  accessToken: string;
+  idToken?: string;
+  refreshToken?: string;
+  expiresIn: number;
+  tokenType: string;
+  scope?: string;
+}
+
+export interface Auth0UserProfile {
+  sub: string;
+  email?: string;
+  name?: string;
+  nickname?: string;
+  picture?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export interface LoginResponseBody {
+  tokens: AuthTokens;
+  user: Auth0UserProfile;
+}

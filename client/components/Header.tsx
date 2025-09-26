@@ -9,7 +9,19 @@ export default function Header() {
   const [showPqrsSuccess, setShowPqrsSuccess] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+
+  const greetingSource =
+    (typeof user?.name === "string" && user.name.trim().length > 0
+      ? user.name
+      : typeof user?.nickname === "string" && user.nickname.trim().length > 0
+        ? user.nickname
+        : typeof user?.email === "string"
+          ? user.email.split("@")[0]
+          : "usuario") ?? "usuario";
+
+  const greetingName =
+    greetingSource.split(" ")[0]?.trim().toLowerCase() || "usuario";
 
   const handleLogout = () => {
     logout();
@@ -63,7 +75,7 @@ export default function Header() {
             <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
               <div className="flex py-[11px] items-center gap-2 self-stretch">
                 <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                  hola angela
+                  hola {greetingName}
                 </span>
               </div>
             </button>

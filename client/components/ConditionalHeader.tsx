@@ -1,33 +1,35 @@
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+
 import Header from "./Header";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+
+const protectedPaths = new Set([
+  "/home",
+  "/bienestar",
+  "/formacion",
+  "/politica-cookies",
+  "/aviso-privacidad",
+]);
 
 export default function ConditionalHeader() {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Never show header on login or register pages
   const isAuthPage =
     location.pathname === "/" || location.pathname === "/register";
+  const isProtectedPage = protectedPaths.has(location.pathname);
 
-  // Protected pages that require authentication
-  const isProtectedPage =
-    location.pathname === "/home" ||
-    location.pathname === "/bienestar" ||
-    location.pathname === "/formacion" ||
-    location.pathname === "/politica-cookies" ||
-    location.pathname === "/aviso-privacidad";
-
-  // Auto-login if user is on a protected page (simulates successful login)
   useEffect(() => {
     if (isProtectedPage && !isAuthenticated) {
-      login();
+      navigate("/", { replace: true });
     }
-  }, [isProtectedPage, isAuthenticated, login]);
+  }, [isAuthenticated, isProtectedPage, navigate]);
 
-  // Show header if authenticated and not on auth pages, OR if on protected pages
-  const shouldShowHeader = (isAuthenticated && !isAuthPage) || isProtectedPage;
+  if (!isAuthenticated || isAuthPage) {
+    return null;
+  }
 
-  return shouldShowHeader ? <Header /> : null;
+  return <Header />;
 }
