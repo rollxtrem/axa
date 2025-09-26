@@ -1,59 +1,72 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
+
 import { useAuth } from "@/context/AuthContext";
 
-export default function Index() {
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    documentNumber: "",
-    rememberMe: false,
-  });
+const loginSchema = z.object({
+  email: z
+    .string({ required_error: "Ingresa tu correo electrónico" })
+    .min(1, "Ingresa tu correo electrónico")
+    .email("Ingresa un correo válido"),
+  password: z
+    .string({ required_error: "Ingresa tu contraseña" })
+    .min(8, "La contraseña debe tener al menos 8 caracteres"),
+  rememberMe: z.boolean().default(false),
+});
 
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+export default function Index() {
+  const [showPassword, setShowPassword] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+    reset,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const rememberMe = watch("rememberMe");
 
-    // Validate form
-    if (!formData.fullName || !formData.email || !formData.documentNumber) {
-      alert("Por favor completa todos los campos");
-      return;
-    }
-
-    // Show success notification
-    setShowSuccessNotification(true);
-
-    // Handle login logic here
-    console.log("Login attempted with:", formData);
-
-    // Mark user as authenticated and navigate to home
+  const onSubmit = async (values: LoginFormValues) => {
+    setServerError(null);
     try {
-      login();
+      const { email, password, rememberMe } = values;
+      await login({ email, password, rememberMe });
+      setShowSuccessNotification(true);
+      reset({ email: "", password: "", rememberMe: values.rememberMe });
       navigate("/home");
-    } catch (err) {
-      // ignore if auth not available
+      setTimeout(() => setShowSuccessNotification(false), 4000);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo iniciar sesión. Inténtalo nuevamente.";
+      setServerError(message);
     }
-
-    // Auto-hide notification after 4 seconds
-    setTimeout(() => {
-      setShowSuccessNotification(false);
-    }, 4000);
   };
 
   return (
     <div className="w-screen h-screen bg-[#0c0e45] relative overflow-hidden">
-      {/* Custom Success Notification */}
       {showSuccessNotification && (
         <div className="absolute top-[43px] left-[140px] w-[313px] h-16 bg-[#6574f8] rounded-[4px] z-10">
-          {/* Check Icon */}
           <div className="absolute left-3 top-5 w-6 h-6 flex items-center justify-center">
             <svg
               width="20"
@@ -81,12 +94,10 @@ export default function Index() {
             </svg>
           </div>
 
-          {/* Text */}
-          <span className="absolute left-11 top-[23px] text-white font-normal text-base leading-normal w-[115px] h-[19px]">
+          <span className="absolute left-11 top-[23px] text-white font-normal text-base leading-normal w-[190px]">
             Inicio de sesión exitoso
           </span>
 
-          {/* Close Button */}
           <button
             onClick={() => setShowSuccessNotification(false)}
             className="absolute right-[25px] top-[9px] w-4 h-4 flex items-center justify-center"
@@ -106,17 +117,14 @@ export default function Index() {
             </svg>
           </button>
 
-          {/* Progress Bar */}
           <div className="absolute bottom-0 left-0 w-[188px] h-[5px] bg-white" />
         </div>
       )}
 
-      {/* Form positioned to match original design */}
       <div
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[416px] bg-white rounded-[20px] flex flex-col items-start gap-4"
         style={{ padding: "32px 28px" }}
       >
-        {/* Header Section */}
         <div className="flex flex-col items-start gap-8 w-full">
           <div className="flex flex-col items-center gap-10 w-full">
             <div className="w-20 h-20 flex items-center justify-center">
@@ -127,7 +135,6 @@ export default function Index() {
               />
             </div>
 
-            {/* Welcome Text */}
             <div className="flex flex-col gap-2 w-full">
               <h1 className="text-[23px] font-bold text-[#0e0e0e] text-center leading-8">
                 Bienvenido
@@ -138,98 +145,108 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Form Section */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-6 w-full"
+            noValidate
+          >
             <div className="flex flex-col gap-2">
-              {/* Input Fields */}
+              {serverError && (
+                <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+                  {serverError}
+                </div>
+              )}
+
               <div className="flex flex-col gap-[18px]">
-                {/* Full Name Input */}
-                <div className="h-14 px-3 py-2 border border-black/[0.42] rounded flex items-center">
-                  <input
-                    type="text"
-                    placeholder="Nombre completo"
-                    value={formData.fullName}
-                    onChange={(e) =>
-                      handleInputChange("fullName", e.target.value)
-                    }
-                    className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                  />
+                <div className="flex flex-col gap-1">
+                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded flex items-center focus-within:border-[#0c0e45]">
+                    <input
+                      type="email"
+                      placeholder="Correo electrónico"
+                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      {...register("email")}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
 
-                {/* Email Input */}
-                <div className="h-14 px-3 py-2 border border-black/[0.42] rounded flex items-center">
-                  <input
-                    type="email"
-                    placeholder="Correo electrónico"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                  />
-                </div>
-
-                {/* Document Number Input */}
-                <div className="h-14 px-3 py-2 border border-black/[0.42] rounded flex items-center">
-                  <input
-                    type="text"
-                    placeholder="Número de documento"
-                    value={formData.documentNumber}
-                    onChange={(e) =>
-                      handleInputChange("documentNumber", e.target.value)
-                    }
-                    className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                  />
+                <div className="flex flex-col gap-1">
+                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded flex items-center focus-within:border-[#0c0e45]">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Contraseña"
+                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      {...register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      className="ml-2 text-[#666] hover:text-[#0e0e0e]"
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M12 9C12.7956 9 13.5587 9.31607 14.1213 9.87868C14.6839 10.4413 15 11.2044 15 12C15 12.7956 14.6839 13.5587 14.1213 14.1213C13.5587 14.6839 12.7956 15 12 15C11.2044 15 10.4413 14.6839 9.87868 14.1213C9.31607 13.5587 9 12.7956 9 12C9 11.2044 9.31607 10.4413 9.87868 9.87868C10.4413 9.31607 11.2044 9 12 9ZM12 4.5C17 4.5 21.27 7.61 23 12C21.27 16.39 17 19.5 12 19.5C7 19.5 2.73 16.39 1 12C2.73 7.61 7 4.5 12 4.5ZM3.18 12C3.98825 13.6503 5.24331 15.0407 6.80248 16.0133C8.36165 16.9858 10.1624 17.5013 12 17.5013C13.8376 17.5013 15.6383 16.9858 17.1975 16.0133C18.7567 15.0407 20.0117 13.6503 20.82 12C20.0117 10.3497 18.7567 8.95925 17.1975 7.98675C15.6383 7.01424 13.8376 6.49868 12 6.49868C10.1624 6.49868 8.36165 7.01424 6.80248 7.98675C5.24331 8.95925 3.98825 10.3497 3.18 12Z"
+                          fill="#666666"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="text-xs text-red-600 mt-1">
+                      {errors.password.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              {/* Remember Me Checkbox */}
               <div className="flex items-center">
                 <div className="w-8 h-8 flex items-center justify-center">
                   <button
                     type="button"
-                    onClick={() =>
-                      handleInputChange("rememberMe", !formData.rememberMe)
-                    }
+                    onClick={() => setValue("rememberMe", !rememberMe)}
                     className="flex items-center justify-center"
                   >
                     <span className="material-icons text-2xl text-[#666] leading-none select-none">
-                      {formData.rememberMe
-                        ? "check_box"
-                        : "check_box_outline_blank"}
+                      {rememberMe ? "check_box" : "check_box_outline_blank"}
                     </span>
                   </button>
                 </div>
                 <label
                   className="text-[15px] font-normal text-[#0e0e0e] leading-4 tracking-[0.15px] cursor-pointer"
-                  onClick={() =>
-                    handleInputChange("rememberMe", !formData.rememberMe)
-                  }
+                  onClick={() => setValue("rememberMe", !rememberMe)}
                 >
                   Recordarme
                 </label>
               </div>
             </div>
 
-            {/* Login Button */}
             <button
               type="submit"
-              className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors"
+              disabled={isLoading}
+              className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                  INICIAR SESIÓN
+                  {isLoading ? "INGRESANDO..." : "INICIAR SESIÓN"}
                 </span>
               </div>
             </button>
           </form>
         </div>
 
-        {/* Register Link */}
         <div className="text-[15px] font-normal text-[#0e0e0e] text-center leading-4 tracking-[0.15px] w-full">
-          <span>No tienes una cuenta? </span>
-          <Link
-            to="/register"
-            className="text-[#0c0e45] hover:underline cursor-pointer"
-          >
+          <span>¿No tienes una cuenta? </span>
+          <Link to="/register" className="text-[#0c0e45] hover:underline cursor-pointer">
             Regístrate
           </Link>
         </div>
