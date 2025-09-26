@@ -24,10 +24,19 @@
         }
       })();
 
-      const mode = env.MODE === "production" ? "production" : "test";
-      const config = oneTrustConfigs[mode];
+      const onetrustEnv = (() => {
+        const value = env.VITE_ONETRUST_ENV;
+        if (typeof value === "string" && value.trim().toLowerCase() === "test") {
+          return "test";
+        }
+
+        return "production";
+      })();
+
+      const config = oneTrustConfigs[onetrustEnv] ?? oneTrustConfigs.production;
       const baseAutoBlockUrl = "https://cdn.cookielaw.org/consent/";
-      const autoBlockSrc = `${baseAutoBlockUrl}${config.domainScript}/OtAutoBlock.js`;
+      const domainScript = config.domainScript ?? oneTrustConfigs.production.domainScript;
+      const autoBlockSrc = `${baseAutoBlockUrl}${domainScript}/OtAutoBlock.js`;
       const stubSrc = "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js";
 
       function appendScript(options) {
@@ -49,7 +58,7 @@
         src: stubSrc,
         attributes: {
           charset: "UTF-8",
-          "data-domain-script": config.domainScript,
+          "data-domain-script": domainScript,
         },
       });
 
