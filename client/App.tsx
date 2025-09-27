@@ -16,6 +16,7 @@ import Bienestar from "./pages/Bienestar";
 import Formacion from "./pages/Formacion";
 import PoliticaCookies from "./pages/PoliticaCookies";
 import AvisoPrivacidad from "./pages/AvisoPrivacidad";
+import { authConfig } from "@/lib/auth-config";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +30,12 @@ const App = () => (
           <ConditionalHeader />
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {authConfig.isAuthEnabled ? (
+              <>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+              </>
+            ) : null}
             <Route path="/home" element={<Home />} />
             <Route path="/bienestar" element={<Bienestar />} />
             <Route path="/formacion" element={<Formacion />} />

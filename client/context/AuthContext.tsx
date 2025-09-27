@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { authConfig } from "@/lib/auth-config";
+
 import type {
   ApiErrorResponse,
   Auth0UserProfile,
@@ -27,6 +29,7 @@ type AuthState = {
 };
 
 type AuthContextType = {
+  isAuthEnabled: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
   tokens?: AuthTokens;
@@ -43,11 +46,32 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_STORAGE_KEY = "axa-auth-state";
 
+const AUTH_DISABLED_MESSAGE =
+  "La autenticación está deshabilitada en este entorno.";
+
 const isApiErrorResponse = (value: unknown): value is ApiErrorResponse =>
   typeof value === "object" &&
   value !== null &&
   "message" in value &&
   typeof (value as { message: unknown }).message === "string";
+
+const createDisabledAuthContextValue = (): AuthContextType => ({
+  isAuthEnabled: false,
+  isAuthenticated: false,
+  isLoading: false,
+  tokens: undefined,
+  user: undefined,
+  login: async () => {
+    throw new Error(AUTH_DISABLED_MESSAGE);
+  },
+  register: async () => {
+    throw new Error(AUTH_DISABLED_MESSAGE);
+  },
+  logout: () => undefined,
+  error: undefined,
+});
+
+const DISABLED_AUTH_CONTEXT_VALUE = createDisabledAuthContextValue();
 
 const readStoredState = (): AuthState => {
   if (typeof window === "undefined") {
@@ -73,6 +97,14 @@ const readStoredState = (): AuthState => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  if (!authConfig.isAuthEnabled) {
+    return (
+      <AuthContext.Provider value={DISABLED_AUTH_CONTEXT_VALUE}>
+        {children}
+      </AuthContext.Provider>
+    );
+  }
+
   const [authState, setAuthState] = useState<AuthState>(() => readStoredState());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
@@ -189,6 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const contextValue = useMemo<AuthContextType>(
     () => ({
+      isAuthEnabled: true,
       isAuthenticated: Boolean(authState.tokens?.accessToken),
       isLoading,
       tokens: authState.tokens,

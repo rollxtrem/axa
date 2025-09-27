@@ -9,7 +9,7 @@ export default function Header() {
   const [showPqrsSuccess, setShowPqrsSuccess] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
-  const { logout, user, isAuthenticated } = useAuth();
+  const { logout, user, isAuthenticated, isAuthEnabled } = useAuth();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -79,24 +79,26 @@ export default function Header() {
             </button>
 
             {/* User greeting / Login link */}
-            {isAuthenticated ? (
-              <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
-                <div className="flex py-[11px] items-center gap-2 self-stretch">
+            {isAuthEnabled ? (
+              isAuthenticated ? (
+                <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
+                  <div className="flex py-[11px] items-center gap-2 self-stretch">
+                    <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
+                      hola {greetingName}
+                    </span>
+                  </div>
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]"
+                >
                   <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                    hola {greetingName}
+                    iniciar sesión
                   </span>
-                </div>
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]"
-              >
-                <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                  iniciar sesión
-                </span>
-              </Link>
-            )}
+                </Link>
+              )
+            ) : null}
 
             {/* Contact Icon - positioned as in Figma */}
             <svg
@@ -137,7 +139,7 @@ export default function Header() {
           </div>
 
           {/* Logout Button */}
-          {isAuthenticated ? (
+          {isAuthEnabled && isAuthenticated ? (
             <button
               onClick={() => setShowLogout(true)}
               className="flex w-[177px] h-[36px] px-4 justify-center items-center gap-4 rounded-[50px] bg-[#FF1721]"
@@ -297,32 +299,34 @@ export default function Header() {
 
               <div className="w-full h-[1px] bg-[#E0E0E0] my-2"></div>
 
-              {isAuthenticated ? (
-                <button
-                  onClick={() => {
-                    setShowMobileMenu(false);
-                    setShowLogout(true);
-                  }}
-                  className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
-                >
-                  CERRAR SESIÓN
-                </button>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setShowMobileMenu(false)}
-                  className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
-                >
-                  INICIAR SESIÓN
-                </Link>
-              )}
+              {isAuthEnabled ? (
+                isAuthenticated ? (
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      setShowLogout(true);
+                    }}
+                    className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
+                  >
+                    CERRAR SESIÓN
+                  </button>
+                ) : (
+                  <Link
+                    to="/login"
+                    onClick={() => setShowMobileMenu(false)}
+                    className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
+                  >
+                    INICIAR SESIÓN
+                  </Link>
+                )
+              ) : null}
             </div>
           </div>
         </div>
       )}
 
       {/* Logout Modal */}
-      {isAuthenticated && showLogout && (
+      {isAuthEnabled && isAuthenticated && showLogout && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(14, 14, 14, 0.5)" }}

@@ -3,6 +3,12 @@
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/favicon.ico", "/api/*"]
   },
+  "routes": [
+    {
+      "route": "/*",
+      "allowedRoles": ["anonymous", "authenticated"]
+    }
+  ],
   "responseOverrides": {
     "404": {
       "rewrite": "/index.html",
