@@ -55,7 +55,7 @@ const isApiErrorResponse = (value: unknown): value is ApiErrorResponse =>
   "message" in value &&
   typeof (value as { message: unknown }).message === "string";
 
-const parseJsonResponse = async <T>(
+const parseJsonResponse = async <T,>(
   response: Response,
   context: string
 ): Promise<{ data?: T; rawText: string }> => {
