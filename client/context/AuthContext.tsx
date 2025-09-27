@@ -55,6 +55,51 @@ const isApiErrorResponse = (value: unknown): value is ApiErrorResponse =>
   "message" in value &&
   typeof (value as { message: unknown }).message === "string";
 
+const parseJsonResponse = async <T>(
+  response: Response,
+  context: string
+): Promise<{ data?: T; rawText: string }> => {
+  const rawText = await response.text();
+
+  if (!rawText) {
+    return { rawText };
+  }
+
+  const trimmed = rawText.trim();
+  if (!trimmed) {
+    return { rawText };
+  }
+
+  const firstChar = trimmed[0];
+  if (firstChar !== "{" && firstChar !== "[") {
+    console.warn(
+      `La respuesta de ${context} no es JSON.`,
+      {
+        status: response.status,
+        contentType: response.headers.get("content-type"),
+        preview: trimmed.slice(0, 120),
+      }
+    );
+
+    return { rawText };
+  }
+
+  try {
+    return { data: JSON.parse(trimmed) as T, rawText };
+  } catch (error) {
+    console.warn(
+      `No se pudo parsear la respuesta JSON de ${context}.`,
+      error,
+      {
+        status: response.status,
+        preview: trimmed.slice(0, 120),
+      }
+    );
+
+    return { rawText };
+  }
+};
+
 const createDisabledAuthContextValue = (): AuthContextType => ({
   isAuthEnabled: false,
   isAuthenticated: false,
@@ -138,10 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(credentials as LoginRequestBody),
         });
 
-        const data = (await response.json().catch(() => undefined)) as
-          | LoginResponseBody
-          | ApiErrorResponse
-          | undefined;
+        const { data } = await parseJsonResponse<
+          LoginResponseBody | ApiErrorResponse
+        >(response, "inicio de sesión");
 
         if (!response.ok || !data || !("tokens" in data)) {
           const message = isApiErrorResponse(data)
@@ -186,10 +230,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(payload),
         });
 
-        const data = (await response.json().catch(() => undefined)) as
-          | RegisterResponseBody
-          | ApiErrorResponse
-          | undefined;
+        const { data } = await parseJsonResponse<
+          RegisterResponseBody | ApiErrorResponse
+        >(response, "registro");
 
         if (!response.ok || !data || !("user" in data)) {
           const message = isApiErrorResponse(data)
