@@ -11,7 +11,8 @@ export default defineConfig({
       formats: ["es"],
     },
     outDir: "dist/server",
-    target: "node22",
+    // Target a broadly supported Node.js runtime for Azure App Service deployments
+    target: "node18",
     ssr: true,
     rollupOptions: {
       external: [
