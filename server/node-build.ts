@@ -2,15 +2,17 @@ import fs from "fs";
 import path from "path";
 import { createServer } from "./index";
 import * as express from "express";
+import { fileURLToPath } from "node:url";
 
 const app = createServer();
 const port = process.env.PORT || 3000;
 
 // In production, serve the built SPA files
-const __dirname = import.meta.dirname;
+const moduleDirname = path.dirname(fileURLToPath(import.meta.url));
 const staticCandidates = [
-  path.join(__dirname, "../spa"),
-  path.join(__dirname, "spa"),
+  path.join(moduleDirname, "../spa"),
+  path.join(moduleDirname, "spa"),
+  path.join(process.cwd(), "dist", "spa"),
 ];
 
 const distPath = staticCandidates.find((candidate) => fs.existsSync(candidate)) ?? staticCandidates[0];
