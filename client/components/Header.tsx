@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -9,19 +9,26 @@ export default function Header() {
   const [showPqrsSuccess, setShowPqrsSuccess] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const { logout, user, isAuthenticated } = useAuth();
 
-  const greetingSource =
-    (typeof user?.name === "string" && user.name.trim().length > 0
-      ? user.name
-      : typeof user?.nickname === "string" && user.nickname.trim().length > 0
-        ? user.nickname
-        : typeof user?.email === "string"
-          ? user.email.split("@")[0]
-          : "usuario") ?? "usuario";
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setShowLogout(false);
+    }
+  }, [isAuthenticated]);
+
+  const greetingSource = isAuthenticated
+    ? (typeof user?.name === "string" && user.name.trim().length > 0
+        ? user.name
+        : typeof user?.nickname === "string" && user.nickname.trim().length > 0
+          ? user.nickname
+          : typeof user?.email === "string"
+            ? user.email.split("@")[0]
+            : "usuario")
+    : undefined;
 
   const greetingName =
-    greetingSource.split(" ")[0]?.trim().toLowerCase() || "usuario";
+    greetingSource?.split(" ")[0]?.trim().toLowerCase() ?? "usuario";
 
   const handleLogout = () => {
     logout();
@@ -71,14 +78,25 @@ export default function Header() {
               </div>
             </button>
 
-            {/* User greeting */}
-            <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
-              <div className="flex py-[11px] items-center gap-2 self-stretch">
+            {/* User greeting / Login link */}
+            {isAuthenticated ? (
+              <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
+                <div className="flex py-[11px] items-center gap-2 self-stretch">
+                  <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
+                    hola {greetingName}
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]"
+              >
                 <span className="text-[#FF1721] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                  hola {greetingName}
+                  iniciar sesión
                 </span>
-              </div>
-            </button>
+              </Link>
+            )}
 
             {/* Contact Icon - positioned as in Figma */}
             <svg
@@ -119,16 +137,18 @@ export default function Header() {
           </div>
 
           {/* Logout Button */}
-          <button
-            onClick={() => setShowLogout(true)}
-            className="flex w-[177px] h-[36px] px-4 justify-center items-center gap-4 rounded-[50px] bg-[#FF1721]"
-          >
-            <div className="flex py-[11px] justify-center items-center gap-2 self-stretch">
-              <span className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                cerrar SESIÓN
-              </span>
-            </div>
-          </button>
+          {isAuthenticated ? (
+            <button
+              onClick={() => setShowLogout(true)}
+              className="flex w-[177px] h-[36px] px-4 justify-center items-center gap-4 rounded-[50px] bg-[#FF1721]"
+            >
+              <div className="flex py-[11px] justify-center items-center gap-2 self-stretch">
+                <span className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
+                  cerrar SESIÓN
+                </span>
+              </div>
+            </button>
+          ) : null}
         </div>
 
         {/* Mobile Menu */}
@@ -163,7 +183,7 @@ export default function Header() {
           <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
             <div className="flex py-[11px] items-center gap-2 self-stretch">
               <Link
-                to="/home"
+                to="/"
                 className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 HOME
@@ -201,7 +221,7 @@ export default function Header() {
       <nav className="lg:hidden w-full bg-[#0c0e45]">
         <div className="flex justify-center items-center gap-4 px-4 py-3">
           <Link
-            to="/home"
+            to="/"
             className="text-white text-center font-['Source_Sans_Pro'] text-[12px] font-bold leading-6 tracking-[1px] uppercase hover:underline transition-all duration-200"
           >
             HOME
@@ -277,22 +297,32 @@ export default function Header() {
 
               <div className="w-full h-[1px] bg-[#E0E0E0] my-2"></div>
 
-              <button
-                onClick={() => {
-                  setShowMobileMenu(false);
-                  setShowLogout(true);
-                }}
-                className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
-              >
-                CERRAR SESIÓN
-              </button>
+              {isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowLogout(true);
+                  }}
+                  className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
+                >
+                  CERRAR SESIÓN
+                </button>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="text-left text-[#FF1721] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
+                >
+                  INICIAR SESIÓN
+                </Link>
+              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Logout Modal */}
-      {showLogout && (
+      {isAuthenticated && showLogout && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(14, 14, 14, 0.5)" }}

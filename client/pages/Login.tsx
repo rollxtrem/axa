@@ -19,7 +19,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function Index() {
+export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export default function Index() {
       await login({ email, password, rememberMe });
       setShowSuccessNotification(true);
       reset({ email: "", password: "", rememberMe: values.rememberMe });
-      navigate("/home");
+      navigate("/");
       setTimeout(() => setShowSuccessNotification(false), 4000);
     } catch (error) {
       const message =
