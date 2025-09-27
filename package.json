@@ -10,6 +10,9 @@
       "dist/server/**/*.js"
     ]
   },
+  "engines": {
+    "node": ">=22.16.0 <23"
+  },
   "scripts": {
     "dev": "vite",
     "build": "npm run build:client && npm run build:server && npm run build:bundle",
