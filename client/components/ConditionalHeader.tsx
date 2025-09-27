@@ -1,13 +1,16 @@
 import { useLocation } from "react-router-dom";
 
 import Header from "./Header";
-
-const hiddenPaths = new Set(["/login", "/register"]);
+import { useAuth } from "@/context/AuthContext";
 
 export default function ConditionalHeader() {
   const location = useLocation();
+  const { isAuthEnabled } = useAuth();
 
-  if (hiddenPaths.has(location.pathname)) {
+  if (
+    isAuthEnabled &&
+    (location.pathname === "/login" || location.pathname === "/register")
+  ) {
     return null;
   }
 
