@@ -185,6 +185,20 @@ La aplicación estará disponible en `http://localhost:3000` (o el puerto config
 
 > ℹ️ **Nota sobre despliegues**: Para entornos administrados (como Netlify, Vercel o Azure Static Web Apps) no es necesario incluir un archivo `web.config`. La aplicación funciona correctamente con la configuración estándar generada por Vite.
 
+## ☁️ Despliegue en Azure App Service (Windows)
+
+Sigue estas recomendaciones para que el paquete publicado por la canalización funcione sin ajustes manuales al desplegar en un App Service Windows:
+
+1. **Versión de Node.js**: el proyecto requiere Node.js `22.16.0`. Azure detectará automáticamente esta versión gracias al campo `engines` del `package.json`, pero valida que el App Service tenga configurado `WEBSITE_NODE_DEFAULT_VERSION=22.16.0`.
+2. **Construcción idéntica al pipeline**: ejecuta localmente `npm ci`, `npm run build` y `npm prune --omit=dev` para validar exactamente el mismo artefacto que la canalización genera.
+3. **Estructura del artefacto**: el paquete ZIP debe contener en la raíz los directorios `dist/` y `node_modules/` junto con `package.json`, `package-lock.json`, `azure-server.js` y `web.config`. La canalización ya copia estos archivos y los publica como `package.zip`.
+4. **Bundle de servidor**: confirma que `dist/server/production.mjs` exista y que `dist/server/spa/` contenga la Single Page Application; de lo contrario, el `azure-server.js` no podrá inicializar el servidor.
+5. **Comando de inicio**: no configures un comando personalizado. El `web.config` enruta todas las peticiones a `azure-server.js`, que a su vez inicia el bundle generado.
+6. **Health check**: configura el `Health check path` del App Service en `/health`. La API expone ese endpoint para que Azure pueda calentar la instancia sin impactar a los usuarios.
+7. **Variables opcionales**: si usas `WEBSITE_RUN_FROM_PACKAGE=1`, publica exactamente el `package.zip` generado por la canalización. Si necesitas mensajes personalizados, define `PING_MESSAGE` para que `/api/ping` refleje el entorno.
+
+Con estos ajustes el despliegue en Azure App Service Windows replica fielmente el entorno empaquetado por la canalización y garantiza que la aplicación responda desde el primer arranque.
+
 ## 🎨 Personalización
 
 ### Colores y Estilos
