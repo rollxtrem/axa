@@ -1,6 +1,6 @@
 import "dotenv/config";
 import express from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
 import { handleAuthLogin, handleAuthRegister } from "./routes/auth";
@@ -8,8 +8,22 @@ import { handleAuthLogin, handleAuthRegister } from "./routes/auth";
 export function createServer() {
   const app = express();
 
+  const corsOptions: CorsOptions = {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
+    optionsSuccessStatus: 200,
+  };
+
   // Middleware
-  app.use(cors());
+  app.use(cors(corsOptions));
+  app.use((req, res, next) => {
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  });
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
