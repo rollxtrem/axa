@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { apiFetch } from "@/lib/api-client";
+
 import { authConfig } from "@/lib/auth-config";
 
 import type {
@@ -177,7 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(undefined);
 
       try {
-        const response = await fetch("/api/auth/login", {
+        const response = await apiFetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(credentials as LoginRequestBody),
@@ -224,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(undefined);
 
       try {
-        const response = await fetch("/api/auth/register", {
+        const response = await apiFetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

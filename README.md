@@ -60,6 +60,19 @@ cp .env.example .env
 # Por defecto, el proyecto funciona sin configuración adicional
 ```
 
+#### Configurar la URL base del API en producción
+
+Cuando la aplicación web y el API se despliegan en hosts diferentes (por ejemplo, `https://mi-app.azurewebsites.net` para el
+frontend y `https://mi-api.azurewebsites.net` para el backend), define la variable `VITE_API_BASE_URL` en el entorno de build
+del cliente:
+
+```bash
+VITE_API_BASE_URL="https://mi-api.azurewebsites.net"
+```
+
+La aplicación utilizará automáticamente esta URL como prefijo para todas las llamadas al API (`/api/...`). Si la variable no se
+define, el cliente usará el mismo host en el que está alojada la SPA.
+
 ### 4. Iniciar el Servidor de Desarrollo
 
 ```bash
