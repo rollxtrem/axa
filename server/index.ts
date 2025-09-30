@@ -4,6 +4,7 @@ import cors, { CorsOptions } from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
 import { handleAuthLogin, handleAuthRegister } from "./routes/auth";
+import { handleEnvironmentVariables } from "./routes/environment";
 
 export function createServer() {
   const app = express();
@@ -38,6 +39,7 @@ export function createServer() {
     res.json({ message: ping });
   });
 
+  app.get("/env", handleEnvironmentVariables);
   app.get("/api/demo", handleDemo);
   app.post("/api/email/send", handleSendEmail);
   app.post("/api/auth/register", handleAuthRegister);
