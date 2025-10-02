@@ -281,8 +281,9 @@ export default function Bienestar() {
                   </button>
                 </div>
               </div>
-
+              
               {/* Nutricional Card */}
+              {/*
               <div className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden shadow-sm">
                 <div className="w-full h-[110px] relative">
                   <img
@@ -327,6 +328,7 @@ export default function Bienestar() {
                   </button>
                 </div>
               </div>
+              */}
             </div>
           </div>
         </div>

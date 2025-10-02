@@ -134,7 +134,7 @@ export default function Formacion() {
                     </span>
                   </div>
                   <span className="border border-[#6574f8] text-[#0e0e0e] text-[10px] px-3 py-1 rounded-[10px] self-start">
-                    Básico a intermedio
+                    Intermedio
                   </span>
                 </div>
                 <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm leading-[22px] tracking-[0.1px] mb-4">
@@ -183,7 +183,7 @@ export default function Formacion() {
                     </span>
                   </div>
                   <span className="border border-[#6574f8] text-[#0e0e0e] text-[10px] px-3 py-1 rounded-[10px] self-start">
-                    Básico a intermedio
+                    Intermedio
                   </span>
                 </div>
                 <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm leading-[22px] tracking-[0.1px] mb-4">
