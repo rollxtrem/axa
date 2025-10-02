@@ -180,7 +180,7 @@ export default function Header() {
 
       {/* Navigation bar - Exact Figma spacing */}
       <nav className="hidden lg:block w-full bg-[#0c0e45]">
-        <div className="flex justify-center items-center gap-8 px-4 py-4 lg:px-[513px] lg:py-4">
+        <div className="flex justify-center items-center gap-8 px-4 pt-4 pb-0 lg:px-[513px] lg:pt-4 lg:pb-0">
           {/* HOME Button */}
           <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
             <div className="flex py-[11px] items-center gap-2 self-stretch">
