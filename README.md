@@ -73,6 +73,16 @@ VITE_API_BASE_URL="https://mi-api.azurewebsites.net"
 La aplicación utilizará automáticamente esta URL como prefijo para todas las llamadas al API (`/api/...`). Si la variable no se
 define, el cliente usará el mismo host en el que está alojada la SPA.
 
+#### Actualizar el contenido público de Builder.io
+
+Algunos enlaces a documentos legales se sirven desde Builder.io. La clave pública utilizada para descargar estos archivos se lee de la variable `VITE_PUBLIC_BUILDER_KEY`. Por defecto, el proyecto incluye la clave configurada actualmente, pero puedes reemplazarla en tu `.env`:
+
+```bash
+VITE_PUBLIC_BUILDER_KEY="tu-clave-publica"
+```
+
+El código del frontend utiliza esta variable para interpolar dinámicamente la clave en las URLs que apuntan a los activos almacenados en Builder.io, por lo que no necesitas modificar cada enlace manualmente cuando cambie la clave. En caso de que la variable no esté definida, se usa la clave por defecto incluida en el repositorio para mantener la compatibilidad.【F:client/lib/builder.ts†L1-L14】【F:client/pages/Home.tsx†L2-L3】【F:client/pages/Home.tsx†L182-L197】
+
 ### 4. Iniciar el Servidor de Desarrollo
 
 ```bash
