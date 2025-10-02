@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
+
 export default function AvisoPrivacidad() {
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
@@ -626,7 +628,7 @@ export default function AvisoPrivacidad() {
                 }}
               >
                 <a
-                  href="https://cdn.builder.io/o/assets%2F251da8f29625434a8c872a9913dedea9%2F8b1be5fcd60f49bdbfc969301f2ca7fc?alt=media&token=5022c0df-5c99-41c0-b448-2dd45d432ccc&apiKey=251da8f29625434a8c872a9913dedea9"
+                  href={`https://cdn.builder.io/o/assets%2F${encodedBuilderPublicKey}%2F8b1be5fcd60f49bdbfc969301f2ca7fc?alt=media&token=5022c0df-5c99-41c0-b448-2dd45d432ccc&apiKey=${builderPublicKey}`}
                   download="Terminos-y-Condiciones.pdf"
                   target="_blank"
                   style={{
@@ -652,7 +654,7 @@ export default function AvisoPrivacidad() {
                   Política de Cookies
                 </div>
                 <a
-                  href="https://cdn.builder.io/o/assets%2F251da8f29625434a8c872a9913dedea9%2F42bed250c3b54cee8fe7078d269b6957?alt=media&token=b67a2eab-62c7-417a-9bf4-4ad68d3ac484&apiKey=251da8f29625434a8c872a9913dedea9"
+                  href={`https://cdn.builder.io/o/assets%2F${encodedBuilderPublicKey}%2F42bed250c3b54cee8fe7078d269b6957?alt=media&token=b67a2eab-62c7-417a-9bf4-4ad68d3ac484&apiKey=${builderPublicKey}`}
                   download="Politica-de-Privacidad.pdf"
                   target="_blank"
                   style={{
