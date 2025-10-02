@@ -5,6 +5,7 @@ import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
 import { handleAuthLogin, handleAuthRegister } from "./routes/auth";
 import { handleEnvironmentVariables } from "./routes/environment";
+import { requireAuth } from "./middleware/require-auth";
 
 export function createServer() {
   const app = express();
@@ -40,8 +41,8 @@ export function createServer() {
   });
 
   app.get("/env", handleEnvironmentVariables);
-  app.get("/api/demo", handleDemo);
-  app.post("/api/email/send", handleSendEmail);
+  app.get("/api/demo", requireAuth, handleDemo);
+  app.post("/api/email/send", requireAuth, handleSendEmail);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
 
