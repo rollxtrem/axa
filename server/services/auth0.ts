@@ -7,13 +7,16 @@ import type {
   RegisterResponseBody,
 } from "@shared/api";
 
-const MANAGEMENT_AUDIENCE_SUFFIX = "/api/v2/";
+export const AUTH0_MANAGEMENT_AUDIENCE_SUFFIX = "/api/v2/";
 
-type Auth0Config = {
+type Auth0BaseConfig = {
   domain: string;
+  audience?: string;
+};
+
+type Auth0Config = Auth0BaseConfig & {
   clientId: string;
   clientSecret: string;
-  audience?: string;
   dbConnection: string;
 };
 
@@ -88,14 +91,30 @@ const extractAuth0Message = (body: unknown, fallback: string): string => {
 const normalizeDomain = (domain: string): string =>
   domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-const getAuth0Config = (): Auth0Config => {
+export const getAuth0BaseConfig = (): Auth0BaseConfig => {
   const domain = process.env.AUTH0_DOMAIN?.trim();
+  const audience = process.env.AUTH0_AUDIENCE?.trim();
+
+  if (!domain) {
+    throw new Auth0ServiceError(
+      "Configuración de Auth0 incompleta. Falta la variable AUTH0_DOMAIN.",
+      500
+    );
+  }
+
+  return {
+    domain: normalizeDomain(domain),
+    audience: audience ? audience : undefined,
+  };
+};
+
+const getAuth0Config = (): Auth0Config => {
+  const baseConfig = getAuth0BaseConfig();
   const clientId = process.env.AUTH0_CLIENT_ID?.trim();
   const clientSecret = process.env.AUTH0_CLIENT_SECRET?.trim();
   const dbConnection = process.env.AUTH0_DB_CONNECTION?.trim();
-  const audience = process.env.AUTH0_AUDIENCE?.trim();
 
-  if (!domain || !clientId || !clientSecret || !dbConnection) {
+  if (!clientId || !clientSecret || !dbConnection) {
     throw new Auth0ServiceError(
       "Configuración de Auth0 incompleta. Verifica tus variables de entorno.",
       500
@@ -103,16 +122,15 @@ const getAuth0Config = (): Auth0Config => {
   }
 
   return {
-    domain: normalizeDomain(domain),
+    ...baseConfig,
     clientId,
     clientSecret,
     dbConnection,
-    audience,
   };
 };
 
 const getManagementAudience = (domain: string) =>
-  `https://${domain}${MANAGEMENT_AUDIENCE_SUFFIX}`;
+  `https://${domain}${AUTH0_MANAGEMENT_AUDIENCE_SUFFIX}`;
 
 const getManagementToken = async (config: Auth0Config): Promise<string> => {
   const now = Date.now();

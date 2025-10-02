@@ -313,6 +313,40 @@ Para producción, considera:
 - Implementar rate limiting
 - Validar y sanitizar inputs
 
+### Protección y consumo de las APIs REST con Auth0
+
+Sigue estos pasos para aprovechar la integración con Auth0 recién agregada y exigir tokens en los endpoints del backend:
+
+1. **Configura las variables del servidor** en tu `.env` (o como variables de entorno en producción):
+   - `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET` y `AUTH0_DB_CONNECTION` son obligatorias.
+   - Define `AUTH0_AUDIENCE` si tus tokens deben tener como audiencia una API personalizada. Si se omite, el backend aceptará el audience del _Management API_ de Auth0.
+2. **Habilita la autenticación en el cliente** activando el feature flag `VITE_ENABLE_AUTH=true`. Esto muestra las pantallas de login/registro y permite almacenar el token en `localStorage` cuando el usuario marca "Recordarme".
+3. **Protege cualquier endpoint de Express** importando el _middleware_ `requireAuth` y añadiéndolo antes del handler:
+
+   ```ts
+   import { requireAuth } from "./middleware/require-auth";
+
+   app.get("/api/mi-endpoint", requireAuth, miHandlerProtegido);
+   ```
+
+   El middleware valida firmas RS256 contra la JWKS pública de tu tenant y expone el token verificado en `req.auth`. Los endpoints existentes `/api/demo` y `/api/email/send` ya lo utilizan y solo responden cuando reciben un `Authorization: Bearer <token>` válido.【F:server/index.ts†L35-L41】【F:server/routes/demo.ts†L1-L22】
+4. **Consume APIs protegidas desde React** usando el hook `useAuthenticatedFetch`, que inyecta automáticamente el encabezado `Authorization` con el `accessToken` del contexto de autenticación:
+
+   ```tsx
+   import { useAuthenticatedFetch } from "@/hooks/use-authenticated-fetch";
+
+   const fetchProtectedData = async () => {
+     const authFetch = useAuthenticatedFetch();
+     const response = await authFetch("/api/demo");
+     const data = await response.json();
+     console.log(data);
+   };
+   ```
+
+   Si prefieres un control total, puedes acceder al token directamente desde `useAuth()` y construir tus peticiones manualmente.【F:client/context/AuthContext.tsx†L24-L206】【F:client/hooks/use-authenticated-fetch.ts†L1-L27】
+
+Cuando la validación falla, el middleware responde con los códigos HTTP correspondientes (`401`, `403` o `500`) para que el cliente pueda redirigir al flujo de login o mostrar un mensaje de error. Las claves públicas de Auth0 se cachean durante una hora y se refrescan automáticamente si cambia el `kid` del token.【F:server/middleware/require-auth.ts†L1-L216】
+
 ## 📞 Soporte
 
 Si encuentras algún problema:
