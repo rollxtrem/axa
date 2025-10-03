@@ -30,11 +30,9 @@ const App = () => (
           <ConditionalHeader />
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
             {authConfig.isAuthEnabled ? (
-              <>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-              </>
+              <Route path="/register" element={<Register />} />
             ) : null}
             <Route path="/home" element={<Home />} />
             <Route path="/bienestar" element={<Bienestar />} />
