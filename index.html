@@ -7,15 +7,6 @@
 
     <!-- Inicio del aviso de consentimiento de cookies de OneTrust para axabeneficios.axa-assistance.com.co -->
     <script type="module">
-      const oneTrustConfigs = {
-        production: {
-          domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449",
-        },
-        test: {
-          domainScript: "019919c8-d3e1-7da5-99ad-fc914e5c7449-test",
-        },
-      };
-
       const env = (() => {
         try {
           return import.meta.env ?? {};
@@ -24,18 +15,22 @@
         }
       })();
 
-      const onetrustEnv = (() => {
-        const value = env.VITE_ONETRUST_ENV;
-        if (typeof value === "string" && value.trim().toLowerCase() === "test") {
-          return "test";
+      const baseAutoBlockUrl = "https://cdn.cookielaw.org/consent/";
+      const defaultDomainScript = "019919c8-d3e1-7da5-99ad-fc914e5c7449";
+      const domainScriptFromEnv = (() => {
+        const value = env.VITE_ONETRUST_DOMAIN_SCRIPT;
+        if (typeof value === "string") {
+          const trimmedValue = value.trim();
+          if (trimmedValue !== "") {
+            return trimmedValue;
+          }
         }
 
-        return "production";
+        return undefined;
       })();
-
-      const config = oneTrustConfigs[onetrustEnv] ?? oneTrustConfigs.production;
-      const baseAutoBlockUrl = "https://cdn.cookielaw.org/consent/";
-      const domainScript = config.domainScript ?? oneTrustConfigs.production.domainScript;
+      const domainScript =
+        domainScriptFromEnv ??
+        defaultDomainScript;
       const autoBlockSrc = `${baseAutoBlockUrl}${domainScript}/OtAutoBlock.js`;
       const stubSrc = "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js";
 
