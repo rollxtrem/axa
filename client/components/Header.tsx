@@ -79,7 +79,7 @@ export default function Header() {
             </button>
 
             {/* User greeting / Login link */}
-            {isAuthEnabled ? (
+            {true ? (
               isAuthenticated ? (
                 <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
                   <div className="flex py-[11px] items-center gap-2 self-stretch">

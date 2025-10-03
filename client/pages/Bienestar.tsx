@@ -122,7 +122,7 @@ export default function Bienestar() {
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-[#6574f8] rounded-b-[20px] h-[300px] md:h-[435px]">
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Hero Image */}
           <img
@@ -133,7 +133,7 @@ export default function Bienestar() {
 
           {/* Blue angled overlay */}
           <svg
-            className="absolute left-[-100px] md:left-[-287px] top-0 w-[600px] md:w-[1213px] h-[300px] md:h-[459px] fill-[#0c0e45]"
+            className="absolute left-[-100px] md:left-[-287px] top-0 w-[600px] md:w-[1213px] h-[300px] md:h-[466px] fill-[#0c0e45]"
             viewBox="0 0 921 435"
             preserveAspectRatio="none"
           >

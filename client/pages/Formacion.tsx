@@ -33,18 +33,18 @@ export default function Formacion() {
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
       {/* Hero Banner */}
-      <section className="relative overflow-hidden rounded-b-[20px] h-[300px] md:h-[435px] bg-[#f0f0f0]">
-        <div className="relative w-full max-w-[1197px] mx-auto h-full px-4 md:px-8 pb-[60px] md:pb-[125px]">
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
+        <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Hero Image */}
           <img
             src="https://api.builder.io/api/v1/image/assets/TEMP/3f328910e63e2b585ed7f72f5f558e99086786ef?width=2302"
             alt="Formación y desarrollo"
-            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[500px] md:w-[1012px] h-[250px] md:h-[398px] object-cover"
+            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
           />
 
           {/* Blue angled overlay */}
           <svg
-            className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[405px] fill-[#0c0e45]"
+            className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[466px] fill-[#0c0e45]"
             viewBox="0 0 957 435"
             preserveAspectRatio="none"
           >
@@ -59,11 +59,18 @@ export default function Formacion() {
           </svg>
 
           {/* Hero Content */}
-          <div className="absolute right-4 md:left-[652px] top-[50px] md:top-[111px] w-full max-w-[350px] md:w-[475px] h-auto md:h-[216px] flex flex-col justify-center items-center md:items-end gap-4 md:gap-6 z-10 px-4 md:px-0">
-            <h1 className="text-white font-['Publico_Text_Web'] text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] text-center md:text-right self-stretch">
-              Aprende, crece y alcanza nuevas metas
-            </h1>
-            <p className="text-white font-['Source_Sans_Pro'] text-[14px] md:text-[20px] leading-[20px] md:leading-8 tracking-[0.25px] text-center md:text-right w-full md:w-[428px]">
+          <div className="absolute right-4 md:left-[759px] top-[30px] md:top-[51px] w-full max-w-[350px] md:w-[470px] text-center md:text-right text-white px-4 md:px-0">
+            <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
+              <h4 className="inline">
+                <div>
+                  <p>
+                    Aprende, crece y alcanza nuevas metas
+                  </p>
+                </div>
+                <br />
+              </h4>
+            </div>
+            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
               Desarrolla nuevas habilidades con nuestros cursos especializados.
             </p>
           </div>
@@ -126,7 +133,7 @@ export default function Formacion() {
                     </defs>
                   </svg>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] font-semibold leading-8">
                       Educación Digital
                     </h4>
                     <span className="bg-[#6574f8] text-white text-[10px] px-3 py-1 rounded-[10px]">
@@ -175,7 +182,7 @@ export default function Formacion() {
                     />
                   </svg>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] font-semibold leading-8">
                       Educación Financiera
                     </h4>
                     <span className="bg-[#6574f8] text-white text-[10px] px-3 py-1 rounded-[10px]">
@@ -224,7 +231,7 @@ export default function Formacion() {
                     />
                   </svg>
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                    <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] font-semibold leading-8">
                       Marketing Digital
                     </h4>
                     <span className="bg-[#6574f8] text-white text-[10px] px-3 py-1 rounded-[10px]">

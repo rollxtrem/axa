@@ -13,13 +13,13 @@ export default function Home() {
           <img
             src="https://api.builder.io/api/v1/image/assets/TEMP/aa522e475c35958159de6477a0c62dd213728f3c?width=2302"
             alt="Background overlay"
-            className="absolute left-[-50px] md:left-[-280px] top-[20px] md:top-[44px] w-[400px] md:w-[1075px] h-[200px] md:h-[388px] object-cover"
+            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
           />
 
           {/* Blue angled overlay */}
           <svg
-            className="absolute left-[150px] md:left-[369px] top-[10px] md:top-[19px] w-[600px] md:w-[1295px] h-[280px] md:h-[421px] fill-[#0C0E45]"
-            viewBox="0 0 982 425"
+            className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[466px] fill-[#0c0e45]"
+            viewBox="0 0 957 435"
             preserveAspectRatio="none"
           >
             <path
