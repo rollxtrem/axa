@@ -145,11 +145,13 @@ export default function Header() {
   const openPqrsModal = () => {
     setPqrsError(null);
     setPqrsKeyError(null);
+    setPqrsLoadingKey(false);
     setShowPqrs(true);
   };
 
   const closePqrsModal = () => {
     setShowPqrs(false);
+    setPqrsLoadingKey(false);
   };
 
   const isPqrsSubmitDisabled = pqrsSubmitting || pqrsLoadingKey || !!pqrsKeyError;
