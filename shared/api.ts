@@ -89,6 +89,8 @@ export interface PqrsFormData {
 
 export interface PqrsSubmissionRequest {
   ciphertext: string;
+  encryptedKey: string;
+  iv: string;
 }
 
 export interface PqrsSubmissionResponse {

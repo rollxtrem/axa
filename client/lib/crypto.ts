@@ -120,15 +120,51 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return globalThis.btoa(binary);
 }
 
-export async function encryptJsonWithPublicKey(key: CryptoKey, payload: unknown): Promise<string> {
+export interface EncryptedJsonPayload {
+  ciphertext: string;
+  encryptedKey: string;
+  iv: string;
+}
+
+const uint8ArrayToBase64 = (value: Uint8Array): string => {
+  let binary = "";
+  for (let i = 0; i < value.byteLength; i += 1) {
+    binary += String.fromCharCode(value[i]);
+  }
+  return globalThis.btoa(binary);
+};
+
+export async function encryptJsonWithPublicKey(
+  key: CryptoKey,
+  payload: unknown,
+): Promise<EncryptedJsonPayload> {
   const json = JSON.stringify(payload);
   const dataBuffer = stringToArrayBuffer(json);
-  const encrypted = await crypto.subtle.encrypt(
+
+  const aesKey = await crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  const ciphertextBuffer = await crypto.subtle.encrypt(
+    {
+      name: "AES-GCM",
+      iv,
+    },
+    aesKey,
+    dataBuffer,
+  );
+
+  const rawAesKey = await crypto.subtle.exportKey("raw", aesKey);
+  const encryptedKeyBuffer = await crypto.subtle.encrypt(
     {
       name: "RSA-OAEP",
     },
     key,
-    dataBuffer,
+    rawAesKey,
   );
-  return arrayBufferToBase64(encrypted);
+
+  return {
+    ciphertext: arrayBufferToBase64(ciphertextBuffer),
+    encryptedKey: arrayBufferToBase64(encryptedKeyBuffer),
+    iv: uint8ArrayToBase64(iv),
+  };
 }

@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { privateDecrypt } from "node:crypto";
+import { createDecipheriv, privateDecrypt } from "node:crypto";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
 import type {
@@ -11,7 +11,16 @@ import type {
 
 const encryptedRequestSchema = z.object({
   ciphertext: z.string().min(1, "Encrypted payload is required"),
+  encryptedKey: z.string().min(1, "Encrypted key is required"),
+  iv: z.string().min(1, "Initialization vector is required"),
 });
+
+type EncryptedPqrsRequest = z.infer<typeof encryptedRequestSchema>;
+type _EncryptedRequestMatchesShared = EncryptedPqrsRequest extends PqrsSubmissionRequest
+  ? PqrsSubmissionRequest extends EncryptedPqrsRequest
+    ? true
+    : never
+  : never;
 
 const pqrsFormSchema = z.object({
   fullName: z.string().min(1),
@@ -26,14 +35,29 @@ const pqrsFormSchema = z.object({
 
 const normalizePem = (value: string): string => value.replace(/\\n/g, "\n");
 
-const decryptPayload = (ciphertext: string, privateKey: string): string => {
-  const decrypted = privateDecrypt(
+const AUTH_TAG_LENGTH = 16;
+
+const decryptPayload = (payload: EncryptedPqrsRequest, privateKey: string): string => {
+  const aesKey = privateDecrypt(
     {
       key: normalizePem(privateKey),
       oaepHash: "sha256",
     },
-    Buffer.from(ciphertext, "base64"),
+    Buffer.from(payload.encryptedKey, "base64"),
   );
+  const ciphertext = Buffer.from(payload.ciphertext, "base64");
+  if (ciphertext.length <= AUTH_TAG_LENGTH) {
+    throw new Error("Ciphertext is too short");
+  }
+
+  const authTag = ciphertext.subarray(ciphertext.length - AUTH_TAG_LENGTH);
+  const encrypted = ciphertext.subarray(0, ciphertext.length - AUTH_TAG_LENGTH);
+  const iv = Buffer.from(payload.iv, "base64");
+
+  const decipher = createDecipheriv("aes-256-gcm", aesKey, iv);
+  decipher.setAuthTag(authTag);
+
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
   return decrypted.toString("utf-8");
 };
 
@@ -109,14 +133,14 @@ export const handleSubmitPqrs: RequestHandler = async (req, res) => {
     return res.status(500).json({ error: "PQRS private key is not configured" });
   }
 
-  const parseEncrypted = encryptedRequestSchema.safeParse(req.body as PqrsSubmissionRequest);
+  const parseEncrypted = encryptedRequestSchema.safeParse(req.body);
   if (!parseEncrypted.success) {
     return res.status(400).json({ error: "Invalid request payload", details: parseEncrypted.error.flatten() });
   }
 
   let pqrsData: PqrsFormData;
   try {
-    const decrypted = decryptPayload(parseEncrypted.data.ciphertext, privateKey);
+    const decrypted = decryptPayload(parseEncrypted.data, privateKey);
     const parsed = pqrsFormSchema.safeParse(JSON.parse(decrypted));
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid PQRS payload", details: parsed.error.flatten() });
