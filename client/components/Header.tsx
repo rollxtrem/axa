@@ -112,13 +112,13 @@ export default function Header() {
 
     try {
       setPqrsSubmitting(true);
-      const ciphertext = await encryptJsonWithPublicKey(pqrsPublicKey, pqrsForm);
+      const encryptedPayload = await encryptJsonWithPublicKey(pqrsPublicKey, pqrsForm);
       const response = await fetch("/api/pqrs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ciphertext }),
+        body: JSON.stringify(encryptedPayload),
       });
 
       if (!response.ok) {
