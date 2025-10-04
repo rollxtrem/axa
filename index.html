@@ -6,59 +6,23 @@
     <title>AXA - Registro e Inicio de Sesión</title>
 
     <!-- Inicio del aviso de consentimiento de cookies de OneTrust para axabeneficios.axa-assistance.com.co -->
-    <script type="module">
-      const env = (() => {
-        try {
-          return import.meta.env ?? {};
-        } catch (_error) {
-          return {};
-        }
-      })();
 
-      const baseAutoBlockUrl = "https://cdn.cookielaw.org/consent/";
-      const defaultDomainScript = "019919c8-d3e1-7da5-99ad-fc914e5c7449";
-      const domainScriptFromEnv = (() => {
-        const value = env.VITE_ONETRUST_DOMAIN_SCRIPT;
-        if (typeof value === "string") {
-          const trimmedValue = value.trim();
-          if (trimmedValue !== "") {
-            return trimmedValue;
-          }
-        }
+    <script
+      type="text/javascript"
+      src="https://cdn.cookielaw.org/consent/019919c8-d3e1-7da5-99ad-fc914e5c7449-test/OtAutoBlock.js"
+    ></script>
 
-        return undefined;
-      })();
-      const domainScript =
-        domainScriptFromEnv ??
-        defaultDomainScript;
-      const autoBlockSrc = `${baseAutoBlockUrl}${domainScript}/OtAutoBlock.js`;
-      const stubSrc = "https://cdn.cookielaw.org/scripttemplates/otSDKStub.js";
+    <script
+      src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
+      type="text/javascript"
+      charset="UTF-8"
+      data-domain-script="019919c8-d3e1-7da5-99ad-fc914e5c7449-test"
+    ></script>
 
-      function appendScript(options) {
-        const script = document.createElement("script");
-        script.type = "text/javascript";
-        script.src = options.src;
-
-        const attributes = options.attributes ?? {};
-        Object.entries(attributes).forEach(([key, value]) => {
-          script.setAttribute(key, value);
-        });
-
-        document.head.appendChild(script);
-        return script;
-      }
-
-      appendScript({ src: autoBlockSrc });
-      appendScript({
-        src: stubSrc,
-        attributes: {
-          charset: "UTF-8",
-          "data-domain-script": domainScript,
-        },
-      });
-
-      window.OptanonWrapper = window.OptanonWrapper || function OptanonWrapper() {};
+    <script type="text/javascript">
+      function OptanonWrapper() {}
     </script>
+
     <!-- Fin del aviso de consentimiento de cookies de OneTrust para axabeneficios.axa-assistance.com.co -->
   </head>
 
