@@ -1,7 +1,7 @@
 export function pemToArrayBuffer(pem: string): ArrayBuffer {
   const cleaned = pem
-    .replace(/-----BEGIN [^-]+-----/g, "")
-    .replace(/-----END [^-]+-----/g, "")
+    .replace(/-----BEGIN PUBLIC KEY-----/g, "")
+    .replace(/-----END PUBLIC KEY-----/g, "")
     .replace(/\s+/g, "");
   const binaryString = globalThis.atob(cleaned);
   const buffer = new Uint8Array(binaryString.length);
