@@ -1,6 +1,19 @@
-import { useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import type { PqrsFormData } from "@shared/api";
+
+const createInitialPqrsState = (): PqrsFormData => ({
+  fullName: "",
+  email: "",
+  phone: "",
+  documentType: "",
+  documentNumber: "",
+  requestType: "",
+  subject: "",
+  description: "",
+});
 
 export default function Header() {
   const [showLogout, setShowLogout] = useState(false);
@@ -8,6 +21,12 @@ export default function Header() {
   const [showPqrs, setShowPqrs] = useState(false);
   const [showPqrsSuccess, setShowPqrsSuccess] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [pqrsForm, setPqrsForm] = useState<PqrsFormData>(() => createInitialPqrsState());
+  const [pqrsError, setPqrsError] = useState<string | null>(null);
+  const [pqrsSubmitting, setPqrsSubmitting] = useState(false);
+  const [pqrsPublicKey, setPqrsPublicKey] = useState<CryptoKey | null>(null);
+  const [pqrsLoadingKey, setPqrsLoadingKey] = useState(false);
+  const [pqrsKeyError, setPqrsKeyError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { logout, user, isAuthenticated, isAuthEnabled } = useAuth();
 
@@ -16,6 +35,124 @@ export default function Header() {
       setShowLogout(false);
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!showPqrs || pqrsPublicKey || pqrsLoadingKey) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPublicKey = async () => {
+      setPqrsKeyError(null);
+      setPqrsLoadingKey(true);
+      try {
+        const response = await fetch("/api/pqrs/public-key");
+        if (!response.ok) {
+          throw new Error(`Error al obtener la llave pública (${response.status})`);
+        }
+        const data: { publicKey: string } = await response.json();
+        const key = await importRsaPublicKey(data.publicKey);
+        if (!cancelled) {
+          setPqrsPublicKey(key);
+        }
+      } catch (error) {
+        console.error("Error fetching PQRS public key", error);
+        if (!cancelled) {
+          setPqrsKeyError("No fue posible preparar el envío seguro. Por favor, inténtalo más tarde.");
+        }
+      } finally {
+        if (!cancelled) {
+          setPqrsLoadingKey(false);
+        }
+      }
+    };
+
+    void fetchPublicKey();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showPqrs, pqrsPublicKey, pqrsLoadingKey]);
+
+  const handlePqrsChange = (field: keyof PqrsFormData) =>
+    (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      const { value } = event.target;
+      setPqrsForm((prev) => ({ ...prev, [field]: value }));
+    };
+
+  const validatePqrsForm = (form: PqrsFormData) => {
+    if (!form.fullName.trim()) return "El nombre es obligatorio.";
+    if (!form.email.trim()) return "El correo electrónico es obligatorio.";
+    if (!form.phone.trim()) return "El teléfono es obligatorio.";
+    if (!form.documentType.trim()) return "Selecciona un tipo de documento.";
+    if (!form.documentNumber.trim()) return "El número de documento es obligatorio.";
+    if (!form.requestType.trim()) return "Selecciona el tipo de solicitud.";
+    if (!form.subject.trim()) return "El asunto es obligatorio.";
+    if (!form.description.trim()) return "La descripción es obligatoria.";
+    return null;
+  };
+
+  const resetPqrsForm = () => {
+    setPqrsForm(createInitialPqrsState());
+  };
+
+  const handlePqrsSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPqrsError(null);
+
+    const validationError = validatePqrsForm(pqrsForm);
+    if (validationError) {
+      setPqrsError(validationError);
+      return;
+    }
+
+    if (!pqrsPublicKey) {
+      setPqrsError("No fue posible preparar el envío seguro. Por favor, inténtalo más tarde.");
+      return;
+    }
+
+    try {
+      setPqrsSubmitting(true);
+      const ciphertext = await encryptJsonWithPublicKey(pqrsPublicKey, pqrsForm);
+      const response = await fetch("/api/pqrs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ciphertext }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const message =
+          (errorBody && typeof errorBody.error === "string" && errorBody.error) ||
+          "No fue posible enviar tu PQRS. Inténtalo de nuevo más tarde.";
+        throw new Error(message);
+      }
+
+      resetPqrsForm();
+      setShowPqrs(false);
+      setShowPqrsSuccess(true);
+    } catch (error) {
+      console.error("Failed to submit PQRS", error);
+      setPqrsError(error instanceof Error ? error.message : "No fue posible enviar tu PQRS.");
+    } finally {
+      setPqrsSubmitting(false);
+    }
+  };
+
+  const openPqrsModal = () => {
+    setPqrsError(null);
+    setPqrsKeyError(null);
+    setShowPqrs(true);
+  };
+
+  const closePqrsModal = () => {
+    setShowPqrs(false);
+  };
+
+  const isPqrsSubmitDisabled = pqrsSubmitting || pqrsLoadingKey || !!pqrsKeyError;
 
   const greetingSource = isAuthenticated
     ? (typeof user?.name === "string" && user.name.trim().length > 0
@@ -68,7 +205,7 @@ export default function Header() {
 
             {/* PQRs Button */}
             <button
-              onClick={() => setShowPqrs(true)}
+              onClick={openPqrsModal}
               className="flex h-[28px] px-4 items-center gap-4 rounded-[4px] hover:bg-gray-50 transition-colors"
             >
               <div className="flex py-[11px] items-center gap-2 self-stretch">
@@ -290,7 +427,7 @@ export default function Header() {
               <button
                 onClick={() => {
                   setShowMobileMenu(false);
-                  setShowPqrs(true);
+                  openPqrsModal();
                 }}
                 className="text-left text-[#0C0E45] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
               >
@@ -556,8 +693,7 @@ export default function Header() {
               </div>
             </div>
 
-            {/* Form Content */}
-            <div className="flex w-full flex-col items-start gap-6">
+            <form onSubmit={handlePqrsSubmit} className="flex w-full flex-col items-start gap-6">
               {/* Personal Information Section */}
               <div className="flex flex-col items-start gap-4 w-full">
                 <h3 className="text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[20px] font-normal leading-6 md:leading-8 tracking-[0.25px]">
@@ -570,6 +706,9 @@ export default function Header() {
                       <input
                         type="text"
                         placeholder="Nombre completo"
+                        value={pqrsForm.fullName}
+                        onChange={handlePqrsChange("fullName")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
@@ -579,6 +718,9 @@ export default function Header() {
                       <input
                         type="email"
                         placeholder="Correo electrónico"
+                        value={pqrsForm.email}
+                        onChange={handlePqrsChange("email")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
@@ -588,13 +730,21 @@ export default function Header() {
                       <input
                         type="tel"
                         placeholder="Número de teléfono"
+                        value={pqrsForm.phone}
+                        onChange={handlePqrsChange("phone")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
 
                     {/* Document Type */}
                     <div className="flex h-12 md:h-14 px-3 items-center gap-[10px] w-full rounded border border-black/42">
-                      <select className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none appearance-none">
+                      <select
+                        value={pqrsForm.documentType}
+                        onChange={handlePqrsChange("documentType")}
+                        disabled={pqrsSubmitting}
+                        className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none appearance-none"
+                      >
                         <option value="">Tipo de documento</option>
                         <option value="cc">Cédula de Ciudadanía</option>
                         <option value="ce">Cédula de Extranjería</option>
@@ -617,6 +767,9 @@ export default function Header() {
                       <input
                         type="text"
                         placeholder="Número de documento"
+                        value={pqrsForm.documentNumber}
+                        onChange={handlePqrsChange("documentNumber")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
@@ -633,7 +786,12 @@ export default function Header() {
                   <div className="flex flex-col items-start gap-[18px] w-full">
                     {/* Request Type */}
                     <div className="flex h-12 md:h-14 px-3 items-center gap-[10px] w-full rounded border border-black/42 bg-white">
-                      <select className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none appearance-none">
+                      <select
+                        value={pqrsForm.requestType}
+                        onChange={handlePqrsChange("requestType")}
+                        disabled={pqrsSubmitting}
+                        className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none appearance-none"
+                      >
                         <option value="">Tipo de solicitud</option>
                         <option value="peticion">Petición</option>
                         <option value="queja">Queja</option>
@@ -656,6 +814,9 @@ export default function Header() {
                       <input
                         type="text"
                         placeholder="Asunto"
+                        value={pqrsForm.subject}
+                        onChange={handlePqrsChange("subject")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
@@ -665,41 +826,53 @@ export default function Header() {
                       <textarea
                         placeholder="Descripción detallada"
                         rows={4}
+                        value={pqrsForm.description}
+                        onChange={handlePqrsChange("description")}
+                        disabled={pqrsSubmitting}
                         className="flex-1 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[14px] md:text-[16px] font-normal leading-5 md:leading-6 tracking-[0.5px] bg-transparent outline-none resize-none placeholder:text-[#0E0E0E]"
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col items-start gap-3 w-full">
-              <button
-                onClick={() => {
-                  setShowPqrs(false);
-                  setShowPqrsSuccess(true);
-                }}
-                className="flex h-11 px-4 justify-center items-center gap-4 w-full rounded-[50px] bg-[#0C0E45] hover:bg-[#090a3a] transition-colors"
-              >
-                <div className="flex py-[11px] justify-center items-center gap-2 w-full">
-                  <span className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-9 tracking-[1.25px] uppercase">
-                    ENVIAR PQRS
-                  </span>
-                </div>
-              </button>
+              {pqrsLoadingKey ? (
+                <p className="text-[#0C0E45] text-sm font-['Source_Sans_Pro']">Preparando el envío seguro…</p>
+              ) : null}
+              {pqrsKeyError ? (
+                <p className="text-[#FF1721] text-sm font-['Source_Sans_Pro']">{pqrsKeyError}</p>
+              ) : null}
+              {pqrsError ? (
+                <p className="text-[#FF1721] text-sm font-['Source_Sans_Pro']">{pqrsError}</p>
+              ) : null}
 
-              <button
-                onClick={() => setShowPqrs(false)}
-                className="flex h-11 px-4 justify-center items-center gap-4 w-full rounded-[50px] border border-[#0C0E45] bg-white hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex py-[11px] justify-center items-center gap-2 w-full">
-                  <span className="text-[#0C0E45] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-9 tracking-[1.25px] uppercase">
-                    CANCELAR
-                  </span>
-                </div>
-              </button>
-            </div>
+              {/* Action Buttons */}
+              <div className="flex flex-col items-start gap-3 w-full">
+                <button
+                  type="submit"
+                  disabled={isPqrsSubmitDisabled}
+                  className={`flex h-11 px-4 justify-center items-center gap-4 w-full rounded-[50px] bg-[#0C0E45] transition-colors ${isPqrsSubmitDisabled ? "opacity-60 cursor-not-allowed" : "hover:bg-[#090a3a]"}`}
+                >
+                  <div className="flex py-[11px] justify-center items-center gap-2 w-full">
+                    <span className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-9 tracking-[1.25px] uppercase">
+                      {pqrsSubmitting ? "ENVIANDO…" : "ENVIAR PQRS"}
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={closePqrsModal}
+                  className="flex h-11 px-4 justify-center items-center gap-4 w-full rounded-[50px] border border-[#0C0E45] bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex py-[11px] justify-center items-center gap-2 w-full">
+                    <span className="text-[#0C0E45] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-9 tracking-[1.25px] uppercase">
+                      CANCELAR
+                    </span>
+                  </div>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
