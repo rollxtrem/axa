@@ -37,7 +37,7 @@ export default function Header() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (!showPqrs || pqrsPublicKey || pqrsLoadingKey) {
+    if (!showPqrs || pqrsPublicKey) {
       return;
     }
 
@@ -55,14 +55,12 @@ export default function Header() {
         const key = await importRsaPublicKey(data.publicKey);
         if (!cancelled) {
           setPqrsPublicKey(key);
+          setPqrsLoadingKey(false);
         }
       } catch (error) {
         console.error("Error fetching PQRS public key", error);
         if (!cancelled) {
           setPqrsKeyError("No fue posible preparar el envío seguro. Por favor, inténtalo más tarde.");
-        }
-      } finally {
-        if (!cancelled) {
           setPqrsLoadingKey(false);
         }
       }
@@ -73,7 +71,7 @@ export default function Header() {
     return () => {
       cancelled = true;
     };
-  }, [showPqrs, pqrsPublicKey, pqrsLoadingKey]);
+  }, [showPqrs, pqrsPublicKey]);
 
   const handlePqrsChange = (field: keyof PqrsFormData) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
