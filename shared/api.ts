@@ -75,3 +75,26 @@ export interface LoginResponseBody {
   tokens: AuthTokens;
   user: Auth0UserProfile;
 }
+
+export interface PqrsFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  documentType: string;
+  documentNumber: string;
+  requestType: string;
+  subject: string;
+  description: string;
+}
+
+export interface PqrsSubmissionRequest {
+  ciphertext: string;
+}
+
+export interface PqrsSubmissionResponse {
+  status: "ok";
+}
+
+export interface PqrsPublicKeyResponse {
+  publicKey: string;
+}
