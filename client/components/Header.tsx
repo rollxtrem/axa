@@ -1,6 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
 import type { PqrsFormData } from "@shared/api";
 
@@ -47,7 +48,7 @@ export default function Header() {
       setPqrsKeyError(null);
       setPqrsLoadingKey(true);
       try {
-        const response = await fetch("/api/pqrs/public-key");
+        const response = await apiFetch("/api/pqrs/public-key");
         if (!response.ok) {
           throw new Error(`Error al obtener la llave pública (${response.status})`);
         }
@@ -113,7 +114,7 @@ export default function Header() {
     try {
       setPqrsSubmitting(true);
       const encryptedPayload = await encryptJsonWithPublicKey(pqrsPublicKey, pqrsForm);
-      const response = await fetch("/api/pqrs", {
+      const response = await apiFetch("/api/pqrs", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
