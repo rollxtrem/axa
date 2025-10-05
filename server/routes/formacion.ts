@@ -49,9 +49,9 @@ const buildEmailContent = (data: FormacionFormData) => {
 };
 
 export const handleGetFormacionPublicKey: RequestHandler = (_req, res) => {
-  const publicKey = process.env.PQRS_PUBLIC_KEY;
+  const publicKey = process.env.FORMACION_PUBLIC_KEY ?? process.env.PQRS_PUBLIC_KEY;
   if (!publicKey) {
-    return res.status(500).json({ error: "PQRS public key is not configured" });
+    return res.status(500).json({ error: "FORMACION public key is not configured" });
   }
 
   const response: FormacionPublicKeyResponse = {
@@ -62,9 +62,9 @@ export const handleGetFormacionPublicKey: RequestHandler = (_req, res) => {
 };
 
 export const handleSubmitFormacion: RequestHandler = async (req, res) => {
-  const privateKey = process.env.PQRS_PRIVATE_KEY;
+  const privateKey = process.env.FORMACION_PRIVATE_KEY ?? process.env.PQRS_PRIVATE_KEY;
   if (!privateKey) {
-    return res.status(500).json({ error: "PQRS private key is not configured" });
+    return res.status(500).json({ error: "FORMACION private key is not configured" });
   }
 
   const parseEncrypted = encryptedRequestSchema.safeParse(req.body);
