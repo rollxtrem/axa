@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
+import { apiFetch } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
 import type {
   FormacionFormData,
@@ -74,7 +75,7 @@ export default function Formacion() {
     const fetchPublicKey = async () => {
       setLoadingKey(true);
       try {
-        const response = await fetch("/api/formacion/public-key");
+        const response = await apiFetch("/api/formacion/public-key");
         if (!response.ok) {
           throw new Error("No se pudo obtener la llave pública.");
         }
@@ -131,7 +132,7 @@ export default function Formacion() {
 
       const encryptedPayload = await encryptJsonWithPublicKey(publicKey, payload);
 
-      const response = await fetch("/api/formacion", {
+      const response = await apiFetch("/api/formacion", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
