@@ -48,6 +48,39 @@ const buildEmailContent = (data: FormacionFormData) => {
   return { html, text };
 };
 
+const buildUserConfirmationContent = (data: FormacionFormData) => {
+  const html = `
+    <h1>Confirmación de inscripción</h1>
+    <p>Hola ${escapeHtml(data.fullName)},</p>
+    <p>Hemos recibido tu solicitud de inscripción al curso ${escapeHtml(data.course)}.</p>
+    <p>Muy pronto nos pondremos en contacto contigo para compartir los siguientes pasos.</p>
+    <p>Resumen de tu inscripción:</p>
+    <ul>
+      <li><strong>Nombre:</strong> ${escapeHtml(data.fullName)}</li>
+      <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
+      <li><strong>Curso seleccionado:</strong> ${escapeHtml(data.course)}</li>
+    </ul>
+    <p>Gracias por confiar en AXA.</p>
+  `;
+
+  const text = [
+    "Confirmación de inscripción",
+    "",
+    `Hola ${data.fullName},`,
+    `Hemos recibido tu solicitud de inscripción al curso ${data.course}.`,
+    "Muy pronto nos pondremos en contacto contigo para compartir los siguientes pasos.",
+    "",
+    "Resumen de tu inscripción:",
+    `Nombre: ${data.fullName}`,
+    `Correo: ${data.email}`,
+    `Curso seleccionado: ${data.course}`,
+    "",
+    "Gracias por confiar en AXA.",
+  ].join("\n");
+
+  return { html, text };
+};
+
 export const handleGetFormacionPublicKey: RequestHandler = (_req, res) => {
   const publicKey = process.env.FORMACION_PUBLIC_KEY;
   if (!publicKey) {
@@ -91,6 +124,8 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
   }
 
   const { html, text } = buildEmailContent(formData);
+  const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
+  const fromAddress = process.env.FORMACION_EMAIL_FROM ?? process.env.PQRS_EMAIL_FROM ?? undefined;
 
   try {
     await sendEmail({
@@ -98,7 +133,15 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
       subject: `Nueva inscripción curso - ${formData.course}`,
       text,
       html,
-      from: process.env.FORMACION_EMAIL_FROM ?? process.env.PQRS_EMAIL_FROM ?? undefined,
+      from: fromAddress,
+    });
+
+    await sendEmail({
+      to: [formData.email],
+      subject: `Confirmación de inscripción - ${formData.course}`,
+      text: userText,
+      html: userHtml,
+      from: fromAddress,
     });
   } catch (error) {
     console.error("Failed to send formación email", error);
