@@ -46,6 +46,9 @@ export default function Formacion() {
     setFormData({ fullName: "", email: "" });
     setFormError(null);
     setFormSubmitting(false);
+    setPublicKey(null);
+    setLoadingKey(false);
+    setKeyError(null);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
