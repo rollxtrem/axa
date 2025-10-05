@@ -29,6 +29,7 @@ export default function Formacion() {
   const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
   const [loadingKey, setLoadingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
+  const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [alertMessage, setAlertMessage] = useState<AlertMessage | null>(null);
 
   const openModal = (course: string) => {
@@ -63,6 +64,7 @@ export default function Formacion() {
   const handleRetryLoadKey = () => {
     setKeyError(null);
     setPublicKey(null);
+    setKeyRetryToken((token) => token + 1);
   };
 
   useEffect(() => {
@@ -105,7 +107,7 @@ export default function Formacion() {
     return () => {
       cancelled = true;
     };
-  }, [isModalOpen, loadingKey, publicKey, keyError]);
+  }, [isModalOpen, keyRetryToken]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
