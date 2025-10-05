@@ -1,5 +1,4 @@
 import { RequestHandler } from "express";
-import { createDecipheriv, privateDecrypt } from "node:crypto";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
 import type {
@@ -8,14 +7,16 @@ import type {
   PqrsSubmissionRequest,
   PqrsSubmissionResponse,
 } from "@shared/api";
+import {
+  decryptPayload,
+  encryptedRequestSchema,
+  escapeHtml,
+  formatRecipients,
+  normalizePem,
+  type ParsedEncryptedRequest,
+} from "./utils/encrypted-request";
 
-const encryptedRequestSchema = z.object({
-  ciphertext: z.string().min(1, "Encrypted payload is required"),
-  encryptedKey: z.string().min(1, "Encrypted key is required"),
-  iv: z.string().min(1, "Initialization vector is required"),
-});
-
-type EncryptedPqrsRequest = z.infer<typeof encryptedRequestSchema>;
+type EncryptedPqrsRequest = ParsedEncryptedRequest;
 type _EncryptedRequestMatchesShared = EncryptedPqrsRequest extends PqrsSubmissionRequest
   ? PqrsSubmissionRequest extends EncryptedPqrsRequest
     ? true
@@ -32,45 +33,6 @@ const pqrsFormSchema = z.object({
   subject: z.string().min(1),
   description: z.string().min(1),
 });
-
-const normalizePem = (value: string): string => value.replace(/\\n/g, "\n");
-
-const AUTH_TAG_LENGTH = 16;
-
-const decryptPayload = (payload: EncryptedPqrsRequest, privateKey: string): string => {
-  const aesKey = privateDecrypt(
-    {
-      key: normalizePem(privateKey),
-      oaepHash: "sha256",
-    },
-    Buffer.from(payload.encryptedKey, "base64"),
-  );
-  const ciphertext = Buffer.from(payload.ciphertext, "base64");
-  if (ciphertext.length <= AUTH_TAG_LENGTH) {
-    throw new Error("Ciphertext is too short");
-  }
-
-  const authTag = ciphertext.subarray(ciphertext.length - AUTH_TAG_LENGTH);
-  const encrypted = ciphertext.subarray(0, ciphertext.length - AUTH_TAG_LENGTH);
-  const iv = Buffer.from(payload.iv, "base64");
-
-  const decipher = createDecipheriv("aes-256-gcm", aesKey, iv);
-  decipher.setAuthTag(authTag);
-
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return decrypted.toString("utf-8");
-};
-
-const formatRecipients = (value: string | undefined): string[] =>
-  value?.split(",").map((entry) => entry.trim()).filter(Boolean) ?? [];
-
-const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
 
 const buildEmailContent = (data: PqrsFormData) => {
   const html = `

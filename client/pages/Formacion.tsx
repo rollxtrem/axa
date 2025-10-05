@@ -1,34 +1,178 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
+import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import type {
+  FormacionFormData,
+  FormacionPublicKeyResponse,
+  FormacionSubmissionResponse,
+} from "@shared/api";
+
+type FormacionFormState = Pick<FormacionFormData, "fullName" | "email">;
+
+type AlertMessage = {
+  type: "success" | "error";
+  message: string;
+};
 
 export default function Formacion() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    nombre: "",
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormacionFormState>({
+    fullName: "",
     email: "",
   });
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
+  const [loadingKey, setLoadingKey] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState<AlertMessage | null>(null);
 
-  const openModal = () => setIsModalOpen(true);
+  const openModal = (course: string) => {
+    setSelectedCourse(course);
+    setIsModalOpen(true);
+    setFormError(null);
+    if (keyError) {
+      setKeyError(null);
+      setPublicKey(null);
+    }
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
-    setFormData({ nombre: "", email: "" });
+    setSelectedCourse(null);
+    setFormData({ fullName: "", email: "" });
+    setFormError(null);
+    setFormSubmitting(false);
+    setPublicKey(null);
+    setLoadingKey(false);
+    setKeyError(null);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setFormData((previous) => ({
+      ...previous,
+      [name as keyof FormacionFormState]: value,
+    }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission here
-    console.log("Form submitted:", formData);
-    closeModal();
+  const handleRetryLoadKey = () => {
+    setKeyError(null);
+    setPublicKey(null);
   };
+
+  useEffect(() => {
+    if (!isModalOpen || loadingKey || publicKey || keyError) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPublicKey = async () => {
+      setLoadingKey(true);
+      try {
+        const response = await fetch("/api/formacion/public-key");
+        if (!response.ok) {
+          throw new Error("No se pudo obtener la llave pública.");
+        }
+        const data = (await response.json()) as FormacionPublicKeyResponse;
+        if (cancelled) {
+          return;
+        }
+        const key = await importRsaPublicKey(data.publicKey);
+        if (cancelled) {
+          return;
+        }
+        setPublicKey(key);
+      } catch (error) {
+        console.error("Failed to load formación public key", error);
+        if (!cancelled) {
+          setKeyError("No pudimos preparar el formulario. Intenta nuevamente.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingKey(false);
+        }
+      }
+    };
+
+    void fetchPublicKey();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isModalOpen, loadingKey, publicKey, keyError]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!selectedCourse) {
+      setFormError("Selecciona un curso antes de enviar tu inscripción.");
+      return;
+    }
+
+    if (!publicKey) {
+      setFormError("No pudimos preparar la inscripción. Intenta nuevamente.");
+      return;
+    }
+
+    setFormSubmitting(true);
+    setFormError(null);
+
+    try {
+      const payload: FormacionFormData = {
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        course: selectedCourse,
+      };
+
+      const encryptedPayload = await encryptJsonWithPublicKey(publicKey, payload);
+
+      const response = await fetch("/api/formacion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(encryptedPayload),
+      });
+
+      const responseBody = (await response
+        .json()
+        .catch(() => null)) as FormacionSubmissionResponse | { error?: string } | null;
+
+      if (!response.ok) {
+        const message =
+          responseBody && typeof responseBody === "object" && "error" in responseBody && responseBody.error
+            ? responseBody.error
+            : "No se pudo completar la inscripción. Intenta nuevamente.";
+        throw new Error(message);
+      }
+
+      if (!responseBody || (responseBody as FormacionSubmissionResponse).status !== "ok") {
+        throw new Error("No recibimos confirmación de la inscripción. Intenta nuevamente.");
+      }
+
+      setAlertMessage({
+        type: "success",
+        message: "Tu inscripción fue enviada correctamente. Pronto nos pondremos en contacto contigo.",
+      });
+      closeModal();
+    } catch (error) {
+      console.error("Error submitting formación form", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente.";
+      setFormError(message);
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError;
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
@@ -94,6 +238,18 @@ export default function Formacion() {
             <div className="w-[177px] h-[2px] bg-[#6574f8] mx-auto"></div>
           </div>
 
+          {alertMessage && (
+            <div
+              className={`mb-6 rounded-lg border px-4 py-3 text-sm font-['Source_Sans_Pro'] ${
+                alertMessage.type === "success"
+                  ? "border-green-500 bg-green-50 text-green-700"
+                  : "border-[#FF1721] bg-red-50 text-[#a1131a]"
+              }`}
+            >
+              {alertMessage.message}
+            </div>
+          )}
+
           {/* Courses Grid - Only 3 courses */}
           <div className="flex flex-col md:flex-row items-center gap-5 justify-center">
             {/* Educación Digital Card */}
@@ -149,7 +305,7 @@ export default function Formacion() {
                   potencian tus habilidades digitales.
                 </p>
                 <button
-                  onClick={openModal}
+                  onClick={() => openModal("Educación Digital")}
                   className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                 >
                   INSCRIBIRME AL CURSO
@@ -198,7 +354,7 @@ export default function Formacion() {
                   planificación financiera.
                 </p>
                 <button
-                  onClick={openModal}
+                  onClick={() => openModal("Educación Financiera")}
                   className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                 >
                   INSCRIBIRME AL CURSO
@@ -247,7 +403,7 @@ export default function Formacion() {
                   para hacer crecer tu negocio.
                 </p>
                 <button
-                  onClick={openModal}
+                  onClick={() => openModal("Marketing Digital")}
                   className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                 >
                   INSCRIBIRME AL CURSO
@@ -381,8 +537,19 @@ export default function Formacion() {
                   Regístrate fácilmente y asegura tu lugar en el curso que
                   impulsará tu desarrollo.
                 </p>
-              </div>
             </div>
+          </div>
+
+            {selectedCourse && (
+              <div className="mb-6 rounded-[12px] bg-[#f0f0f0] px-4 py-3">
+                <p className="text-xs font-['Source_Sans_Pro'] font-semibold uppercase tracking-[1.25px] text-[#0c0e45]">
+                  Curso seleccionado
+                </p>
+                <p className="mt-1 text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6">
+                  {selectedCourse}
+                </p>
+              </div>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -397,11 +564,13 @@ export default function Formacion() {
                   <div className="relative">
                     <input
                       type="text"
-                      name="nombre"
-                      value={formData.nombre}
+                      name="fullName"
+                      value={formData.fullName}
                       onChange={handleInputChange}
                       placeholder="Nombre y apellido"
-                      className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px]"
+                      autoComplete="name"
+                      disabled={formSubmitting}
+                      className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px] disabled:bg-gray-100"
                       required
                     />
                   </div>
@@ -414,28 +583,55 @@ export default function Formacion() {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="correo electrónico"
-                      className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px]"
+                      autoComplete="email"
+                      disabled={formSubmitting}
+                      className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px] disabled:bg-gray-100"
                       required
                     />
                   </div>
                 </div>
               </div>
 
+              {loadingKey && !keyError && (
+                <p className="text-xs text-[#666] font-['Source_Sans_Pro']">
+                  Preparando la información para el envío seguro…
+                </p>
+              )}
+
+              {keyError && (
+                <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-[#a1131a] font-['Source_Sans_Pro']">
+                  {keyError}
+                  <button
+                    type="button"
+                    onClick={handleRetryLoadKey}
+                    className="ml-2 font-semibold underline hover:no-underline"
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              )}
+
+              {formError && (
+                <p className="text-sm text-[#FF1721] font-['Source_Sans_Pro']">{formError}</p>
+              )}
+
               {/* Buttons */}
               <div className="space-y-3 pt-6">
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full h-11 bg-[#0c0e45] text-white font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase rounded-full hover:bg-[#0a0c3a] transition-colors"
+                  disabled={isSubmitDisabled}
+                  className="w-full h-11 bg-[#0c0e45] text-white font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase rounded-full hover:bg-[#0a0c3a] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  INSCRIBIRSE
+                  {formSubmitting ? "ENVIANDO…" : "INSCRIBIRSE"}
                 </button>
 
                 {/* Cancel Button */}
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="w-full h-11 bg-white border border-[#0c0e45] text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase rounded-full hover:bg-gray-50 transition-colors"
+                  disabled={formSubmitting}
+                  className="w-full h-11 bg-white border border-[#0c0e45] text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase rounded-full hover:bg-gray-50 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   CANCELAR
                 </button>
