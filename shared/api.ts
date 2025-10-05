@@ -87,11 +87,15 @@ export interface PqrsFormData {
   description: string;
 }
 
-export interface PqrsSubmissionRequest {
+export interface EncryptedSubmissionRequest {
   ciphertext: string;
   encryptedKey: string;
   iv: string;
 }
+
+export interface PqrsSubmissionRequest extends EncryptedSubmissionRequest {}
+
+export type FormacionSubmissionRequest = EncryptedSubmissionRequest;
 
 export interface PqrsSubmissionResponse {
   status: "ok";
@@ -100,3 +104,13 @@ export interface PqrsSubmissionResponse {
 export interface PqrsPublicKeyResponse {
   publicKey: string;
 }
+
+export interface FormacionFormData {
+  fullName: string;
+  email: string;
+  course: string;
+}
+
+export type FormacionSubmissionResponse = PqrsSubmissionResponse;
+
+export type FormacionPublicKeyResponse = PqrsPublicKeyResponse;
