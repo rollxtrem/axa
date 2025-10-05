@@ -49,7 +49,7 @@ const buildEmailContent = (data: FormacionFormData) => {
 };
 
 export const handleGetFormacionPublicKey: RequestHandler = (_req, res) => {
-  const publicKey = process.env.PQRS_PUBLIC_KEY;
+  const publicKey = process.env.FORMACION_PUBLIC_KEY;
   if (!publicKey) {
     return res.status(500).json({ error: "FORMACION public key is not configured" });
   }
@@ -62,7 +62,7 @@ export const handleGetFormacionPublicKey: RequestHandler = (_req, res) => {
 };
 
 export const handleSubmitFormacion: RequestHandler = async (req, res) => {
-  const privateKey = process.env.PQRS_PRIVATE_KEY;
+  const privateKey = process.env.FORMACION_PRIVATE_KEY;
   if (!privateKey) {
     return res.status(500).json({ error: "FORMACION private key is not configured" });
   }
