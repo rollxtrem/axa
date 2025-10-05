@@ -42,7 +42,10 @@ export const decryptPayload = (
 };
 
 export const formatRecipients = (value: string | undefined): string[] =>
-  value?.split(",").map((entry) => entry.trim()).filter(Boolean) ?? [];
+  value
+    ?.split(/[\s,;]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean) ?? [];
 
 export const escapeHtml = (value: string): string =>
   value
