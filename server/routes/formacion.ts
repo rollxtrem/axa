@@ -125,7 +125,7 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
 
   const { html, text } = buildEmailContent(formData);
   const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
-  const fromAddress = process.env.FORMACION_EMAIL_FROM ?? process.env.PQRS_EMAIL_FROM ?? undefined;
+  const fromAddress = process.env.FORMACION_EMAIL_FROM ?? undefined;
 
   try {
     await sendEmail({
@@ -133,12 +133,12 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
       subject: `Nueva inscripción curso - ${formData.course}`,
       text,
       html,
-      from: fromAddress,
+      from: process.env.FORMACION_EMAIL_FROM ?? undefined,
     });
 
     await sendEmail({
       to: [formData.email],
-      subject: `Confirmación de inscripción - ${formData.course}`,
+      subject: `Inscripción Pendiente - ${formData.course}`,
       text: userText,
       html: userHtml,
       from: fromAddress,
