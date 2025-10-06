@@ -1,0 +1,23 @@
+{
+  "phoneAssistance": {
+    "title": "Asistencia telefónica",
+    "services": [
+      {
+        "id": "informatica",
+        "name": "Informática",
+        "badge": "12 eventos",
+        "description": "Asesoría especializada en ciberseguridad y protección de datos personales.",
+        "imageSrc": "https://api.builder.io/api/v1/image/assets/TEMP/0fe5e04f99c4cc66351c3aad3b43f3bf88f598b6?width=746",
+        "iconKey": "informatica"
+      },
+      {
+        "id": "financiera",
+        "name": "Financiera",
+        "badge": "12 eventos",
+        "description": "Orientación profesional en temas financieros, inversiones y planificación.",
+        "imageSrc": "https://api.builder.io/api/v1/image/assets/TEMP/f3cacc7de060f01ab81918ce68cba47441b7b7dd?width=746",
+        "iconKey": "financiera"
+      }
+    ]
+  }
+}
