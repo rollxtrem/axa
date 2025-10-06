@@ -8,6 +8,7 @@ import { handleEnvironmentVariables } from "./routes/environment";
 import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
+import { handleRequestSiaToken } from "./routes/sia";
 import { requireAuth } from "./middleware/require-auth";
 
 export function createServer() {
@@ -52,6 +53,7 @@ export function createServer() {
   app.post("/api/formacion", handleSubmitFormacion);
   app.get("/api/bienestar/public-key", handleGetBienestarPublicKey);
   app.post("/api/bienestar", handleSubmitBienestar);
+  app.post("/api/sia/token", handleRequestSiaToken);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
   return app;
