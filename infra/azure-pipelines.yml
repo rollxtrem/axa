@@ -53,20 +53,6 @@ stages:
           - script: npm ci
             displayName: "Install dependencies"
 
-          - pwsh: |
-              $envPath = "$(Build.SourcesDirectory)/.env"
-              $envLines = @(
-                "VITE_API_BASE_URL=$(VITE_API_BASE_URL)",
-                "VITE_ENABLE_AUTH=$(VITE_ENABLE_AUTH)",
-                "AUTH0_DOMAIN=$(AUTH0_DOMAIN)",
-                "AUTH0_CLIENT_ID=$(AUTH0_CLIENT_ID)",
-                "AUTH0_CLIENT_SECRET=$(AUTH0_CLIENT_SECRET)",
-                "AUTH0_DB_CONNECTION=$(AUTH0_DB_CONNECTION)"
-              )
-              $envLines | Set-Content -Path $envPath -Encoding utf8
-            displayName: "Generate .env from variable group"
-            condition: succeeded()
-
           - script: npm run build
             displayName: "Build application"
 
