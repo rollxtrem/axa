@@ -472,7 +472,7 @@ export default function Bienestar() {
           ></div>
 
           {/* Modal Content */}
-          <div className="relative bg-white rounded-[20px] w-full max-w-[416px] p-[32px_28px] flex flex-col gap-6">
+          <div className="relative bg-white rounded-[20px] w-full max-w-[416px] max-h-[90vh] p-[32px_28px] flex flex-col gap-6 overflow-hidden">
             {/* Modal Header */}
             <div className="flex flex-col gap-8">
               <div className="flex flex-col items-center gap-10">
@@ -494,7 +494,7 @@ export default function Bienestar() {
             </div>
 
             {/* Form */}
-            <div className="overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
               <form
                 onSubmit={handleSubmit}
                 className="flex min-w-[416px] flex-col gap-6"
