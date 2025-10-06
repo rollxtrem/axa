@@ -472,7 +472,7 @@ export default function Bienestar() {
           ></div>
 
           {/* Modal Content */}
-          <div className="relative bg-white rounded-[20px] w-[416px] p-[32px_28px] flex flex-col gap-6">
+          <div className="relative bg-white rounded-[20px] w-full max-w-[416px] p-[32px_28px] flex flex-col gap-6">
             {/* Modal Header */}
             <div className="flex flex-col gap-8">
               <div className="flex flex-col items-center gap-10">
@@ -494,81 +494,221 @@ export default function Bienestar() {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              {/* Form Section Header */}
-              <div className="flex flex-col gap-4">
-                <h3 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] leading-8 tracking-[0.25px]">
-                  Información Personal
-                </h3>
+            <div className="overflow-x-auto">
+              <form
+                onSubmit={handleSubmit}
+                className="flex min-w-[416px] flex-col gap-6"
+              >
+                {/* Form Section Header */}
+                <div className="flex flex-col gap-4">
+                  <h3 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] leading-8 tracking-[0.25px]">
+                    Información Personal
+                  </h3>
 
-                {/* Form Fields */}
-                <div className="flex flex-col gap-[18px]">
-                  {/* Nombre y apellido */}
-                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
-                    <input
-                      type="text"
-                      placeholder="Nombre y apellido"
-                      value={formData.name}
-                      onChange={(e) =>
-                        handleInputChange("name", e.target.value)
-                      }
-                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                    />
-                  </div>
+                  {/* Form Fields */}
+                  <div className="flex flex-col gap-[18px]">
+                    {/* Nombre y apellido */}
+                    <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
+                      <input
+                        type="text"
+                        placeholder="Nombre y apellido"
+                        value={formData.name}
+                        onChange={(e) =>
+                          handleInputChange("name", e.target.value)
+                        }
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      />
+                    </div>
 
-                  {/* Identificación */}
-                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
-                    <input
-                      type="text"
-                      placeholder="Identificación"
-                      value={formData.identification}
-                      onChange={(e) =>
-                        handleInputChange("identification", e.target.value)
-                      }
-                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                    />
-                  </div>
+                    {/* Identificación */}
+                    <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
+                      <input
+                        type="text"
+                        placeholder="Identificación"
+                        value={formData.identification}
+                        onChange={(e) =>
+                          handleInputChange("identification", e.target.value)
+                        }
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      />
+                    </div>
 
-                  {/* Correo electrónico */}
-                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
-                    <input
-                      type="email"
-                      placeholder="Correo electrónico"
-                      value={formData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                    />
-                  </div>
+                    {/* Correo electrónico */}
+                    <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
+                      <input
+                        type="email"
+                        placeholder="Correo electrónico"
+                        value={formData.email}
+                        onChange={(e) =>
+                          handleInputChange("email", e.target.value)
+                        }
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      />
+                    </div>
 
-                  {/* Teléfono */}
-                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
-                    <input
-                      type="tel"
-                      placeholder="Teléfono"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                    />
-                  </div>
+                    {/* Teléfono */}
+                    <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center">
+                      <input
+                        type="tel"
+                        placeholder="Teléfono"
+                        value={formData.phone}
+                        onChange={(e) =>
+                          handleInputChange("phone", e.target.value)
+                        }
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      />
+                    </div>
 
-                  {/* Fecha */}
-                  <div className="relative calendar-container">
-                    <div
-                      className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] cursor-pointer"
-                      onClick={openCalendar}
-                    >
+                    {/* Fecha */}
+                    <div className="relative calendar-container">
+                      <div
+                        className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] cursor-pointer"
+                        onClick={openCalendar}
+                      >
+                        <div className="flex items-center gap-[10px] flex-1">
+                          <input
+                            type="text"
+                            placeholder="Fecha"
+                            value={formData.date}
+                            readOnly
+                            className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex w-6 h-6 justify-center items-center flex-shrink-0">
+                          <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path d="M7 10l5 5 5-5z" fill="#0E0E0E" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      {/* Calendar Picker */}
+                      {isCalendarOpen && (
+                        <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.42] rounded-[4px] shadow-lg z-50 p-4 w-[300px]">
+                          {/* Calendar Header */}
+                          <div className="flex items-center justify-between mb-4">
+                            <button
+                              type="button"
+                              onClick={() => navigateMonth("prev")}
+                              className="p-1 hover:bg-gray-100 rounded"
+                            >
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M15 18l-6-6 6-6"
+                                  stroke="#0E0E0E"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+
+                            <div className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-base font-medium capitalize">
+                              {getMonthName()} {getYear()}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => navigateMonth("next")}
+                              className="p-1 hover:bg-gray-100 rounded"
+                            >
+                              <svg
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                xmlns="http://www.w3.org/2000/svg"
+                              >
+                                <path
+                                  d="M9 18l6-6-6-6"
+                                  stroke="#0E0E0E"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+
+                          {/* Day Labels */}
+                          <div className="grid grid-cols-7 gap-1 mb-2">
+                            {["S", "M", "T", "W", "T", "F", "S"].map(
+                              (day, index) => (
+                                <div
+                                  key={index}
+                                  className="text-center text-[#666] font-['Source_Sans_Pro'] text-sm py-2 font-medium"
+                                >
+                                  {day}
+                                </div>
+                              ),
+                            )}
+                          </div>
+
+                          {/* Calendar Grid */}
+                          <div className="grid grid-cols-7 gap-1 mb-4">
+                            {getDaysInMonth().map((day, index) => (
+                              <div
+                                key={index}
+                                className="h-8 flex items-center justify-center"
+                              >
+                                {day && (
+                                  <button
+                                    type="button"
+                                    onClick={() => selectDate(day)}
+                                    className="w-8 h-8 flex items-center justify-center text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm hover:bg-[#6574f8] hover:text-white rounded cursor-pointer transition-colors"
+                                  >
+                                    {day}
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Calendar Footer */}
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={closeCalendar}
+                              className="flex-1 h-9 px-3 bg-white border border-[#0c0e45] rounded-[50px] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+                            >
+                              <span className="text-[#0c0e45] text-xs font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                                CANCELAR
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hora */}
+                    <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px]">
                       <div className="flex items-center gap-[10px] flex-1">
-                        <input
-                          type="text"
-                          placeholder="Fecha"
-                          value={formData.date}
-                          readOnly
-                          className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none cursor-pointer"
-                        />
+                        <select
+                          value={formData.time}
+                          onChange={(e) =>
+                            handleInputChange("time", e.target.value)
+                          }
+                          className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none appearance-none"
+                        >
+                          <option value="">Hora</option>
+                          <option value="09:00">09:00 AM</option>
+                          <option value="10:00">10:00 AM</option>
+                          <option value="11:00">11:00 AM</option>
+                          <option value="14:00">02:00 PM</option>
+                          <option value="15:00">03:00 PM</option>
+                          <option value="16:00">04:00 PM</option>
+                        </select>
                       </div>
                       <div className="flex w-6 h-6 justify-center items-center flex-shrink-0">
                         <svg
@@ -582,169 +722,34 @@ export default function Bienestar() {
                         </svg>
                       </div>
                     </div>
-
-                    {/* Calendar Picker */}
-                    {isCalendarOpen && (
-                      <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.42] rounded-[4px] shadow-lg z-50 p-4 w-[300px]">
-                        {/* Calendar Header */}
-                        <div className="flex items-center justify-between mb-4">
-                          <button
-                            type="button"
-                            onClick={() => navigateMonth("prev")}
-                            className="p-1 hover:bg-gray-100 rounded"
-                          >
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M15 18l-6-6 6-6"
-                                stroke="#0E0E0E"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-
-                          <div className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-base font-medium capitalize">
-                            {getMonthName()} {getYear()}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => navigateMonth("next")}
-                            className="p-1 hover:bg-gray-100 rounded"
-                          >
-                            <svg
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M9 18l6-6-6-6"
-                                stroke="#0E0E0E"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-
-                        {/* Day Labels */}
-                        <div className="grid grid-cols-7 gap-1 mb-2">
-                          {["S", "M", "T", "W", "T", "F", "S"].map(
-                            (day, index) => (
-                              <div
-                                key={index}
-                                className="text-center text-[#666] font-['Source_Sans_Pro'] text-sm py-2 font-medium"
-                              >
-                                {day}
-                              </div>
-                            ),
-                          )}
-                        </div>
-
-                        {/* Calendar Grid */}
-                        <div className="grid grid-cols-7 gap-1 mb-4">
-                          {getDaysInMonth().map((day, index) => (
-                            <div
-                              key={index}
-                              className="h-8 flex items-center justify-center"
-                            >
-                              {day && (
-                                <button
-                                  type="button"
-                                  onClick={() => selectDate(day)}
-                                  className="w-8 h-8 flex items-center justify-center text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm hover:bg-[#6574f8] hover:text-white rounded cursor-pointer transition-colors"
-                                >
-                                  {day}
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Calendar Footer */}
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={closeCalendar}
-                            className="flex-1 h-9 px-3 bg-white border border-[#0c0e45] rounded-[50px] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                          >
-                            <span className="text-[#0c0e45] text-xs font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                              CANCELAR
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Hora */}
-                  <div className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px]">
-                    <div className="flex items-center gap-[10px] flex-1">
-                      <select
-                        value={formData.time}
-                        onChange={(e) =>
-                          handleInputChange("time", e.target.value)
-                        }
-                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none appearance-none"
-                      >
-                        <option value="">Hora</option>
-                        <option value="09:00">09:00 AM</option>
-                        <option value="10:00">10:00 AM</option>
-                        <option value="11:00">11:00 AM</option>
-                        <option value="14:00">02:00 PM</option>
-                        <option value="15:00">03:00 PM</option>
-                        <option value="16:00">04:00 PM</option>
-                      </select>
-                    </div>
-                    <div className="flex w-6 h-6 justify-center items-center flex-shrink-0">
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M7 10l5 5 5-5z" fill="#0E0E0E" />
-                      </svg>
-                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Buttons */}
-              <div className="flex flex-col gap-3">
-                {/* Agendar Cita Button */}
-                <button
-                  type="submit"
-                  className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors"
-                >
-                  <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                    AGENDAR CITA
-                  </span>
-                </button>
+                {/* Buttons */}
+                <div className="flex flex-col gap-3">
+                  {/* Agendar Cita Button */}
+                  <button
+                    type="submit"
+                    className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors"
+                  >
+                    <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                      AGENDAR CITA
+                    </span>
+                  </button>
 
-                {/* Cancelar Button */}
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="h-11 px-4 bg-white border border-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-[#0c0e45] text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                    CANCELAR
-                  </span>
-                </button>
-              </div>
-            </form>
+                  {/* Cancelar Button */}
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="h-11 px-4 bg-white border border-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-[#0c0e45] text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                      CANCELAR
+                    </span>
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
