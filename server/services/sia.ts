@@ -353,4 +353,14 @@ export const addSiaFile = async (request: SiaFileAddRequest) => {
   return response.json();
 };
 
+export const getSiaSessionDetails = async () => {
+  const { session } = await getSession();
+
+  return {
+    sia_token: session.accessToken,
+    sia_dz: session.dz,
+    sia_consumer_key: session.consumerKey,
+  };
+};
+
 export { SiaConfigurationError, SiaRequestError };
