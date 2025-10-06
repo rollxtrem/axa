@@ -114,3 +114,19 @@ export interface FormacionFormData {
 export type FormacionSubmissionResponse = PqrsSubmissionResponse;
 
 export type FormacionPublicKeyResponse = PqrsPublicKeyResponse;
+
+export interface BienestarFormData {
+  fullName: string;
+  identification: string;
+  email: string;
+  phone: string;
+  service: string;
+  preferredDate: string;
+  preferredTime: string;
+}
+
+export type BienestarSubmissionRequest = EncryptedSubmissionRequest;
+
+export type BienestarSubmissionResponse = PqrsSubmissionResponse;
+
+export type BienestarPublicKeyResponse = PqrsPublicKeyResponse;
