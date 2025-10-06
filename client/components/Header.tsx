@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
 import type { PqrsFormData } from "@shared/api";
 
@@ -49,10 +49,20 @@ export default function Header() {
       setPqrsLoadingKey(true);
       try {
         const response = await apiFetch("/api/pqrs/public-key");
+        const { data, errorMessage } = await readJsonResponse<{ publicKey?: string }>(response);
+
         if (!response.ok) {
-          throw new Error(`Error al obtener la llave pública (${response.status})`);
+          const message = translateApiErrorMessage(
+            errorMessage,
+            "No fue posible preparar el envío seguro."
+          );
+          throw new Error(message);
         }
-        const data: { publicKey: string } = await response.json();
+
+        if (!data || typeof data.publicKey !== "string") {
+          throw new Error("La respuesta del servidor no incluyó la llave pública requerida.");
+        }
+
         const key = await importRsaPublicKey(data.publicKey);
         if (!cancelled) {
           setPqrsPublicKey(key);
@@ -61,7 +71,9 @@ export default function Header() {
       } catch (error) {
         console.error("Error fetching PQRS public key", error);
         if (!cancelled) {
-          setPqrsKeyError("No fue posible preparar el envío seguro. Por favor, inténtalo más tarde.");
+          const fallback = "No fue posible preparar el envío seguro. Por favor, inténtalo más tarde.";
+          const message = formatApiError(error, fallback);
+          setPqrsKeyError(message);
           setPqrsLoadingKey(false);
         }
       }
@@ -122,12 +134,18 @@ export default function Header() {
         body: JSON.stringify(encryptedPayload),
       });
 
+      const { data, errorMessage } = await readJsonResponse<{ status?: string }>(response);
+
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const message =
-          (errorBody && typeof errorBody.error === "string" && errorBody.error) ||
-          "No fue posible enviar tu PQRS. Inténtalo de nuevo más tarde.";
+        const message = translateApiErrorMessage(
+          errorMessage,
+          "No fue posible enviar tu PQRS. Inténtalo de nuevo más tarde."
+        );
         throw new Error(message);
+      }
+
+      if (!data || data.status !== "ok") {
+        throw new Error("No recibimos la confirmación del envío de tu PQRS.");
       }
 
       resetPqrsForm();
@@ -135,7 +153,9 @@ export default function Header() {
       setShowPqrsSuccess(true);
     } catch (error) {
       console.error("Failed to submit PQRS", error);
-      setPqrsError(error instanceof Error ? error.message : "No fue posible enviar tu PQRS.");
+      const fallback = "No fue posible enviar tu PQRS.";
+      const message = formatApiError(error, fallback);
+      setPqrsError(message);
     } finally {
       setPqrsSubmitting(false);
     }

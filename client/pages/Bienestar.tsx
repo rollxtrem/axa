@@ -3,9 +3,14 @@ import { Link } from "react-router-dom";
 
 import bienestarServicesData from "@/data/bienestar-services.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
-import type { BienestarFormData, BienestarPublicKeyResponse, SiaTokenResponse } from "@shared/api";
+import type {
+  BienestarFormData,
+  BienestarPublicKeyResponse,
+  BienestarSubmissionResponse,
+  SiaTokenResponse,
+} from "@shared/api";
 
 type FormState = {
   name: string;
@@ -225,12 +230,18 @@ export default function Bienestar() {
         body: JSON.stringify(encryptedPayload),
       });
 
+      const { data, errorMessage } = await readJsonResponse<BienestarSubmissionResponse | null>(response);
+
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => null);
-        const message =
-          (errorBody && typeof errorBody.error === "string" && errorBody.error) ||
-          "No pudimos enviar tu solicitud. Intenta nuevamente.";
+        const message = translateApiErrorMessage(
+          errorMessage,
+          "No pudimos enviar tu solicitud. Intenta nuevamente."
+        );
         throw new Error(message);
+      }
+
+      if (!data || data.status !== "ok") {
+        throw new Error("No recibimos confirmación de la solicitud. Intenta nuevamente.");
       }
 
       setIsModalOpen(false);
@@ -246,7 +257,8 @@ export default function Bienestar() {
       setSelectedService(null);
     } catch (error) {
       console.error("Failed to submit bienestar form", error);
-      setFormError(error instanceof Error ? error.message : "No pudimos enviar tu solicitud.");
+      const fallback = "No pudimos enviar tu solicitud.";
+      setFormError(formatApiError(error, fallback));
     } finally {
       setFormSubmitting(false);
     }
@@ -337,13 +349,24 @@ export default function Bienestar() {
       setLoadingKey(true);
       try {
         const response = await apiFetch("/api/bienestar/public-key");
+        const { data, errorMessage } = await readJsonResponse<BienestarPublicKeyResponse | null>(response);
+
         if (!response.ok) {
-          throw new Error("No se pudo obtener la llave pública.");
+          const message = translateApiErrorMessage(
+            errorMessage,
+            "No pudimos preparar el formulario."
+          );
+          throw new Error(message);
         }
-        const data = (await response.json()) as BienestarPublicKeyResponse;
+
+        if (!data || typeof data.publicKey !== "string") {
+          throw new Error("La respuesta del servidor no incluyó la llave pública requerida.");
+        }
+
         if (cancelled) {
           return;
         }
+
         const key = await importRsaPublicKey(data.publicKey);
         if (cancelled) {
           return;
@@ -352,7 +375,8 @@ export default function Bienestar() {
       } catch (error) {
         console.error("Failed to load bienestar public key", error);
         if (!cancelled) {
-          setKeyError("No pudimos preparar el formulario. Intenta nuevamente.");
+          const fallback = "No pudimos preparar el formulario. Intenta nuevamente.";
+          setKeyError(formatApiError(error, fallback));
         }
       } finally {
         if (!cancelled) {
