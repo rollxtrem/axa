@@ -143,3 +143,8 @@ export interface SiaTokenResponse {
   ".expires"?: string;
 }
 
+export interface NodeVersionResponse {
+  build: string;
+  runtime: string;
+}
+
