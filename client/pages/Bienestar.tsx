@@ -273,6 +273,7 @@ export default function Bienestar() {
         throw new Error("La respuesta del servicio de SIA tiene un formato inesperado.");
       }
 
+      console.log("SiaTokenResponse", payload);
       setSiaTokenData(payload);
     } catch (error) {
       console.error("Failed to fetch SIA token", error);
