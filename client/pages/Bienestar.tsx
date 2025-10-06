@@ -2,49 +2,228 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
+import { apiFetch } from "@/lib/api-client";
+import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import type { BienestarFormData, BienestarPublicKeyResponse } from "@shared/api";
+
+type FormState = {
+  name: string;
+  identification: string;
+  email: string;
+  phone: string;
+  date: string;
+  time: string;
+};
+
+const initialFormState: FormState = {
+  name: "",
+  identification: "",
+  email: "",
+  phone: "",
+  date: "",
+  time: "",
+};
+
+type ConfirmationDetails = Pick<BienestarFormData, "fullName" | "service" | "preferredDate" | "preferredTime">;
 
 export default function Bienestar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [formData, setFormData] = useState({
-    name: "",
-    identification: "",
-    email: "",
-    phone: "",
-    date: "",
-    time: "",
-  });
+  const [formData, setFormData] = useState<FormState>(initialFormState);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
+  const [loadingKey, setLoadingKey] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+  const [keyRetryToken, setKeyRetryToken] = useState(0);
+  const [confirmationDetails, setConfirmationDetails] = useState<ConfirmationDetails | null>(null);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Here you would handle the form submission
-    setIsModalOpen(false);
-    setIsConfirmationModalOpen(true);
-    // Reset form after showing confirmation
-    setFormData({
-      name: "",
-      identification: "",
-      email: "",
-      phone: "",
-      date: "",
-      time: "",
-    });
+  const validateForm = (): string | null => {
+    if (!selectedService) {
+      return "Selecciona el servicio que deseas agendar.";
+    }
+
+    if (!formData.name.trim()) {
+      return "Ingresa tu nombre y apellido.";
+    }
+
+    if (!formData.identification.trim()) {
+      return "Ingresa tu número de identificación.";
+    }
+
+    if (!formData.email.trim()) {
+      return "Ingresa tu correo electrónico.";
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(formData.email.trim())) {
+      return "Ingresa un correo electrónico válido.";
+    }
+
+    if (!formData.phone.trim()) {
+      return "Ingresa tu número de teléfono.";
+    }
+
+    if (!formData.date.trim()) {
+      return "Selecciona la fecha preferida de contacto.";
+    }
+
+    if (!formData.time.trim()) {
+      return "Selecciona la hora preferida de contacto.";
+    }
+
+    return null;
   };
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
 
-  const closeConfirmationModal = () => setIsConfirmationModalOpen(false);
+    const validationError = validateForm();
+    if (validationError) {
+      setFormError(validationError);
+      return;
+    }
+
+    if (!publicKey) {
+      setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
+      return;
+    }
+
+    try {
+      setFormSubmitting(true);
+      const payload: BienestarFormData = {
+        fullName: formData.name.trim(),
+        identification: formData.identification.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        service: selectedService!,
+        preferredDate: formData.date.trim(),
+        preferredTime: formData.time.trim(),
+      };
+
+      const encryptedPayload = await encryptJsonWithPublicKey(publicKey, payload);
+      const response = await apiFetch("/api/bienestar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(encryptedPayload),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const message =
+          (errorBody && typeof errorBody.error === "string" && errorBody.error) ||
+          "No pudimos enviar tu solicitud. Intenta nuevamente.";
+        throw new Error(message);
+      }
+
+      setIsModalOpen(false);
+      setIsCalendarOpen(false);
+      setConfirmationDetails({
+        fullName: payload.fullName,
+        service: payload.service,
+        preferredDate: payload.preferredDate,
+        preferredTime: payload.preferredTime,
+      });
+      setIsConfirmationModalOpen(true);
+      setFormData(initialFormState);
+      setSelectedService(null);
+    } catch (error) {
+      console.error("Failed to submit bienestar form", error);
+      setFormError(error instanceof Error ? error.message : "No pudimos enviar tu solicitud.");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const openModal = (service: string) => {
+    setSelectedService(service);
+    setIsModalOpen(true);
+    setFormError(null);
+    setKeyError(null);
+    setFormSubmitting(false);
+    setIsCalendarOpen(false);
+    setFormData(initialFormState);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedService(null);
+    setFormError(null);
+    setFormSubmitting(false);
+    setIsCalendarOpen(false);
+    setFormData(initialFormState);
+  };
+
+  const closeConfirmationModal = () => {
+    setIsConfirmationModalOpen(false);
+    setConfirmationDetails(null);
+  };
+
+  const handleRetryLoadKey = () => {
+    setKeyError(null);
+    setPublicKey(null);
+    setKeyRetryToken((token) => token + 1);
+  };
+
+  useEffect(() => {
+    if (!isModalOpen || loadingKey || publicKey || keyError) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchPublicKey = async () => {
+      setLoadingKey(true);
+      try {
+        const response = await apiFetch("/api/bienestar/public-key");
+        if (!response.ok) {
+          throw new Error("No se pudo obtener la llave pública.");
+        }
+        const data = (await response.json()) as BienestarPublicKeyResponse;
+        if (cancelled) {
+          return;
+        }
+        const key = await importRsaPublicKey(data.publicKey);
+        if (cancelled) {
+          return;
+        }
+        setPublicKey(key);
+      } catch (error) {
+        console.error("Failed to load bienestar public key", error);
+        if (!cancelled) {
+          setKeyError("No pudimos preparar el formulario. Intenta nuevamente.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingKey(false);
+        }
+      }
+    };
+
+    void fetchPublicKey();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isModalOpen, keyRetryToken]);
 
   // Calendar functions
-  const openCalendar = () => setIsCalendarOpen(true);
+  const openCalendar = () => {
+    if (formSubmitting || loadingKey || !!keyError) {
+      return;
+    }
+    setIsCalendarOpen(true);
+  };
   const closeCalendar = () => setIsCalendarOpen(false);
 
   const navigateMonth = (direction: "prev" | "next") => {
@@ -119,6 +298,9 @@ export default function Bienestar() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isCalendarOpen]);
+
+  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError;
+
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
       {/* Hero Banner */}
@@ -228,7 +410,7 @@ export default function Bienestar() {
                     datos personales.
                   </p>
                   <button
-                    onClick={openModal}
+                    onClick={() => openModal("Informática")}
                     className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                   >
                     Agendar cita
@@ -274,7 +456,7 @@ export default function Bienestar() {
                     planificación.
                   </p>
                   <button
-                    onClick={openModal}
+                    onClick={() => openModal("Financiera")}
                     className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                   >
                     Agendar cita
@@ -321,7 +503,7 @@ export default function Bienestar() {
                     tu salud integral.
                   </p>
                   <button
-                    onClick={openModal}
+                    onClick={() => openModal("Nutricional")}
                     className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                   >
                     Agendar cita
@@ -495,10 +677,38 @@ export default function Bienestar() {
 
             {/* Form */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
-              <form
-                onSubmit={handleSubmit}
-                className="flex min-w-[416px] flex-col gap-6"
-              >
+              <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
+                {selectedService ? (
+                  <div className="rounded-[6px] border border-[#6574f8]/60 bg-[#f4f5ff] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[1px] text-[#0c0e45] opacity-80">
+                      Servicio seleccionado
+                    </p>
+                    <p className="text-sm font-semibold text-[#0e0e0e]">{selectedService}</p>
+                  </div>
+                ) : null}
+
+                {formError ? (
+                  <p className="text-sm text-[#FF1721]">{formError}</p>
+                ) : null}
+
+                {keyError ? (
+                  <div className="flex flex-col gap-2 rounded-[6px] border border-[#ffb3b8] bg-[#fff5f5] px-3 py-2 text-sm text-[#ff1721]">
+                    <span>{keyError}</span>
+                    <button
+                      type="button"
+                      onClick={handleRetryLoadKey}
+                      disabled={loadingKey}
+                      className="self-start text-xs font-semibold tracking-[0.5px] text-[#0c0e45] underline disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {loadingKey ? "Reintentando…" : "Intentar nuevamente"}
+                    </button>
+                  </div>
+                ) : null}
+
+                {!keyError && loadingKey && !publicKey ? (
+                  <p className="text-sm text-[#0C0E45]">Preparando el envío seguro…</p>
+                ) : null}
+
                 {/* Form Section Header */}
                 <div className="flex flex-col gap-4">
                   <h3 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] leading-8 tracking-[0.25px]">
@@ -516,7 +726,8 @@ export default function Bienestar() {
                         onChange={(e) =>
                           handleInputChange("name", e.target.value)
                         }
-                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                        disabled={formSubmitting}
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
 
@@ -529,7 +740,8 @@ export default function Bienestar() {
                         onChange={(e) =>
                           handleInputChange("identification", e.target.value)
                         }
-                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                        disabled={formSubmitting}
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
 
@@ -542,7 +754,8 @@ export default function Bienestar() {
                         onChange={(e) =>
                           handleInputChange("email", e.target.value)
                         }
-                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                        disabled={formSubmitting}
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
 
@@ -555,15 +768,17 @@ export default function Bienestar() {
                         onChange={(e) =>
                           handleInputChange("phone", e.target.value)
                         }
-                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                        disabled={formSubmitting}
+                        className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
 
                     {/* Fecha */}
                     <div className="relative calendar-container">
                       <div
-                        className="h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] cursor-pointer"
-                        onClick={openCalendar}
+                        className={`h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] ${formSubmitting ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+                        onClick={formSubmitting ? undefined : openCalendar}
+                        aria-disabled={formSubmitting}
                       >
                         <div className="flex items-center gap-[10px] flex-1">
                           <input
@@ -595,7 +810,8 @@ export default function Bienestar() {
                             <button
                               type="button"
                               onClick={() => navigateMonth("prev")}
-                              className="p-1 hover:bg-gray-100 rounded"
+                              disabled={formSubmitting}
+                              className={`p-1 rounded ${formSubmitting ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
                             >
                               <svg
                                 width="24"
@@ -621,7 +837,8 @@ export default function Bienestar() {
                             <button
                               type="button"
                               onClick={() => navigateMonth("next")}
-                              className="p-1 hover:bg-gray-100 rounded"
+                              disabled={formSubmitting}
+                              className={`p-1 rounded ${formSubmitting ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
                             >
                               <svg
                                 width="24"
@@ -666,7 +883,8 @@ export default function Bienestar() {
                                   <button
                                     type="button"
                                     onClick={() => selectDate(day)}
-                                    className="w-8 h-8 flex items-center justify-center text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm hover:bg-[#6574f8] hover:text-white rounded cursor-pointer transition-colors"
+                                    disabled={formSubmitting}
+                                    className="w-8 h-8 flex items-center justify-center text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm hover:bg-[#6574f8] hover:text-white rounded cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                   >
                                     {day}
                                   </button>
@@ -699,7 +917,8 @@ export default function Bienestar() {
                           onChange={(e) =>
                             handleInputChange("time", e.target.value)
                           }
-                          className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none appearance-none"
+                          disabled={formSubmitting}
+                          className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none appearance-none disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <option value="">Hora</option>
                           <option value="09:00">09:00 AM</option>
@@ -730,10 +949,11 @@ export default function Bienestar() {
                   {/* Agendar Cita Button */}
                   <button
                     type="submit"
-                    className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors"
+                    disabled={isSubmitDisabled}
+                    className={`h-11 px-4 rounded-[50px] flex items-center justify-center gap-4 transition-colors ${isSubmitDisabled ? "bg-[#0c0e45] opacity-60 cursor-not-allowed" : "bg-[#0c0e45] hover:bg-[#0c0e45]/90"}`}
                   >
                     <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                      AGENDAR CITA
+                      {formSubmitting ? "ENVIANDO…" : "AGENDAR CITA"}
                     </span>
                   </button>
 
@@ -773,12 +993,25 @@ export default function Bienestar() {
             </div>
 
             {/* Modal Content */}
-            <div className="flex px-4 pb-4 flex-col items-start gap-2 self-stretch">
-              <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-4 tracking-[0.15px]">
-                Tu solicitud ha sido registrada con el número de expediente
-                EXP123456. Un agente se pondrá en contacto contigo en breves
-                minutos.
-              </div>
+            <div className="flex px-4 pb-4 flex-col items-start gap-3 self-stretch">
+              {confirmationDetails ? (
+                <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
+                  <p>
+                    ¡Gracias, {confirmationDetails.fullName}! Hemos recibido tu solicitud para el servicio de {confirmationDetails.service}.
+                  </p>
+                  <p className="mt-2">
+                    En breve uno de nuestros especialistas se comunicará contigo para confirmar los detalles.
+                  </p>
+                  <p className="mt-2">
+                    Preferencias registradas: {confirmationDetails.preferredDate}
+                    {confirmationDetails.preferredTime ? ` a las ${confirmationDetails.preferredTime}.` : "."}
+                  </p>
+                </div>
+              ) : (
+                <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
+                  Hemos recibido tu solicitud. Un agente se pondrá en contacto contigo en breve.
+                </div>
+              )}
             </div>
 
             {/* Modal Actions */}
