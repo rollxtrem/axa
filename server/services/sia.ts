@@ -3,9 +3,15 @@ import type { SiaTokenResponse } from "@shared/api";
 const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
 
 type SiaTokenApiResponse = {
-  sia_token?: unknown;
-  sia_dz?: unknown;
-  sia_consumer_key?: unknown;
+  access_token?: unknown;
+  token_type?: unknown;
+  expires_in?: unknown;
+  uid?: unknown;
+  ulogin?: unknown;
+  consumerKey?: unknown;
+  dz?: unknown;
+  ".issued"?: unknown;
+  ".expires"?: unknown;
   [key: string]: unknown;
 };
 
@@ -50,20 +56,51 @@ const parseSiaResponse = (body: unknown): SiaTokenResponse => {
     throw new SiaServiceError("La respuesta de SIA tiene un formato inesperado.", 500, body);
   }
 
-  const { sia_token, sia_dz, sia_consumer_key } = body as SiaTokenApiResponse;
+  const {
+    access_token,
+    token_type,
+    expires_in,
+    uid,
+    ulogin,
+    consumerKey,
+    dz,
+    ".issued": issued,
+    ".expires": expires,
+  } = body as SiaTokenApiResponse;
 
-  if (
-    typeof sia_token !== "string" ||
-    typeof sia_dz !== "string" ||
-    typeof sia_consumer_key !== "string"
-  ) {
+  if (typeof access_token !== "string" || typeof token_type !== "string") {
     throw new SiaServiceError("La respuesta de SIA no contiene los datos esperados.", 500, body);
   }
 
+  const parsedExpiresIn = (() => {
+    if (typeof expires_in === "number" && Number.isFinite(expires_in)) {
+      return expires_in;
+    }
+
+    if (typeof expires_in === "string") {
+      const value = Number.parseInt(expires_in, 10);
+      if (Number.isFinite(value)) {
+        return value;
+      }
+    }
+
+    return null;
+  })();
+
+  if (parsedExpiresIn === null) {
+    throw new SiaServiceError("La respuesta de SIA tiene un tiempo de expiración inválido.", 500, body);
+  }
+
   return {
-    sia_token,
-    sia_dz,
-    sia_consumer_key,
+    access_token,
+    token_type,
+    expires_in: parsedExpiresIn,
+    uid: typeof uid === "string" ? uid : undefined,
+    ulogin: typeof ulogin === "string" ? ulogin : undefined,
+    consumerKey: typeof consumerKey === "string" ? consumerKey : undefined,
+    dz: typeof dz === "string" ? dz : undefined,
+    ".issued": typeof issued === "string" ? issued : undefined,
+    ".expires": typeof expires === "string" ? expires : undefined,
   };
 };
 

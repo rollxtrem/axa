@@ -96,10 +96,13 @@ const isSiaTokenResponse = (value: unknown): value is SiaTokenResponse => {
 
   const record = value as Record<string, unknown>;
 
+  const expiresIn = record.expires_in;
+
   return (
-    typeof record.sia_token === "string" &&
-    typeof record.sia_dz === "string" &&
-    typeof record.sia_consumer_key === "string"
+    typeof record.access_token === "string" &&
+    typeof record.token_type === "string" &&
+    typeof expiresIn === "number" &&
+    Number.isFinite(expiresIn)
   );
 };
 
@@ -1024,14 +1027,44 @@ export default function Bienestar() {
                     {siaTokenData ? (
                       <div className="rounded-[6px] border border-[#0c0e45]/30 bg-[#f4f5ff] px-3 py-2 text-xs text-[#0e0e0e] space-y-1 break-all">
                         <p>
-                          <span className="font-semibold">sia_token:</span> {siaTokenData.sia_token}
+                          <span className="font-semibold">access_token:</span> {siaTokenData.access_token}
                         </p>
                         <p>
-                          <span className="font-semibold">sia_dz:</span> {siaTokenData.sia_dz}
+                          <span className="font-semibold">token_type:</span> {siaTokenData.token_type}
                         </p>
                         <p>
-                          <span className="font-semibold">sia_consumer_key:</span> {siaTokenData.sia_consumer_key}
+                          <span className="font-semibold">expires_in:</span> {siaTokenData.expires_in}
                         </p>
+                        {siaTokenData.uid ? (
+                          <p>
+                            <span className="font-semibold">uid:</span> {siaTokenData.uid}
+                          </p>
+                        ) : null}
+                        {siaTokenData.ulogin ? (
+                          <p>
+                            <span className="font-semibold">ulogin:</span> {siaTokenData.ulogin}
+                          </p>
+                        ) : null}
+                        {siaTokenData.consumerKey ? (
+                          <p>
+                            <span className="font-semibold">consumerKey:</span> {siaTokenData.consumerKey}
+                          </p>
+                        ) : null}
+                        {siaTokenData.dz ? (
+                          <p>
+                            <span className="font-semibold">dz:</span> {siaTokenData.dz}
+                          </p>
+                        ) : null}
+                        {siaTokenData[".issued"] ? (
+                          <p>
+                            <span className="font-semibold">.issued:</span> {siaTokenData[".issued"]}
+                          </p>
+                        ) : null}
+                        {siaTokenData[".expires"] ? (
+                          <p>
+                            <span className="font-semibold">.expires:</span> {siaTokenData[".expires"]}
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
                   </div>
