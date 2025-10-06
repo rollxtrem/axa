@@ -132,8 +132,14 @@ export type BienestarSubmissionResponse = PqrsSubmissionResponse;
 export type BienestarPublicKeyResponse = PqrsPublicKeyResponse;
 
 export interface SiaTokenResponse {
-  sia_token: string;
-  sia_dz: string;
-  sia_consumer_key: string;
+  access_token: string;
+  token_type: string;
+  expires_in: number;
+  uid?: string;
+  ulogin?: string;
+  consumerKey?: string;
+  dz?: string;
+  ".issued"?: string;
+  ".expires"?: string;
 }
 
