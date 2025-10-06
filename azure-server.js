@@ -1,4 +1,4 @@
-import { existsSync } from "node:fs";
+import { existsSync } from "fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -21,9 +21,7 @@ if (!entryPath) {
 
 const entryUrl = pathToFileURL(entryPath).href;
 
-try {
-  await import(entryUrl);
-} catch (error) {
+import(entryUrl).catch((error) => {
   console.error("Fallo al iniciar el servidor de producción", error);
   process.exit(1);
-}
+});
