@@ -130,3 +130,9 @@ export type BienestarSubmissionRequest = EncryptedSubmissionRequest;
 export type BienestarSubmissionResponse = PqrsSubmissionResponse;
 
 export type BienestarPublicKeyResponse = PqrsPublicKeyResponse;
+
+export interface SiaSessionResponse {
+  sia_token: string;
+  sia_dz: string;
+  sia_consumer_key: string;
+}

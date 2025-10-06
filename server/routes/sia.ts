@@ -1,6 +1,14 @@
 import { RequestHandler } from "express";
 import { z } from "zod";
-import { addSiaFile, getSiaFiles, SiaConfigurationError, SiaRequestError, type SiaFileAddRequest, type SiaFileGetRequest } from "../services/sia";
+import {
+  addSiaFile,
+  getSiaFiles,
+  getSiaSessionDetails,
+  SiaConfigurationError,
+  SiaRequestError,
+  type SiaFileAddRequest,
+  type SiaFileGetRequest,
+} from "../services/sia";
 
 const fileGetSchema = z.object({
   plates: z.string().min(1, "plates is required"),
@@ -85,6 +93,15 @@ export const handleSiaFileGet: RequestHandler = async (req, res) => {
 
   try {
     const data = await getSiaFiles(parseResult.data as SiaFileGetRequest);
+    res.json(data);
+  } catch (error) {
+    handleError(error, res);
+  }
+};
+
+export const handleSiaSession: RequestHandler = async (_req, res) => {
+  try {
+    const data = await getSiaSessionDetails();
     res.json(data);
   } catch (error) {
     handleError(error, res);

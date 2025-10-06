@@ -9,7 +9,7 @@ import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
 import { requireAuth } from "./middleware/require-auth";
-import { handleSiaFileAdd, handleSiaFileGet } from "./routes/sia";
+import { handleSiaFileAdd, handleSiaFileGet, handleSiaSession } from "./routes/sia";
 
 export function createServer() {
   const app = express();
@@ -55,6 +55,7 @@ export function createServer() {
   app.post("/api/bienestar", handleSubmitBienestar);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
+  app.post("/api/sia/session", handleSiaSession);
   app.post("/api/sia/file-get", handleSiaFileGet);
   app.post("/api/sia/file-add", handleSiaFileAdd);
 
