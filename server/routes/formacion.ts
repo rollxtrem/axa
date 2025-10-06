@@ -10,6 +10,7 @@ import {
 } from "./utils/encrypted-request";
 import { sendEmail } from "../services/email";
 import type {
+  EncryptedSubmissionRequest,
   FormacionFormData,
   FormacionPublicKeyResponse,
   FormacionSubmissionRequest,
@@ -107,12 +108,12 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
 
   let formData: FormacionFormData;
   try {
-    const decrypted = decryptPayload(parseEncrypted.data, privateKey);
+    const decrypted = decryptPayload(parseEncrypted.data as EncryptedSubmissionRequest, privateKey);
     const parsed = formacionFormSchema.safeParse(JSON.parse(decrypted));
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid form payload", details: parsed.error.flatten() });
     }
-    formData = parsed.data;
+    formData = parsed.data as FormacionFormData;
   } catch (error) {
     console.error("Failed to decrypt formación payload", error);
     return res.status(400).json({ error: "Unable to decrypt form payload" });

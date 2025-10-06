@@ -8,6 +8,7 @@ import { handleEnvironmentVariables } from "./routes/environment";
 import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
 import { requireAuth } from "./middleware/require-auth";
+import { handleSiaFileAdd, handleSiaFileGet } from "./routes/sia";
 
 export function createServer() {
   const app = express();
@@ -51,6 +52,8 @@ export function createServer() {
   app.post("/api/formacion", handleSubmitFormacion);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
+  app.post("/api/sia/file-get", handleSiaFileGet);
+  app.post("/api/sia/file-add", handleSiaFileAdd);
 
   return app;
 }

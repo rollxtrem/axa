@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
 import type {
+  EncryptedSubmissionRequest,
   PqrsFormData,
   PqrsPublicKeyResponse,
   PqrsSubmissionRequest,
@@ -102,7 +103,7 @@ export const handleSubmitPqrs: RequestHandler = async (req, res) => {
 
   let pqrsData: PqrsFormData;
   try {
-    const decrypted = decryptPayload(parseEncrypted.data, privateKey);
+    const decrypted = decryptPayload(parseEncrypted.data as EncryptedSubmissionRequest, privateKey);
     const parsed = pqrsFormSchema.safeParse(JSON.parse(decrypted));
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid PQRS payload", details: parsed.error.flatten() });
