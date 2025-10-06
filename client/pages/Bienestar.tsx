@@ -494,7 +494,7 @@ export default function Bienestar() {
             </div>
 
             {/* Form */}
-            <div className="overflow-x-auto">
+            <div className="overflow-y-auto overflow-x-hidden">
               <form
                 onSubmit={handleSubmit}
                 className="flex min-w-[416px] flex-col gap-6"
