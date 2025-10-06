@@ -5,7 +5,7 @@ import bienestarServicesData from "@/data/bienestar-services.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 import { apiFetch } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
-import type { BienestarFormData, BienestarPublicKeyResponse, SiaSessionResponse } from "@shared/api";
+import type { BienestarFormData, BienestarPublicKeyResponse } from "@shared/api";
 
 type FormState = {
   name: string;
@@ -103,10 +103,6 @@ export default function Bienestar() {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [confirmationDetails, setConfirmationDetails] = useState<ConfirmationDetails | null>(null);
-  const [siaSessionDetails, setSiaSessionDetails] = useState<SiaSessionResponse | null>(null);
-  const [siaSessionError, setSiaSessionError] = useState<string | null>(null);
-  const [loadingSiaSession, setLoadingSiaSession] = useState(false);
-
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
@@ -218,38 +214,6 @@ export default function Bienestar() {
     }
   };
 
-  const handleFetchSiaSession = async () => {
-    setSiaSessionError(null);
-    setSiaSessionDetails(null);
-    setLoadingSiaSession(true);
-
-    try {
-      const response = await apiFetch("/api/sia/session", { method: "POST" });
-
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as { message?: unknown } | null;
-        const message =
-          errorBody && typeof errorBody.message === "string"
-            ? errorBody.message
-            : "No pudimos obtener los datos de SIA. Intenta nuevamente.";
-        throw new Error(message);
-      }
-
-      const data = (await response.json()) as SiaSessionResponse;
-      setSiaSessionDetails(data);
-    } catch (error) {
-      console.error("Failed to fetch SIA session details", error);
-      setSiaSessionDetails(null);
-      setSiaSessionError(
-        error instanceof Error
-          ? error.message
-          : "No pudimos obtener los datos de SIA. Intenta nuevamente.",
-      );
-    } finally {
-      setLoadingSiaSession(false);
-    }
-  };
-
   const openModal = (service: string) => {
     setSelectedService(service);
     setIsModalOpen(true);
@@ -258,9 +222,6 @@ export default function Bienestar() {
     setFormSubmitting(false);
     setIsCalendarOpen(false);
     setFormData(initialFormState);
-    setSiaSessionDetails(null);
-    setSiaSessionError(null);
-    setLoadingSiaSession(false);
   };
 
   const closeModal = () => {
@@ -270,9 +231,6 @@ export default function Bienestar() {
     setFormSubmitting(false);
     setIsCalendarOpen(false);
     setFormData(initialFormState);
-    setSiaSessionDetails(null);
-    setSiaSessionError(null);
-    setLoadingSiaSession(false);
   };
 
   const closeConfirmationModal = () => {
@@ -977,18 +935,6 @@ export default function Bienestar() {
                     </span>
                   </button>
 
-                  {/* Obtener datos de SIA */}
-                  <button
-                    type="button"
-                    onClick={handleFetchSiaSession}
-                    disabled={loadingSiaSession}
-                    className={`h-11 px-4 rounded-[50px] flex items-center justify-center gap-4 transition-colors ${loadingSiaSession ? "bg-[#6574f8] opacity-60 cursor-not-allowed" : "bg-[#6574f8] hover:bg-[#6574f8]/90"}`}
-                  >
-                    <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                      {loadingSiaSession ? "CONSULTANDO…" : "OBTENER DATOS SIA"}
-                    </span>
-                  </button>
-
                   {/* Cancelar Button */}
                   <button
                     type="button"
@@ -1000,32 +946,6 @@ export default function Bienestar() {
                     </span>
                   </button>
                 </div>
-
-                {siaSessionError ? (
-                  <p className="text-sm text-[#FF1721]">{siaSessionError}</p>
-                ) : null}
-
-                {siaSessionDetails ? (
-                  <div className="rounded-[6px] border border-[#6574f8]/60 bg-[#f4f5ff] px-3 py-2 text-sm text-[#0e0e0e]">
-                    <p className="text-xs font-semibold uppercase tracking-[0.5px] text-[#0c0e45]">
-                      Datos SIA recibidos
-                    </p>
-                    <dl className="mt-2 space-y-2 text-xs font-mono break-all">
-                      <div>
-                        <dt className="font-semibold not-italic text-[#0c0e45]">Token</dt>
-                        <dd>{siaSessionDetails.sia_token}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold not-italic text-[#0c0e45]">DZ</dt>
-                        <dd>{siaSessionDetails.sia_dz}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-semibold not-italic text-[#0c0e45]">Consumer Key</dt>
-                        <dd>{siaSessionDetails.sia_consumer_key}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                ) : null}
               </form>
             </div>
           </div>
