@@ -1,4 +1,4 @@
-import { RequestHandler } from "express";
+import type { RequestHandler, Response } from "express";
 import { z } from "zod";
 
 import {
@@ -15,7 +15,10 @@ import type {
   BienestarSubmissionRequest,
   BienestarSubmissionResponse,
   EncryptedSubmissionRequest,
+  SiaFileAddRequestBody,
+  SiaFileGetResponseItem,
 } from "@shared/api";
+import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
 
 const bienestarFormSchema = z.object({
   fullName: z.string().min(1),
@@ -99,6 +102,132 @@ const buildUserConfirmationContent = (data: BienestarFormData) => {
   return { html, text };
 };
 
+const SPANISH_MONTHS = new Map<string, number>([
+  ["enero", 0],
+  ["febrero", 1],
+  ["marzo", 2],
+  ["abril", 3],
+  ["mayo", 4],
+  ["junio", 5],
+  ["julio", 6],
+  ["agosto", 7],
+  ["septiembre", 8],
+  ["setiembre", 8],
+  ["octubre", 9],
+  ["noviembre", 10],
+  ["diciembre", 11],
+]);
+
+const normalizeSpanishWord = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+const parsePreferredDateTime = (dateText: string, timeText: string) => {
+  const dateMatch = dateText.match(/^(\d{1,2})\s+de\s+([a-zA-ZáéíóúÁÉÍÓÚñÑ]+)\s+de\s+(\d{4})$/);
+  if (!dateMatch) {
+    return null;
+  }
+
+  const [, dayText, monthText, yearText] = dateMatch;
+  const day = Number.parseInt(dayText, 10);
+  const year = Number.parseInt(yearText, 10);
+  const monthName = normalizeSpanishWord(monthText);
+  const monthIndex = SPANISH_MONTHS.get(monthName);
+
+  if (!Number.isFinite(day) || !Number.isFinite(year) || monthIndex === undefined) {
+    return null;
+  }
+
+  const [hoursText, minutesText] = timeText.split(":");
+  const hours = Number.parseInt(hoursText ?? "", 10);
+  const minutes = Number.parseInt(minutesText ?? "", 10);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+
+  const date = new Date(Date.UTC(year, monthIndex, day, hours, minutes));
+  const isoString = date.toISOString();
+  const [isoDate] = isoString.split("T");
+  const normalizedTime = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+  return {
+    formDate: isoDate,
+    formTime: normalizedTime,
+    formDateTime: isoString,
+  };
+};
+
+const splitFullName = (fullName: string) => {
+  const parts = fullName
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return { firstName: "", lastName: "" };
+  }
+
+  if (parts.length === 1) {
+    return { firstName: parts[0], lastName: parts[0] };
+  }
+
+  return {
+    firstName: parts[0],
+    lastName: parts.slice(1).join(" "),
+  };
+};
+
+const hasAvailableSiaServices = (items: SiaFileGetResponseItem[]) =>
+  items.some((item) => {
+    const availability = item.ServiciosDisponibles.trim();
+    if (!availability) {
+      return false;
+    }
+
+    if (availability.toUpperCase() === "ILIMITADO") {
+      return true;
+    }
+
+    const numericMatch = availability.match(/-?\d+/);
+    if (!numericMatch) {
+      return false;
+    }
+
+    const value = Number.parseInt(numericMatch[0], 10);
+    return Number.isFinite(value) && value > 0;
+  });
+
+const buildServiceCode = (service: string) => {
+  const normalized = service
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized.replace(/\s+/g, "_").toUpperCase();
+};
+
+const handleSiaErrorResponse = (res: Response, error: unknown, fallback: string) => {
+  if (error instanceof SiaServiceError) {
+    if (error.status >= 500) {
+      console.error(fallback, error);
+    }
+
+    res.status(error.status).json({ error: error.message });
+    return;
+  }
+
+  console.error(fallback, error);
+  res.status(500).json({ error: fallback });
+};
+
 export const handleGetBienestarPublicKey: RequestHandler = (_req, res) => {
   const publicKey = process.env.BIENESTAR_PUBLIC_KEY;
   if (!publicKey) {
@@ -130,7 +259,15 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid form payload", details: parsed.error.flatten() });
     }
-    formData = parsed.data as BienestarFormData;
+    formData = {
+      fullName: parsed.data.fullName.trim(),
+      identification: parsed.data.identification.trim(),
+      email: parsed.data.email.trim(),
+      phone: parsed.data.phone.trim(),
+      service: parsed.data.service.trim(),
+      preferredDate: parsed.data.preferredDate.trim(),
+      preferredTime: parsed.data.preferredTime.trim(),
+    };
   } catch (error) {
     console.error("Failed to decrypt bienestar payload", error);
     return res.status(400).json({ error: "Unable to decrypt form payload" });
@@ -144,6 +281,87 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   const fromAddress = process.env.BIENESTAR_EMAIL_FROM ?? undefined;
   const { html, text } = buildEmailContent(formData);
   const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
+
+  const parsedPreferredDate = parsePreferredDateTime(formData.preferredDate, formData.preferredTime);
+  const formDateTime = parsedPreferredDate?.formDateTime ?? new Date().toISOString();
+  const formDate = parsedPreferredDate?.formDate ?? formData.preferredDate;
+  const formTime = parsedPreferredDate?.formTime ?? formData.preferredTime;
+
+  let siaToken: { access_token: string; consumerKey: string; dz: string } | null = null;
+  try {
+    const tokenResponse = await requestSiaToken();
+    const consumerKey = tokenResponse.consumerKey?.trim();
+    const dz = tokenResponse.dz?.trim();
+
+    if (!consumerKey || !dz) {
+      throw new SiaServiceError(
+        "La respuesta del servicio de SIA no contiene los datos requeridos.",
+        502,
+        tokenResponse,
+      );
+    }
+
+    siaToken = {
+      access_token: tokenResponse.access_token,
+      consumerKey,
+      dz,
+    };
+  } catch (error) {
+    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.");
+    return;
+  }
+
+  if (!siaToken) {
+    return;
+  }
+
+  let fileGetItems: SiaFileGetResponseItem[] | null = null;
+  try {
+    fileGetItems = await FileGet({
+      sia_token: siaToken.access_token,
+      sia_dz: siaToken.dz,
+      sia_consumer_key: siaToken.consumerKey,
+      user_identification: formData.identification,
+    });
+  } catch (error) {
+    handleSiaErrorResponse(res, error, "Ocurrió un error al consultar FileGet de SIA.");
+    return;
+  }
+
+  if (!fileGetItems || fileGetItems.length === 0) {
+    res.status(400).json({ error: "No encontramos información en SIA para este usuario." });
+    return;
+  }
+
+  if (!hasAvailableSiaServices(fileGetItems)) {
+    res.status(400).json({ error: "El usuario no tiene servicios disponibles en SIA." });
+    return;
+  }
+
+  const { firstName, lastName } = splitFullName(formData.fullName);
+  const formCodeService = buildServiceCode(formData.service) || formData.service;
+
+  const fileAddPayload: SiaFileAddRequestBody = {
+    sia_token: siaToken.access_token,
+    sia_dz: siaToken.dz,
+    sia_consumer_key: siaToken.consumerKey,
+    user_identification: formData.identification,
+    form_datetime: formDateTime,
+    form_code_service: formCodeService,
+    user_name: firstName || formData.fullName,
+    user_last_name: lastName || formData.fullName,
+    user_email: formData.email,
+    user_mobile: formData.phone,
+    form_date: formDate,
+    form_hora: formTime,
+  };
+
+  try {
+    await FileAdd(fileAddPayload);
+  } catch (error) {
+    handleSiaErrorResponse(res, error, "Ocurrió un error al registrar la solicitud en SIA.");
+    return;
+  }
 
   try {
     await sendEmail({
