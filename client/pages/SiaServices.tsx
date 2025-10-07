@@ -1,6 +1,8 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 
 import type {
+  SiaFileAddRequestBody,
+  SiaFileAddResponse,
   SiaFileGetRequestBody,
   SiaFileGetResponse,
   SiaTokenResponse,
@@ -11,6 +13,21 @@ const initialFormValues: SiaFileGetRequestBody = {
   sia_dz: "",
   sia_consumer_key: "",
   user_identification: "",
+};
+
+const initialFileAddValues: SiaFileAddRequestBody = {
+  sia_token: "",
+  sia_dz: "",
+  sia_consumer_key: "",
+  user_identification: "",
+  form_datetime: "",
+  form_code_service: "",
+  user_name: "",
+  user_last_name: "",
+  user_email: "",
+  user_mobile: "",
+  form_date: "",
+  form_hora: "",
 };
 
 const formatJson = (data: unknown) => JSON.stringify(data, null, 2);
@@ -24,6 +41,11 @@ const SiaServices = () => {
   const [fileGetData, setFileGetData] = useState<SiaFileGetResponse | null>(null);
   const [fileGetError, setFileGetError] = useState<string | null>(null);
   const [isSubmittingFileGet, setIsSubmittingFileGet] = useState(false);
+
+  const [fileAddValues, setFileAddValues] = useState<SiaFileAddRequestBody>(initialFileAddValues);
+  const [fileAddData, setFileAddData] = useState<SiaFileAddResponse | null>(null);
+  const [fileAddError, setFileAddError] = useState<string | null>(null);
+  const [isSubmittingFileAdd, setIsSubmittingFileAdd] = useState(false);
 
   const handleRequestToken = async () => {
     setIsRequestingToken(true);
@@ -41,6 +63,12 @@ const SiaServices = () => {
       const data: SiaTokenResponse = await response.json();
       setTokenData(data);
       setFormValues((previous) => ({
+        ...previous,
+        sia_token: data.access_token ?? previous.sia_token,
+        sia_dz: data.dz ?? previous.sia_dz,
+        sia_consumer_key: data.consumerKey ?? previous.sia_consumer_key,
+      }));
+      setFileAddValues((previous) => ({
         ...previous,
         sia_token: data.access_token ?? previous.sia_token,
         sia_dz: data.dz ?? previous.sia_dz,
@@ -66,6 +94,7 @@ const SiaServices = () => {
     event.preventDefault();
     setIsSubmittingFileGet(true);
     setFileGetError(null);
+    setFileGetData(null);
 
     try {
       const payload: SiaFileGetRequestBody = {
@@ -98,6 +127,58 @@ const SiaServices = () => {
       setFileGetData(null);
     } finally {
       setIsSubmittingFileGet(false);
+    }
+  };
+
+  const handleFileAddChange = (field: keyof SiaFileAddRequestBody) =>
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setFileAddValues((previous) => ({ ...previous, [field]: value }));
+    };
+
+  const handleSubmitFileAdd = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmittingFileAdd(true);
+    setFileAddError(null);
+    setFileAddData(null);
+
+    try {
+      const payload: SiaFileAddRequestBody = {
+        sia_token: fileAddValues.sia_token.trim(),
+        sia_dz: fileAddValues.sia_dz.trim(),
+        sia_consumer_key: fileAddValues.sia_consumer_key.trim(),
+        user_identification: fileAddValues.user_identification.trim(),
+        form_datetime: fileAddValues.form_datetime.trim(),
+        form_code_service: fileAddValues.form_code_service.trim(),
+        user_name: fileAddValues.user_name.trim(),
+        user_last_name: fileAddValues.user_last_name.trim(),
+        user_email: fileAddValues.user_email.trim(),
+        user_mobile: fileAddValues.user_mobile.trim(),
+        form_date: fileAddValues.form_date.trim(),
+        form_hora: fileAddValues.form_hora.trim(),
+      };
+
+      const response = await fetch("/api/sia/file-add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const message = errorPayload?.error ?? "No se pudo invocar FileAdd.";
+        throw new Error(message);
+      }
+
+      const data: SiaFileAddResponse = await response.json();
+      setFileAddData(data);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Ocurrió un error al invocar FileAdd de SIA.";
+      setFileAddError(message);
+      setFileAddData(null);
+    } finally {
+      setIsSubmittingFileAdd(false);
     }
   };
 
@@ -208,6 +289,172 @@ const SiaServices = () => {
               <h3 className="text-sm font-semibold text-slate-800">Respuesta</h3>
               <pre className="max-h-72 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
                 {formatJson(fileGetData)}
+              </pre>
+            </div>
+          ) : null}
+        </section>
+
+        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
+          <header className="space-y-1">
+            <h2 className="text-xl font-semibold text-slate-900">Registrar servicio con FileAdd</h2>
+            <p className="text-sm text-slate-600">
+              Ingresa los datos del servicio a registrar y envía el formulario para llamar al
+              servicio FileAdd de SIA.
+            </p>
+          </header>
+
+          <form className="space-y-4" onSubmit={handleSubmitFileAdd}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>sia_token</span>
+                <input
+                  type="text"
+                  value={fileAddValues.sia_token}
+                  onChange={handleFileAddChange("sia_token")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>sia_dz</span>
+                <input
+                  type="text"
+                  value={fileAddValues.sia_dz}
+                  onChange={handleFileAddChange("sia_dz")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>sia_consumer_key</span>
+                <input
+                  type="text"
+                  value={fileAddValues.sia_consumer_key}
+                  onChange={handleFileAddChange("sia_consumer_key")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>user_identification</span>
+                <input
+                  type="text"
+                  value={fileAddValues.user_identification}
+                  onChange={handleFileAddChange("user_identification")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>form_datetime</span>
+                <input
+                  type="datetime-local"
+                  value={fileAddValues.form_datetime}
+                  onChange={handleFileAddChange("form_datetime")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>form_code_service</span>
+                <input
+                  type="text"
+                  value={fileAddValues.form_code_service}
+                  onChange={handleFileAddChange("form_code_service")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>user_name</span>
+                <input
+                  type="text"
+                  value={fileAddValues.user_name}
+                  onChange={handleFileAddChange("user_name")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>user_last_name</span>
+                <input
+                  type="text"
+                  value={fileAddValues.user_last_name}
+                  onChange={handleFileAddChange("user_last_name")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>user_email</span>
+                <input
+                  type="email"
+                  value={fileAddValues.user_email}
+                  onChange={handleFileAddChange("user_email")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>user_mobile</span>
+                <input
+                  type="tel"
+                  value={fileAddValues.user_mobile}
+                  onChange={handleFileAddChange("user_mobile")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>form_date</span>
+                <input
+                  type="date"
+                  value={fileAddValues.form_date}
+                  onChange={handleFileAddChange("form_date")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>form_hora</span>
+                <input
+                  type="time"
+                  value={fileAddValues.form_hora}
+                  onChange={handleFileAddChange("form_hora")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
+                disabled={isSubmittingFileAdd}
+              >
+                {isSubmittingFileAdd ? "Registrando servicio..." : "Invocar FileAdd"}
+              </button>
+              {fileAddError ? <p className="text-sm text-red-600">{fileAddError}</p> : null}
+            </div>
+          </form>
+
+          {fileAddData ? (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-slate-800">Respuesta</h3>
+              <pre className="max-h-72 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
+                {formatJson(fileAddData)}
               </pre>
             </div>
           ) : null}
