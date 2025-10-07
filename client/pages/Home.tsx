@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
+import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import type { NodeVersionResponse } from "@shared/api";
 
 export default function Home() {
@@ -14,18 +15,27 @@ export default function Home() {
     setNodeVersionError(null);
 
     try {
-      const response = await fetch("/api/node-version");
+      const response = await apiFetch("/api/node-version");
+      const { data, errorMessage } = await readJsonResponse<NodeVersionResponse | null>(response);
 
       if (!response.ok) {
-        throw new Error("No se pudo obtener la versión de Node");
+        const message = translateApiErrorMessage(
+          errorMessage,
+          "No se pudo obtener la versión de Node."
+        );
+        throw new Error(message);
       }
 
-      const data: NodeVersionResponse = await response.json();
+      if (!data) {
+        throw new Error("La respuesta del servidor no incluyó la versión de Node.");
+      }
+
       setNodeVersion(data);
     } catch (error) {
       console.error("Error fetching Node version", error);
       setNodeVersion(null);
-      setNodeVersionError("No se pudo obtener la versión de Node. Intenta de nuevo más tarde.");
+      const fallback = "No se pudo obtener la versión de Node. Intenta de nuevo más tarde.";
+      setNodeVersionError(formatApiError(error, fallback));
     } finally {
       setIsFetchingNodeVersion(false);
     }

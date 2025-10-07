@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 import coursesData from "@/data/formacion-courses.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
 import type {
   FormacionFormData,
@@ -148,13 +148,24 @@ export default function Formacion() {
       setLoadingKey(true);
       try {
         const response = await apiFetch("/api/formacion/public-key");
+        const { data, errorMessage } = await readJsonResponse<FormacionPublicKeyResponse | null>(response);
+
         if (!response.ok) {
-          throw new Error("No se pudo obtener la llave pública.");
+          const message = translateApiErrorMessage(
+            errorMessage,
+            "No pudimos preparar el formulario."
+          );
+          throw new Error(message);
         }
-        const data = (await response.json()) as FormacionPublicKeyResponse;
+
+        if (!data || typeof data.publicKey !== "string") {
+          throw new Error("La respuesta del servidor no incluyó la llave pública requerida.");
+        }
+
         if (cancelled) {
           return;
         }
+
         const key = await importRsaPublicKey(data.publicKey);
         if (cancelled) {
           return;
@@ -163,7 +174,9 @@ export default function Formacion() {
       } catch (error) {
         console.error("Failed to load formación public key", error);
         if (!cancelled) {
-          setKeyError("No pudimos preparar el formulario. Intenta nuevamente.");
+          const fallback = "No pudimos preparar el formulario. Intenta nuevamente.";
+          const message = formatApiError(error, fallback);
+          setKeyError(message);
         }
       } finally {
         if (!cancelled) {
@@ -212,19 +225,17 @@ export default function Formacion() {
         body: JSON.stringify(encryptedPayload),
       });
 
-      const responseBody = (await response
-        .json()
-        .catch(() => null)) as FormacionSubmissionResponse | { error?: string } | null;
+      const { data, errorMessage } = await readJsonResponse<FormacionSubmissionResponse | null>(response);
 
       if (!response.ok) {
-        const message =
-          responseBody && typeof responseBody === "object" && "error" in responseBody && responseBody.error
-            ? responseBody.error
-            : "No se pudo completar la inscripción. Intenta nuevamente.";
+        const message = translateApiErrorMessage(
+          errorMessage,
+          "No se pudo completar la inscripción. Intenta nuevamente."
+        );
         throw new Error(message);
       }
 
-      if (!responseBody || (responseBody as FormacionSubmissionResponse).status !== "ok") {
+      if (!data || data.status !== "ok") {
         throw new Error("No recibimos confirmación de la inscripción. Intenta nuevamente.");
       }
 
@@ -235,10 +246,10 @@ export default function Formacion() {
       closeModal();
     } catch (error) {
       console.error("Error submitting formación form", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente.";
+      const message = formatApiError(
+        error,
+        "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
+      );
       setFormError(message);
     } finally {
       setFormSubmitting(false);
