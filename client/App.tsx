@@ -16,6 +16,7 @@ import Bienestar from "./pages/Bienestar";
 import Formacion from "./pages/Formacion";
 import PoliticaCookies from "./pages/PoliticaCookies";
 import AvisoPrivacidad from "./pages/AvisoPrivacidad";
+import SiaServices from "./pages/SiaServices";
 import { authConfig } from "@/lib/auth-config";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,7 @@ const App = () => (
             <Route path="/formacion" element={<Formacion />} />
             <Route path="/politica-cookies" element={<PoliticaCookies />} />
             <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
+            <Route path="/sia" element={<SiaServices />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

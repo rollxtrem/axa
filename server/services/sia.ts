@@ -1,4 +1,8 @@
-import type { SiaTokenResponse } from "@shared/api";
+import type {
+  SiaFileGetRequestBody,
+  SiaFileGetResponseItem,
+  SiaTokenResponse,
+} from "@shared/api";
 
 const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
 
@@ -142,26 +146,6 @@ export const requestSiaToken = async (): Promise<SiaTokenResponse> => {
   return parseSiaResponse(payload);
 };
 
-type SiaFileGetParams = {
-  sia_token: string;
-  sia_dz: string;
-  sia_consumer_key: string;
-  user_identification: string;
-};
-
-type SiaFileGetResponseItem = {
-  Contrato: string;
-  IdCliente: string;
-  IdPlan: string;
-  IdClientePlan: string;
-  PlanPoliza: string;
-  TipoTraslado: string;
-  TipoServicio: string;
-  ServiciosTomados: string;
-  ServiciosDisponibles: string;
-  ServiciosConfigurados: string;
-};
-
 const parseSiaFileGetResponse = (payload: unknown): SiaFileGetResponseItem[] => {
   if (!Array.isArray(payload)) {
     throw new SiaServiceError(
@@ -214,7 +198,7 @@ export const FileGet = async ({
   sia_dz,
   sia_consumer_key,
   user_identification,
-}: SiaFileGetParams): Promise<SiaFileGetResponseItem[]> => {
+}: SiaFileGetRequestBody): Promise<SiaFileGetResponseItem[]> => {
   let response: Response;
   try {
     response = await fetch("https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet", {
@@ -263,5 +247,5 @@ export const FileGet = async ({
   return parseSiaFileGetResponse(payload);
 };
 
-export type { SiaFileGetParams, SiaFileGetResponseItem };
+export type { SiaFileGetResponseItem };
 
