@@ -2,9 +2,12 @@ import type {
   SiaFileGetRequestBody,
   SiaFileGetResponseItem,
   SiaTokenResponse,
+  SiaFileAddRequestBody,
+  SiaFileAddResponse,
 } from "@shared/api";
 
 const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
+const SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
 
 type SiaTokenApiResponse = {
   access_token?: unknown;
@@ -245,6 +248,148 @@ export const FileGet = async ({
   }
 
   return parseSiaFileGetResponse(payload);
+};
+
+const parseSiaFileAddResponse = (payload: unknown): SiaFileAddResponse => {
+  if (!isRecord(payload)) {
+    throw new SiaServiceError(
+      "La respuesta de SIA FileAdd tiene un formato inesperado.",
+      500,
+      payload
+    );
+  }
+
+  const { Success, Code, Message, File } = payload;
+
+  if (typeof Success !== "boolean") {
+    throw new SiaServiceError(
+      'El campo "Success" de la respuesta de SIA FileAdd es inválido.',
+      500,
+      payload
+    );
+  }
+
+  if (
+    typeof Code !== "string" ||
+    typeof Message !== "string" ||
+    typeof File !== "string" ||
+    !Code.trim() ||
+    !Message.trim() ||
+    !File.trim()
+  ) {
+    throw new SiaServiceError(
+      "La respuesta de SIA FileAdd no contiene los datos esperados.",
+      500,
+      payload
+    );
+  }
+
+  return { Success, Code, Message, File };
+};
+
+export const FileAdd = async ({
+  sia_token,
+  sia_dz,
+  sia_consumer_key,
+  user_identification,
+  form_datetime,
+  form_code_service,
+  user_name,
+  user_last_name,
+  user_email,
+  user_mobile,
+  form_date,
+  form_hora,
+}: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
+  const body = {
+    dz: sia_dz,
+    consumerKey: sia_consumer_key,
+    idCatalogCountry: "CO",
+    contract: "4430010",
+    policy: user_identification,
+    vip: false,
+    statusPolicy: "VIGENTE",
+    startDatePolicy: form_datetime,
+    endDatePolicy: form_datetime,
+    idCatalogTypeAssistance: "3",
+    idCatalogFile: "989",
+    idCatalogDiagnostic: "058",
+    idCatalogServices: form_code_service,
+    idCatalogClassification: form_code_service,
+    idCatalogRequiredService: form_code_service,
+    idCatalogSinisterCode: "000",
+    idCatalogServiceCode: "000",
+    idCatalogProblem: "173",
+    idCatalogSecondCall: "11",
+    idCatalogTransfer: "L",
+    idCatalogAssignmentType: "16",
+    idCatalogServiceCondition: "13",
+    name: user_name,
+    lastname: user_last_name,
+    beneficiaryName: user_name,
+    beneficiaryLastname: user_last_name,
+    gender: "M",
+    age: 30,
+    email: user_email,
+    mobile: user_mobile,
+    latitudeOrigin: 4.6874253,
+    lengthOrigin: -74.0507687,
+    addressOrigin: "CL. 102 #17A-61",
+    idCityCallOrigin: "18",
+    cityCallOrigin: "BOGOTA",
+    stateCallOrigin: "BOGOTA",
+    latitudeDestiny: 4.6874253,
+    lengthDestiny: -74.0507687,
+    addressDestiny: "CL. 102 #17A-61",
+    idCityCallDestiny: "18",
+    stateCallDestiny: "BOGOTA",
+    idStateCallDestiny: "01",
+    carPlates: user_identification,
+    carBrand: "NA",
+    carModel: "NA",
+    carYear: "9999",
+    carColor: "NA",
+    scheduleService: "true",
+    scheduleDate: form_date,
+    scheduleHour: form_hora,
+    reasonCalled: "TELEFONICA FINANCIERA reasonCalled",
+    comment: "TELEFONICA FINANCIERA comment",
+  } as const;
+
+  let response: Response;
+  try {
+    response = await fetch(SIA_FILE_ADD_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sia_token}`,
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new SiaServiceError("No se pudo conectar con el servicio FileAdd de SIA.", 502, error);
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    throw new SiaServiceError(
+      "La respuesta de SIA FileAdd no es un JSON válido.",
+      response.status || 500,
+      error
+    );
+  }
+
+  if (!response.ok) {
+    throw new SiaServiceError(
+      "El servicio FileAdd de SIA respondió con un error.",
+      response.status || 500,
+      payload
+    );
+  }
+
+  return parseSiaFileAddResponse(payload);
 };
 
 export type { SiaFileGetResponseItem };
