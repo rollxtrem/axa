@@ -16,7 +16,7 @@ type SiaTokenApiResponse = {
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 export class SiaServiceError extends Error {
   status: number;
@@ -141,4 +141,127 @@ export const requestSiaToken = async (): Promise<SiaTokenResponse> => {
 
   return parseSiaResponse(payload);
 };
+
+type SiaFileGetParams = {
+  sia_token: string;
+  sia_dz: string;
+  sia_consumer_key: string;
+  user_identification: string;
+};
+
+type SiaFileGetResponseItem = {
+  Contrato: string;
+  IdCliente: string;
+  IdPlan: string;
+  IdClientePlan: string;
+  PlanPoliza: string;
+  TipoTraslado: string;
+  TipoServicio: string;
+  ServiciosTomados: string;
+  ServiciosDisponibles: string;
+  ServiciosConfigurados: string;
+};
+
+const parseSiaFileGetResponse = (payload: unknown): SiaFileGetResponseItem[] => {
+  if (!Array.isArray(payload)) {
+    throw new SiaServiceError(
+      "La respuesta de SIA FileGet tiene un formato inesperado.",
+      500,
+      payload
+    );
+  }
+
+  return payload.map((item, index) => {
+    if (!isRecord(item)) {
+      throw new SiaServiceError(
+        `Elemento ${index} de la respuesta de SIA FileGet tiene un formato inesperado.`,
+        500,
+        item
+      );
+    }
+
+    const getField = (field: keyof SiaFileGetResponseItem): string => {
+      const value = item[field];
+
+      if (typeof value !== "string" || !value.trim()) {
+        throw new SiaServiceError(
+          `El campo "${field}" del elemento ${index} de la respuesta de SIA FileGet es inválido.`,
+          500,
+          item
+        );
+      }
+
+      return value;
+    };
+
+    return {
+      Contrato: getField("Contrato"),
+      IdCliente: getField("IdCliente"),
+      IdPlan: getField("IdPlan"),
+      IdClientePlan: getField("IdClientePlan"),
+      PlanPoliza: getField("PlanPoliza"),
+      TipoTraslado: getField("TipoTraslado"),
+      TipoServicio: getField("TipoServicio"),
+      ServiciosTomados: getField("ServiciosTomados"),
+      ServiciosDisponibles: getField("ServiciosDisponibles"),
+      ServiciosConfigurados: getField("ServiciosConfigurados"),
+    };
+  });
+};
+
+export const FileGet = async ({
+  sia_token,
+  sia_dz,
+  sia_consumer_key,
+  user_identification,
+}: SiaFileGetParams): Promise<SiaFileGetResponseItem[]> => {
+  let response: Response;
+  try {
+    response = await fetch("https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${sia_token}`,
+      },
+      body: JSON.stringify({
+        dz: sia_dz,
+        consumerKey: sia_consumer_key,
+        operationType: "4",
+        contract: "{'contrato':'4430010', 'IdCliente': '01544', 'IdPlan': '01586'}",
+        serviceTypeCode: "",
+        Plates: user_identification,
+        validationType: "1",
+      }),
+    });
+  } catch (error) {
+    throw new SiaServiceError(
+      "No se pudo conectar con el servicio FileGet de SIA.",
+      502,
+      error
+    );
+  }
+
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    throw new SiaServiceError(
+      "La respuesta de SIA FileGet no es un JSON válido.",
+      response.status || 500,
+      error
+    );
+  }
+
+  if (!response.ok) {
+    throw new SiaServiceError(
+      "El servicio FileGet de SIA respondió con un error.",
+      response.status || 500,
+      payload
+    );
+  }
+
+  return parseSiaFileGetResponse(payload);
+};
+
+export type { SiaFileGetParams, SiaFileGetResponseItem };
 
