@@ -143,6 +143,28 @@ export interface SiaTokenResponse {
   ".expires"?: string;
 }
 
+export interface SiaFileGetRequestBody {
+  sia_token: string;
+  sia_dz: string;
+  sia_consumer_key: string;
+  user_identification: string;
+}
+
+export type SiaFileGetResponseItem = {
+  Contrato: string;
+  IdCliente: string;
+  IdPlan: string;
+  IdClientePlan: string;
+  PlanPoliza: string;
+  TipoTraslado: string;
+  TipoServicio: string;
+  ServiciosTomados: string;
+  ServiciosDisponibles: string;
+  ServiciosConfigurados: string;
+};
+
+export type SiaFileGetResponse = SiaFileGetResponseItem[];
+
 export interface NodeVersionResponse {
   build: string;
   runtime: string;
