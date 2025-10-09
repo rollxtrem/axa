@@ -9,7 +9,6 @@ import type {
   BienestarFormData,
   BienestarPublicKeyResponse,
   BienestarSubmissionResponse,
-  SiaTokenResponse,
 } from "@shared/api";
 
 type FormState = {
@@ -94,41 +93,6 @@ const getServiceIcon = (iconKey?: string): React.ReactNode => {
   return serviceIcons[iconKey];
 };
 
-const isSiaTokenResponse = (value: unknown): value is SiaTokenResponse => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  const expiresIn = record.expires_in;
-
-  return (
-    typeof record.access_token === "string" &&
-    typeof record.token_type === "string" &&
-    typeof expiresIn === "number" &&
-    Number.isFinite(expiresIn)
-  );
-};
-
-const extractSiaErrorMessage = (value: unknown, fallback: string) => {
-  if (!value || typeof value !== "object") {
-    return fallback;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  if (typeof record.error === "string" && record.error.trim()) {
-    return record.error;
-  }
-
-  if (typeof record.message === "string" && record.message.trim()) {
-    return record.message;
-  }
-
-  return fallback;
-};
-
 export default function Bienestar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -143,9 +107,6 @@ export default function Bienestar() {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [confirmationDetails, setConfirmationDetails] = useState<ConfirmationDetails | null>(null);
-  const [siaTokenData, setSiaTokenData] = useState<SiaTokenResponse | null>(null);
-  const [siaLoading, setSiaLoading] = useState(false);
-  const [siaError, setSiaError] = useState<string | null>(null);
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
@@ -264,44 +225,6 @@ export default function Bienestar() {
     }
   };
 
-  const handleFetchSiaToken = async () => {
-    setSiaError(null);
-    setSiaTokenData(null);
-
-    try {
-      setSiaLoading(true);
-      const response = await apiFetch("/api/sia/token", { method: "POST" });
-
-      let payload: unknown;
-      try {
-        payload = await response.json();
-      } catch (error) {
-        throw new Error("No se pudo leer la respuesta del servicio de SIA.");
-      }
-
-      if (!response.ok) {
-        const message = extractSiaErrorMessage(payload, "No se pudo obtener el token de SIA.");
-        throw new Error(message);
-      }
-
-      if (!isSiaTokenResponse(payload)) {
-        throw new Error("La respuesta del servicio de SIA tiene un formato inesperado.");
-      }
-
-      console.log("SiaTokenResponse", payload);
-      setSiaTokenData(payload);
-    } catch (error) {
-      console.error("Failed to fetch SIA token", error);
-      const message =
-        error instanceof Error && error.message
-          ? error.message
-          : "No se pudo obtener el token de SIA.";
-      setSiaError(message);
-    } finally {
-      setSiaLoading(false);
-    }
-  };
-
   const openModal = (service: string) => {
     setSelectedService(service);
     setIsModalOpen(true);
@@ -310,9 +233,6 @@ export default function Bienestar() {
     setFormSubmitting(false);
     setIsCalendarOpen(false);
     setFormData(initialFormState);
-    setSiaTokenData(null);
-    setSiaError(null);
-    setSiaLoading(false);
   };
 
   const closeModal = () => {
@@ -322,9 +242,6 @@ export default function Bienestar() {
     setFormSubmitting(false);
     setIsCalendarOpen(false);
     setFormData(initialFormState);
-    setSiaTokenData(null);
-    setSiaError(null);
-    setSiaLoading(false);
   };
 
   const closeConfirmationModal = () => {
@@ -1030,69 +947,6 @@ export default function Bienestar() {
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={handleFetchSiaToken}
-                      disabled={siaLoading}
-                      className={`h-11 px-4 rounded-[50px] flex items-center justify-center gap-4 transition-colors ${siaLoading ? "bg-[#0c0e45] opacity-60 cursor-not-allowed" : "bg-[#0c0e45] hover:bg-[#0c0e45]/90"}`}
-                    >
-                      <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                        {siaLoading ? "OBTENIENDO…" : "OBTENER TOKEN SIA"}
-                      </span>
-                    </button>
-
-                    {siaError ? (
-                      <p className="text-xs text-[#FF1721]" aria-live="polite">
-                        {siaError}
-                      </p>
-                    ) : null}
-
-                    {siaTokenData ? (
-                      <div className="rounded-[6px] border border-[#0c0e45]/30 bg-[#f4f5ff] px-3 py-2 text-xs text-[#0e0e0e] space-y-1 break-all">
-                        <p>
-                          <span className="font-semibold">access_token:</span> {siaTokenData.access_token}
-                        </p>
-                        <p>
-                          <span className="font-semibold">token_type:</span> {siaTokenData.token_type}
-                        </p>
-                        <p>
-                          <span className="font-semibold">expires_in:</span> {siaTokenData.expires_in}
-                        </p>
-                        {siaTokenData.uid ? (
-                          <p>
-                            <span className="font-semibold">uid:</span> {siaTokenData.uid}
-                          </p>
-                        ) : null}
-                        {siaTokenData.ulogin ? (
-                          <p>
-                            <span className="font-semibold">ulogin:</span> {siaTokenData.ulogin}
-                          </p>
-                        ) : null}
-                        {siaTokenData.consumerKey ? (
-                          <p>
-                            <span className="font-semibold">consumerKey:</span> {siaTokenData.consumerKey}
-                          </p>
-                        ) : null}
-                        {siaTokenData.dz ? (
-                          <p>
-                            <span className="font-semibold">dz:</span> {siaTokenData.dz}
-                          </p>
-                        ) : null}
-                        {siaTokenData[".issued"] ? (
-                          <p>
-                            <span className="font-semibold">.issued:</span> {siaTokenData[".issued"]}
-                          </p>
-                        ) : null}
-                        {siaTokenData[".expires"] ? (
-                          <p>
-                            <span className="font-semibold">.expires:</span> {siaTokenData[".expires"]}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-
                   {/* Agendar Cita Button */}
                   <button
                     type="submit"
