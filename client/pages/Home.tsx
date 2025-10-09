@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
@@ -40,6 +40,10 @@ export default function Home() {
       setIsFetchingNodeVersion(false);
     }
   };
+
+  useEffect(() => {
+    void handleShowNodeVersion();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
@@ -94,14 +98,11 @@ export default function Home() {
           <p className="text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px] mb-6">
             Consulta la versión de Node con la que se compiló y se está ejecutando la plataforma.
           </p>
-          <button
-            type="button"
-            onClick={handleShowNodeVersion}
-            className="inline-flex items-center justify-center rounded-full bg-[#0C0E45] px-6 py-3 text-white font-['Source_Sans_Pro'] text-sm font-semibold tracking-[1.25px] uppercase transition hover:bg-[#0a0c3a] disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isFetchingNodeVersion}
-          >
-            {isFetchingNodeVersion ? "Consultando versión..." : "Mostrar versión de Node"}
-          </button>
+          {isFetchingNodeVersion && (
+            <p className="mt-4 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px]">
+              Consultando versión...
+            </p>
+          )}
           {nodeVersion && (
             <p className="mt-4 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px]">
               Compilado con Node <span className="font-semibold">{nodeVersion.build}</span> y ejecutado con Node
