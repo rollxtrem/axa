@@ -1,29 +1,15 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const candidates = [
-  path.join(__dirname, "dist", "server", "production.mjs"),
-  path.join(__dirname, "dist", "server", "production.js"),
-];
-
-const entryPath = candidates.find((candidate) => existsSync(candidate));
-
-if (!entryPath) {
-  console.error(
-    "No se encontró el bundle de producción del servidor. Asegúrate de ejecutar 'npm run build' antes de iniciar la aplicación.",
-  );
-  process.exit(1);
+// Contenido para: azure-server.js
+// Este es el "puente" que iisnode puede entender.
+async function start() {
+  try {
+    // Usamos import() dinámico para cargar nuestro script principal, que es un Módulo ES.
+    console.log("Iniciando el cargador de la aplicación ESM...");
+    await import('./start-app.js');
+    console.log("El cargador de la aplicación ESM se ejecutó correctamente.");
+  } catch(error) {
+    console.error("Error al cargar la aplicación principal desde el puente:", error);
+    process.exit(1);
+  }
 }
 
-const entryUrl = pathToFileURL(entryPath).href;
-
-try {
-  await import(entryUrl);
-} catch (error) {
-  console.error("Fallo al iniciar el servidor de producción", error);
-  process.exit(1);
-}
+start();

@@ -1,7 +1,7 @@
 trigger:
-   - main
+   - master
    - dev 
-   - IaC/Add-pipeline
+   - IaC/node
 
 pool:
   vmImage: 'windows-latest'
@@ -14,7 +14,7 @@ resources:
     ref: master
 
 variables:
-  nodeVersion: '22.16.0'
+  nodeVersion: '22.17.1'
   artifactName: 'node-app'
   infrastructureAsCodeRepositoryName: 'infrastructure_as_code'
   projectName: 'aa_americas_co_partner_service'
@@ -50,14 +50,18 @@ stages:
               checkLatest: true
             displayName: "Install Node.js"
 
-          - script: npm ci
+          - script: | 
+              echo "Node.js version used for build:" node -v echo "NPM version used for build:" npm -v displayName: "Print Node.js and NPM versions"
+
+          #- script: npm ci
+          - script: npm install
             displayName: "Install dependencies"
 
           - script: npm run build
             displayName: "Build application"
 
-          - script: npm prune --omit=dev
-            displayName: "Prune dev dependencies"
+          #- script: npm prune --omit=dev
+          #  displayName: "Prune dev dependencies"
 
           - pwsh: |
               $path = "$(Build.ArtifactStagingDirectory)/website"
@@ -86,9 +90,11 @@ stages:
             inputs:
               SourceFolder: "$(Build.SourcesDirectory)"
               Contents: |
+                .env
                 package.json
                 package-lock.json
                 azure-server.js
+                start-app.js
                 web.config
               TargetFolder: "$(Build.ArtifactStagingDirectory)/website"
 
@@ -128,14 +134,15 @@ stages:
               PathtoPublish: '$(Build.SourcesDirectory)/IaC/'
               ArtifactName: 'infra-arm-PSER'
 
-  # - template: 'deploy-template/travel-deployment.yml@${{variables.infrastructureAsCodeRepositoryName}}'
-  #   parameters:
-  #     stageName: 'PROD'
-  #     deploySubscriptionName: '$(prodAzureServiceConnection)'
-  #     deployBranchTrigger: 'main'
-  #     deploySubscriptionId: '$(prodSubscriptionId)'
-  #     deployResourceGroupName: '$(prodResourceGroupName)'
-  #     deployWebAppName: '$(prodWebAppName)'
+  - template: 'deploy-template/pser-deploy.yml@${{variables.infrastructureAsCodeRepositoryName}}'
+    parameters:
+      stageName: 'PROD'
+      deploySubscriptionName: '$(prodAzureServiceConnection)'
+      deployBranchTrigger: 'master'
+      deploySubscriptionId: '$(prodSubscriptionId)'
+      deployResourceGroupName: '$(prodResourceGroupName)'
+      deployWebAppName: '$(prodWebAppName)'
+      agentPool: '$(prodAgentPool)'
 
   - template: 'deploy-template/pser-deploy.yml@${{variables.infrastructureAsCodeRepositoryName}}'
     parameters:
