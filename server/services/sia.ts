@@ -25,6 +25,36 @@ type SiaTokenApiResponse = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const formatDateTimeForSia = (value: string): string => {
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    throw new SiaServiceError(
+      "La fecha y hora proporcionadas para FileAdd están vacías.",
+      400,
+      value
+    );
+  }
+
+  const date = new Date(trimmedValue);
+
+  if (Number.isNaN(date.getTime())) {
+    throw new SiaServiceError(
+      "La fecha y hora proporcionadas para FileAdd no tienen un formato válido.",
+      400,
+      value
+    );
+  }
+
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const hours = String(date.getUTCHours()).padStart(2, "0");
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+  const seconds = String(date.getUTCSeconds()).padStart(2, "0");
+
+  return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+};
+
 export class SiaServiceError extends Error {
   status: number;
   details?: unknown;
@@ -301,6 +331,9 @@ export const FileAdd = async ({
   form_date,
   form_hora,
 }: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
+  const formattedStartDate = formatDateTimeForSia(form_datetime);
+  const formattedEndDate = formatDateTimeForSia(form_datetime);
+
   const body = {
     dz: sia_dz,
     consumerKey: sia_consumer_key,
@@ -309,8 +342,8 @@ export const FileAdd = async ({
     policy: user_identification,
     vip: false,
     statusPolicy: "VIGENTE",
-    startDatePolicy: form_datetime,
-    endDatePolicy: form_datetime,
+    startDatePolicy: formattedStartDate,
+    endDatePolicy: formattedEndDate,
     idCatalogTypeAssistance: "3",
     idCatalogFile: "989",
     idCatalogDiagnostic: "058",
