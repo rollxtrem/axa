@@ -18,6 +18,7 @@ import PoliticaCookies from "./pages/PoliticaCookies";
 import AvisoPrivacidad from "./pages/AvisoPrivacidad";
 import SiaServices from "./pages/SiaServices";
 import { authConfig } from "@/lib/auth-config";
+import { AppInsightsTracker } from "@/components/AppInsightsTracker";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <BrowserRouter>
+          <AppInsightsTracker />
           <ConditionalHeader />
           <Routes>
             <Route path="/" element={<Home />} />
