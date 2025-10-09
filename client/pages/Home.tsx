@@ -1,46 +1,8 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
-import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
-import type { NodeVersionResponse } from "@shared/api";
 
 export default function Home() {
-  const [nodeVersion, setNodeVersion] = useState<NodeVersionResponse | null>(null);
-  const [isFetchingNodeVersion, setIsFetchingNodeVersion] = useState(false);
-  const [nodeVersionError, setNodeVersionError] = useState<string | null>(null);
-
-  const handleShowNodeVersion = async () => {
-    setIsFetchingNodeVersion(true);
-    setNodeVersionError(null);
-
-    try {
-      const response = await apiFetch("/api/node-version");
-      const { data, errorMessage } = await readJsonResponse<NodeVersionResponse | null>(response);
-
-      if (!response.ok) {
-        const message = translateApiErrorMessage(
-          errorMessage,
-          "No se pudo obtener la versión de Node."
-        );
-        throw new Error(message);
-      }
-
-      if (!data) {
-        throw new Error("La respuesta del servidor no incluyó la versión de Node.");
-      }
-
-      setNodeVersion(data);
-    } catch (error) {
-      console.error("Error fetching Node version", error);
-      setNodeVersion(null);
-      const fallback = "No se pudo obtener la versión de Node. Intenta de nuevo más tarde.";
-      setNodeVersionError(formatApiError(error, fallback));
-    } finally {
-      setIsFetchingNodeVersion(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
       {/* Hero Banner */}
@@ -83,36 +45,6 @@ export default function Home() {
               asistencias que tenemos diseñadas para ti.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="px-4 md:px-8 lg:px-[142px] py-6">
-        <div className="max-w-3xl mx-auto bg-white rounded-[12px] shadow-sm p-6 text-center">
-          <h2 className="text-[#0E0E0E] font-['Publico_Text_Web'] text-[24px] leading-[32px] mb-4">
-            Versión de Node del sitio
-          </h2>
-          <p className="text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px] mb-6">
-            Consulta la versión de Node con la que se compiló y se está ejecutando la plataforma.
-          </p>
-          <button
-            type="button"
-            onClick={handleShowNodeVersion}
-            className="inline-flex items-center justify-center rounded-full bg-[#0C0E45] px-6 py-3 text-white font-['Source_Sans_Pro'] text-sm font-semibold tracking-[1.25px] uppercase transition hover:bg-[#0a0c3a] disabled:cursor-not-allowed disabled:opacity-70"
-            disabled={isFetchingNodeVersion}
-          >
-            {isFetchingNodeVersion ? "Consultando versión..." : "Mostrar versión de Node"}
-          </button>
-          {nodeVersion && (
-            <p className="mt-4 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px]">
-              Compilado con Node <span className="font-semibold">{nodeVersion.build}</span> y ejecutado con Node
-              <span className="font-semibold"> {nodeVersion.runtime}</span>.
-            </p>
-          )}
-          {nodeVersionError && (
-            <p className="mt-4 text-[#FF1721] font-['Source_Sans_Pro'] text-[14px] leading-[22px]">
-              {nodeVersionError}
-            </p>
-          )}
         </div>
       </section>
 
