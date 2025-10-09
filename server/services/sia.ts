@@ -331,8 +331,9 @@ export const FileAdd = async ({
   form_date,
   form_hora,
 }: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
-  const formattedStartDate = formatDateTimeForSia(form_datetime);
-  const formattedEndDate = formatDateTimeForSia(form_datetime);
+  const nowIsoString = new Date().toISOString();
+  const formattedStartDate = formatDateTimeForSia(nowIsoString);
+  const formattedEndDate = formatDateTimeForSia(nowIsoString);
 
   const body = {
     dz: sia_dz,
