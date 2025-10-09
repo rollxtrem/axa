@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
-import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
-import type { NodeVersionResponse } from "@shared/api";
 
 export default function Home() {
   const [nodeVersion, setNodeVersion] = useState<NodeVersionResponse | null>(null);
