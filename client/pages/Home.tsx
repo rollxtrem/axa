@@ -88,33 +88,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="px-4 md:px-8 lg:px-[142px] py-6">
-        <div className="max-w-3xl mx-auto bg-white rounded-[12px] shadow-sm p-6 text-center">
-          <h2 className="text-[#0E0E0E] font-['Publico_Text_Web'] text-[24px] leading-[32px] mb-4">
-            Versión de Node del sitio
-          </h2>
-          <p className="text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px] mb-6">
-            Consulta la versión de Node con la que se compiló y se está ejecutando la plataforma.
-          </p>
-          {isFetchingNodeVersion && (
-            <p className="mt-4 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px]">
-              Consultando versión...
-            </p>
-          )}
-          {nodeVersion && (
-            <p className="mt-4 text-[#0E0E0E] font-['Source_Sans_Pro'] text-[16px] leading-[24px]">
-              Compilado con Node <span className="font-semibold">{nodeVersion.build}</span> y ejecutado con Node
-              <span className="font-semibold"> {nodeVersion.runtime}</span>.
-            </p>
-          )}
-          {nodeVersionError && (
-            <p className="mt-4 text-[#FF1721] font-['Source_Sans_Pro'] text-[14px] leading-[22px]">
-              {nodeVersionError}
-            </p>
-          )}
-        </div>
-      </section>
-
       {/* Benefits Section */}
       <section className="py-12">
         <div className="flex flex-col items-center gap-4 mb-8">
