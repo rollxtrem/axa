@@ -7,7 +7,8 @@
     "description": "Aprende a tu ritmo con herramientas y cursos online que potencian tus habilidades digitales.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/15162605f6d6c658fb4d45b2ec649d9c0ff11619?width=746",
     "iconKey": "digital-skills",
-    "urlCurso":"https://youtu.be/W5BXXZmbZiE"
+    "urlCurso":"https://youtu.be/W5BXXZmbZiE",
+    "isCertificate": false
   },
   {
     "id": "educacion-financiera",
@@ -17,7 +18,8 @@
     "description": "Aprende a manejar tus finanzas personales, inversiones y planificación financiera.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6cdf72c2d1802d55cec62224a4d7d86931228283?width=746",
     "iconKey": "financial-education",
-    "urlCurso":"https://youtu.be/7GKMa4G2_Hw"
+    "urlCurso":"https://youtu.be/7GKMa4G2_Hw",
+    "isCertificate": false
   },
   {
     "id": "marketing-digital",
@@ -27,7 +29,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://youtu.be/WV-0tgqJ1eo"
+    "urlCurso":"https://youtu.be/WV-0tgqJ1eo",
+    "isCertificate": false
   },
   {
     "id": "marketing-digital",
@@ -37,7 +40,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://youtu.be/xx68x2SACgE"
+    "urlCurso":"https://youtu.be/xx68x2SACgE",
+    "isCertificate": false
   },
   {
     "id": "marketing-digital",
@@ -47,7 +51,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://edutin.com/curso-de-introduccion-a-la-inteligencia-artificial-4243"
+    "urlCurso":"https://edutin.com/curso-de-introduccion-a-la-inteligencia-artificial-4243",
+    "isCertificate": true
   },
    {
     "id": "marketing-digital",
@@ -57,7 +62,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://app.edutin.com/category"
+    "urlCurso":"https://app.edutin.com/category",
+    "isCertificate": true
   },
   
    {
@@ -68,7 +74,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://app.edutin.com/category"
+    "urlCurso":"https://app.edutin.com/category",
+    "isCertificate": true
   },
   
    {
@@ -79,7 +86,8 @@
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
     "iconKey": "digital-marketing",
-    "urlCurso":"https://app.edutin.com/category"
+    "urlCurso":"https://app.edutin.com/category",
+    "isCertificate": true
   }
 
 ]

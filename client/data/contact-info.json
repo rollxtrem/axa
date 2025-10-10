@@ -49,5 +49,13 @@
       { "type": "text", "text": "med.colombia@axa-assistance.com.co" }
     ],
     "breakAll": true
+  },
+  {
+    "id": "reembolsos 2",
+    "title": "Reembolsos 2",
+    "entries": [
+      { "type": "text", "text": "med.colombia@axa-assistance.com.co" }
+    ],
+    "breakAll": true
   }
 ]
