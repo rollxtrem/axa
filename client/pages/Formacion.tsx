@@ -101,6 +101,9 @@ export default function Formacion() {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [alertMessage, setAlertMessage] = useState<AlertMessage | null>(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const slidesPerView = 3;
+  const totalSlides = Math.ceil(courses.length / slidesPerView);
 
   const openModal = (course: string) => {
     setSelectedCourse(course);
@@ -286,7 +289,7 @@ export default function Formacion() {
             />
           </svg>
 
-          {/* Hero Content */}
+          {/* Hero Con tent */}
           <div className="absolute right-4 md:left-[759px] top-[30px] md:top-[51px] w-full max-w-[350px] md:w-[470px] text-center md:text-right text-white px-4 md:px-0">
             <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
               <h4 className="inline">
@@ -334,9 +337,19 @@ export default function Formacion() {
             </div>
           )}
 
-          {/* Courses Grid */}
+          {/*Courses Grid */}
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-300 ease-in-out"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {Array.from({ length: totalSlides }).map((_, slideIndex) => (
+                  <div key={slideIndex} className="flex-shrink-0 w-full">
           <div className="flex flex-col md:flex-row items-center gap-5 justify-center">
-            {courses.map((course) => (
+                      {courses
+                        .slice(slideIndex * slidesPerView, (slideIndex + 1) * slidesPerView)
+                        .map((course) => (
               <div key={course.id} className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden">
                 <div className="w-full h-[110px] relative">
                   <img src={course.imageUrl} alt={course.title} className="w-full h-full object-cover" />
@@ -368,6 +381,53 @@ export default function Formacion() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Navigation Buttons */}
+            {totalSlides > 1 && (
+              <div className="flex justify-center gap-4 mt-6">
+                <button
+                  onClick={() => setCurrentSlide((prev) => Math.max(0, prev - 1))}
+                  disabled={currentSlide === 0}
+                  className="p-2 rounded-full bg-[#0c0e45] text-white disabled:opacity-50"
+                  aria-label="Previous slide"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setCurrentSlide((prev) => Math.min(totalSlides - 1, prev + 1))}
+                  disabled={currentSlide === totalSlides - 1}
+                  className="p-2 rounded-full bg-[#0c0e45] text-white disabled:opacity-50"
+                  aria-label="Next slide"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {/* Dots Indicator */}
+            {totalSlides > 1 && (
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: totalSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      currentSlide === index ? 'bg-[#0c0e45]' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
