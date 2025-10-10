@@ -26,6 +26,7 @@ const bienestarFormSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(1),
   service: z.string().min(1),
+  serviceCatalog: z.string().min(1),
   preferredDate: z.string().min(1),
   preferredTime: z.string().min(1),
 });
@@ -268,6 +269,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       email: parsed.data.email.trim(),
       phone: parsed.data.phone.trim(),
       service: parsed.data.service.trim(),
+      serviceCatalog: parsed.data.serviceCatalog.trim().toUpperCase(),
       preferredDate: parsed.data.preferredDate.trim(),
       preferredTime: parsed.data.preferredTime.trim(),
     };
@@ -339,11 +341,13 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
+  const serviceCatalog = formData.serviceCatalog;
   const serviceCatalog = getServiceCatalogCode(formData.service);
   if (!serviceCatalog) {
     const error = new SiaServiceError(
       "No se pudo determinar el catálogo del servicio seleccionado.",
       500,
+      { service: formData.service, serviceCatalog: formData.serviceCatalog },
       { service: formData.service },
     );
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
