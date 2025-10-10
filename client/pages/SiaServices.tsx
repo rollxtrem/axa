@@ -20,10 +20,8 @@ const initialFileAddValues: SiaFileAddRequestBody = {
   sia_dz: "",
   sia_consumer_key: "",
   user_identification: "",
-  form_datetime: "",
   form_code_service: "",
   user_name: "",
-  user_last_name: "",
   user_email: "",
   user_mobile: "",
   form_date: "",
@@ -148,10 +146,8 @@ const SiaServices = () => {
         sia_dz: fileAddValues.sia_dz.trim(),
         sia_consumer_key: fileAddValues.sia_consumer_key.trim(),
         user_identification: fileAddValues.user_identification.trim(),
-        form_datetime: fileAddValues.form_datetime.trim(),
         form_code_service: fileAddValues.form_code_service.trim(),
         user_name: fileAddValues.user_name.trim(),
-        user_last_name: fileAddValues.user_last_name.trim(),
         user_email: fileAddValues.user_email.trim(),
         user_mobile: fileAddValues.user_mobile.trim(),
         form_date: fileAddValues.form_date.trim(),
@@ -350,17 +346,6 @@ const SiaServices = () => {
               </label>
 
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>form_datetime</span>
-                <input
-                  type="datetime-local"
-                  value={fileAddValues.form_datetime}
-                  onChange={handleFileAddChange("form_datetime")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
                 <span>form_code_service</span>
                 <input
                   type="text"
@@ -377,17 +362,6 @@ const SiaServices = () => {
                   type="text"
                   value={fileAddValues.user_name}
                   onChange={handleFileAddChange("user_name")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_last_name</span>
-                <input
-                  type="text"
-                  value={fileAddValues.user_last_name}
-                  onChange={handleFileAddChange("user_last_name")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   required
                 />
