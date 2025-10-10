@@ -9,6 +9,7 @@ import {
   normalizePem,
 } from "./utils/encrypted-request";
 import { sendEmail } from "../services/email";
+import coursesData from "../../client/data/formacion-courses.json";
 import type {
   EncryptedSubmissionRequest,
   FormacionFormData,
@@ -49,7 +50,45 @@ const buildEmailContent = (data: FormacionFormData) => {
   return { html, text };
 };
 
-const buildUserConfirmationContent = (data: FormacionFormData) => {
+type CourseDefinition = (typeof coursesData)[number];
+
+const findCourseDefinition = (courseTitle: string): CourseDefinition | undefined => {
+  const normalizedTitle = courseTitle.trim().toLowerCase();
+  return coursesData.find((course) => course.title.trim().toLowerCase() === normalizedTitle);
+};
+
+const buildCertificateNotice = (course?: CourseDefinition) => {
+  if (!course || course.isCertificate === undefined) {
+    return { html: "", text: "" };
+  }
+
+  if (course.isCertificate) {
+    const message = "su solicitud fue recibida espere indicaciones de acceso por este medio";
+    return {
+      html: `<p>${escapeHtml(message)}</p>`,
+      text: message,
+    };
+  }
+
+  const courseUrl = course.urlCurso?.trim();
+  const escapedUrl = courseUrl ? escapeHtml(courseUrl) : null;
+
+  const htmlMessage = courseUrl
+    ? `Este curso no genera certificado y puede acceder al siguiente link <a href="${escapedUrl}" target="_blank" rel="noopener noreferrer">${escapedUrl}</a>`
+    : "Este curso no genera certificado.";
+
+  const textMessage = courseUrl
+    ? `Este curso no genera certificado y puede acceder al siguiente link ${courseUrl}`
+    : "Este curso no genera certificado.";
+
+  return {
+    html: `<p>${htmlMessage}</p>`,
+    text: textMessage,
+  };
+};
+
+const buildUserConfirmationContent = (data: FormacionFormData, course?: CourseDefinition) => {
+  const certificateNotice = buildCertificateNotice(course);
   const html = `
     <h1>Confirmación de inscripción</h1>
     <p>Hola ${escapeHtml(data.fullName)},</p>
@@ -61,10 +100,11 @@ const buildUserConfirmationContent = (data: FormacionFormData) => {
       <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
       <li><strong>Curso seleccionado:</strong> ${escapeHtml(data.course)}</li>
     </ul>
+    ${certificateNotice.html}
     <p>Gracias por confiar en AXA.</p>
   `;
 
-  const text = [
+  const textLines = [
     "Confirmación de inscripción",
     "",
     `Hola ${data.fullName},`,
@@ -75,9 +115,15 @@ const buildUserConfirmationContent = (data: FormacionFormData) => {
     `Nombre: ${data.fullName}`,
     `Correo: ${data.email}`,
     `Curso seleccionado: ${data.course}`,
-    "",
-    "Gracias por confiar en AXA.",
-  ].join("\n");
+  ];
+
+  if (certificateNotice.text) {
+    textLines.push("", certificateNotice.text);
+  }
+
+  textLines.push("", "Gracias por confiar en AXA.");
+
+  const text = textLines.join("\n");
 
   return { html, text };
 };
@@ -125,7 +171,8 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
   }
 
   const { html, text } = buildEmailContent(formData);
-  const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
+  const courseDefinition = findCourseDefinition(formData.course);
+  const { html: userHtml, text: userText } = buildUserConfirmationContent(formData, courseDefinition);
   const fromAddress = process.env.FORMACION_EMAIL_FROM ?? undefined;
 
   try {
