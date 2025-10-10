@@ -406,6 +406,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   };
 
   try {
+    logJson("SIA FileAdd request", fileAddPayload);
     const fileAddResponse = await FileAdd(fileAddPayload);
     logJson("SIA FileAdd response", fileAddResponse);
   } catch (error) {
