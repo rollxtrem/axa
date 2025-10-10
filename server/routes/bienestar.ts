@@ -342,22 +342,18 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   }
 
   const normalizedServiceCatalog = formData.serviceCatalog;
-  if (!normalizedServiceCatalog) {
-  const serviceCatalog = formData.serviceCatalog;
-  const serviceCatalog = getServiceCatalogCode(formData.service);
+  const serviceCatalog = normalizedServiceCatalog || getServiceCatalogCode(formData.service);
   if (!serviceCatalog) {
     const error = new SiaServiceError(
       "No se pudo determinar el catálogo del servicio seleccionado.",
       500,
       { service: formData.service, serviceCatalog: formData.serviceCatalog },
-      { service: formData.service },
     );
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
   }
 
   const matchingService = fileGetItems.find(
-    (item) => item.TipoServicio?.trim().toUpperCase() === normalizedServiceCatalog,
     (item) => item.TipoServicio?.trim().toUpperCase() === serviceCatalog,
   );
 
@@ -366,7 +362,6 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       "El usuario no tiene acceso a este beneficio",
       403,
       { service: formData.service, serviceCatalog: normalizedServiceCatalog, fileGetItems },
-      { service: formData.service, serviceCatalog, fileGetItems },
     );
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
@@ -380,11 +375,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   const hasAvailableServices =
     isUnlimited || (!Number.isNaN(availableServicesCount) && availableServicesCount > 0);
 
-  console.log(
-    `[Bienestar] Servicios disponibles para el catálogo ${normalizedServiceCatalog}:`,
-    `[Bienestar] Servicios disponibles para el catálogo ${serviceCatalog}:`,
-    availableServicesRaw,
-  );
+  console.log(`[Bienestar] Servicios disponibles para el catálogo ${serviceCatalog}:`, availableServicesRaw);
 
   if (!hasAvailableServices) {
     const error = new SiaServiceError(
