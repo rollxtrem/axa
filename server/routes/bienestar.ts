@@ -320,7 +320,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
-  const normalizedServiceCatalog = formData.serviceCatalog;
+  const normalizedServiceCatalog = formData.serviceCatalog.trim().toUpperCase();
   const serviceCatalog = normalizedServiceCatalog || getServiceCatalogCode(formData.service);
   if (!serviceCatalog) {
     const error = new SiaServiceError(
