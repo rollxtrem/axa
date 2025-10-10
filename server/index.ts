@@ -10,7 +10,6 @@ import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/for
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
 import { handleRequestSiaToken, handleSiaFileAdd, handleSiaFileGet } from "./routes/sia";
 import { requireAuth } from "./middleware/require-auth";
-import { handleNodeVersion } from "./routes/node-version";
 
 export function createServer() {
   const app = express();
@@ -48,7 +47,6 @@ export function createServer() {
   app.get("/env", handleEnvironmentVariables);
   app.get("/api/demo", requireAuth, handleDemo);
   app.post("/api/email/send", requireAuth, handleSendEmail);
-  app.get("/api/node-version", handleNodeVersion);
   app.get("/api/pqrs/public-key", handleGetPqrsPublicKey);
   app.post("/api/pqrs", handleSubmitPqrs);
   app.get("/api/formacion/public-key", handleGetFormacionPublicKey);

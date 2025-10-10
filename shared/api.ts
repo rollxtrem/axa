@@ -188,8 +188,3 @@ export interface SiaFileAddResponse {
   File: string;
 }
 
-export interface NodeVersionResponse {
-  build: string;
-  runtime: string;
-}
-

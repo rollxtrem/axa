@@ -1,50 +1,8 @@
-import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
-import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
-import type { NodeVersionResponse } from "@shared/api";
 
 export default function Home() {
-  const [nodeVersion, setNodeVersion] = useState<NodeVersionResponse | null>(null);
-  const [isFetchingNodeVersion, setIsFetchingNodeVersion] = useState(false);
-  const [nodeVersionError, setNodeVersionError] = useState<string | null>(null);
-
-  const handleShowNodeVersion = async () => {
-    setIsFetchingNodeVersion(true);
-    setNodeVersionError(null);
-
-    try {
-      const response = await apiFetch("/api/node-version");
-      const { data, errorMessage } = await readJsonResponse<NodeVersionResponse | null>(response);
-
-      if (!response.ok) {
-        const message = translateApiErrorMessage(
-          errorMessage,
-          "No se pudo obtener la versión de Node."
-        );
-        throw new Error(message);
-      }
-
-      if (!data) {
-        throw new Error("La respuesta del servidor no incluyó la versión de Node.");
-      }
-
-      setNodeVersion(data);
-    } catch (error) {
-      console.error("Error fetching Node version", error);
-      setNodeVersion(null);
-      const fallback = "No se pudo obtener la versión de Node. Intenta de nuevo más tarde.";
-      setNodeVersionError(formatApiError(error, fallback));
-    } finally {
-      setIsFetchingNodeVersion(false);
-    }
-  };
-
-  useEffect(() => {
-    void handleShowNodeVersion();
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
       {/* Hero Banner */}
