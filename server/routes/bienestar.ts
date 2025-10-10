@@ -195,6 +195,21 @@ const buildServiceCode = (service: string) => {
   return normalized.replace(/\s+/g, "_").toUpperCase();
 };
 
+const SERVICE_CATALOG_MAP: Record<string, string> = {
+  INFORMATICA: "IF",
+  FINANCIERA: "FI",
+};
+
+const getServiceCatalogCode = (service: string): string | null => {
+  const serviceCode = buildServiceCode(service);
+
+  if (!serviceCode) {
+    return null;
+  }
+
+  return SERVICE_CATALOG_MAP[serviceCode] ?? null;
+};
+
 const logJson = (label: string, payload: unknown) => {
   try {
     console.log(`[Bienestar] ${label}:`, JSON.stringify(payload));
@@ -327,11 +342,13 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   }
 
   const serviceCatalog = formData.serviceCatalog;
+  const serviceCatalog = getServiceCatalogCode(formData.service);
   if (!serviceCatalog) {
     const error = new SiaServiceError(
       "No se pudo determinar el catálogo del servicio seleccionado.",
       500,
       { service: formData.service, serviceCatalog: formData.serviceCatalog },
+      { service: formData.service },
     );
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
