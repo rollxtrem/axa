@@ -121,6 +121,7 @@ export interface BienestarFormData {
   email: string;
   phone: string;
   service: string;
+  serviceCatalog: string;
   preferredDate: string;
   preferredTime: string;
 }

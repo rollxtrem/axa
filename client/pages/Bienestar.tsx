@@ -74,6 +74,7 @@ type BienestarService = {
   badge?: string;
   iconKey?: string;
   modalServiceName?: string;
+  catalog?: string;
 };
 
 type BienestarServicesData = {
@@ -81,6 +82,12 @@ type BienestarServicesData = {
     title?: string;
     services?: BienestarService[];
   };
+};
+
+type SelectedService = {
+  id: string;
+  displayName: string;
+  catalog: string;
 };
 
 const isServiceIconKey = (iconKey: string): iconKey is ServiceIconKey => iconKey in serviceIcons;
@@ -101,7 +108,7 @@ export default function Bienestar() {
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<SelectedService | null>(null);
   const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
   const [loadingKey, setLoadingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -110,8 +117,14 @@ export default function Bienestar() {
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
-    (service): service is BienestarService =>
-      Boolean(service.id && service.name && service.description && service.imageSrc),
+    (service): service is BienestarService & { catalog: string } =>
+      Boolean(
+        service.id &&
+          service.name &&
+          service.description &&
+          service.imageSrc &&
+          service.catalog,
+      ),
   );
 
   const handleInputChange = (field: keyof FormState, value: string) => {
@@ -119,7 +132,7 @@ export default function Bienestar() {
   };
 
   const validateForm = (): string | null => {
-    if (!selectedService) {
+    if (!selectedService || !selectedService.catalog) {
       return "Selecciona el servicio que deseas agendar.";
     }
 
@@ -140,8 +153,15 @@ export default function Bienestar() {
       return "Ingresa un correo electrónico válido.";
     }
 
-    if (!formData.phone.trim()) {
+    const trimmedPhone = formData.phone.trim();
+    if (!trimmedPhone) {
       return "Ingresa tu número de teléfono.";
+    }
+
+    const normalizedPhone = trimmedPhone.replace(/[\s()-]/g, "");
+    const colombianMobilePattern = /^(?:\+?57)?3\d{9}$/;
+    if (!colombianMobilePattern.test(normalizedPhone)) {
+      return "Ingresa un número de celular válido de Colombia.";
     }
 
     if (!formData.date.trim()) {
@@ -177,7 +197,8 @@ export default function Bienestar() {
         identification: formData.identification.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        service: selectedService!,
+        service: selectedService.displayName,
+        serviceCatalog: selectedService.catalog,
         preferredDate: formData.date.trim(),
         preferredTime: formData.time.trim(),
       };
@@ -225,8 +246,19 @@ export default function Bienestar() {
     }
   };
 
-  const openModal = (service: string) => {
-    setSelectedService(service);
+  const openModal = (service: BienestarService & { catalog: string }) => {
+    const catalog = service.catalog.trim();
+    if (!catalog) {
+      setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
+      return;
+    }
+
+    const displayName = (service.modalServiceName ?? service.name).trim();
+    setSelectedService({
+      id: service.id,
+      displayName: displayName || service.name,
+      catalog,
+    });
     setIsModalOpen(true);
     setFormError(null);
     setKeyError(null);
@@ -498,7 +530,7 @@ export default function Bienestar() {
                           {service.description}
                         </p>
                         <button
-                          onClick={() => openModal(service.modalServiceName ?? service.name)}
+                          onClick={() => openModal(service)}
                           className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                         >
                           Agendar cita
@@ -679,12 +711,17 @@ export default function Bienestar() {
             {/* Form */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
               <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
+                <input
+                  type="hidden"
+                  name="serviceCatalog"
+                  value={selectedService?.catalog ?? ""}
+                />
                 {selectedService ? (
                   <div className="rounded-[6px] border border-[#6574f8]/60 bg-[#f4f5ff] px-3 py-2">
                     <p className="text-[11px] font-semibold uppercase tracking-[1px] text-[#0c0e45] opacity-80">
                       Servicio seleccionado
                     </p>
-                    <p className="text-sm font-semibold text-[#0e0e0e]">{selectedService}</p>
+                    <p className="text-sm font-semibold text-[#0e0e0e]">{selectedService.displayName}</p>
                   </div>
                 ) : null}
 
