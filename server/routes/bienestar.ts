@@ -341,6 +341,8 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
+  const normalizedServiceCatalog = formData.serviceCatalog;
+  if (!normalizedServiceCatalog) {
   const serviceCatalog = formData.serviceCatalog;
   const serviceCatalog = getServiceCatalogCode(formData.service);
   if (!serviceCatalog) {
@@ -355,6 +357,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   }
 
   const matchingService = fileGetItems.find(
+    (item) => item.TipoServicio?.trim().toUpperCase() === normalizedServiceCatalog,
     (item) => item.TipoServicio?.trim().toUpperCase() === serviceCatalog,
   );
 
@@ -362,6 +365,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     const error = new SiaServiceError(
       "El usuario no tiene acceso a este beneficio",
       403,
+      { service: formData.service, serviceCatalog: normalizedServiceCatalog, fileGetItems },
       { service: formData.service, serviceCatalog, fileGetItems },
     );
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
@@ -377,6 +381,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     isUnlimited || (!Number.isNaN(availableServicesCount) && availableServicesCount > 0);
 
   console.log(
+    `[Bienestar] Servicios disponibles para el catálogo ${normalizedServiceCatalog}:`,
     `[Bienestar] Servicios disponibles para el catálogo ${serviceCatalog}:`,
     availableServicesRaw,
   );
