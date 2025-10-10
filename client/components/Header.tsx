@@ -1,5 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+
+import contactInfoData from "@/data/contact-info.json";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
@@ -15,6 +17,27 @@ const createInitialPqrsState = (): PqrsFormData => ({
   subject: "",
   description: "",
 });
+
+type ContactEntry =
+  | { type: "text"; text: string }
+  | { type: "labelValue"; label: string; value: string }
+  | { type: "footnote"; text: string };
+
+type ContactCard = {
+  id: string;
+  title: string;
+  entries: ContactEntry[];
+  showIcon?: boolean;
+  breakAll?: boolean;
+};
+
+const contactCards = contactInfoData as ContactCard[];
+
+const contactEntryBaseClass =
+  "text-[#0E0E0E] font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px]";
+const contactFootnoteClass = "text-[#666] text-[12px] leading-5 tracking-[0.4px]";
+const contactLabelClass = "text-[#666]";
+const contactValueClass = "text-[#0E0E0E]";
 
 export default function Header() {
   const [showLogout, setShowLogout] = useState(false);
@@ -552,131 +575,64 @@ export default function Header() {
 
             {/* Contact Cards */}
             <div className="flex flex-col items-start gap-3 w-full">
-              {/* Colombia Card */}
-              <div className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
-                <div className="flex p-4 pb-1 items-start gap-2 w-full">
-                  <div className="flex flex-col items-start gap-3 flex-1">
-                    <svg
-                      width="60"
-                      height="60"
-                      viewBox="0 0 60 60"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M40.9375 8H49.6875C50.2824 8 50.7696 8.16971 51.1738 8.50391L51.3428 8.65723C51.7786 9.09269 52 9.63243 52 10.3125C52 15.0631 50.8539 19.9185 48.5469 24.8828C46.2405 29.8457 42.9632 34.4547 38.709 38.709C34.4547 42.9632 29.8457 46.2405 24.8828 48.5469C19.9185 50.8539 15.0631 52 10.3125 52C9.71756 52 9.23042 51.8303 8.82617 51.4961L8.65723 51.3428C8.22142 50.9073 8 50.3676 8 49.6875V41.25C8 40.7517 8.16367 40.3019 8.50977 39.8848C8.86063 39.4623 9.29178 39.1847 9.81543 39.0449L17.2061 37.4307C17.6543 37.3606 18.1153 37.3952 18.5947 37.541C19.0493 37.6793 19.4563 37.9388 19.8174 38.3359L19.8232 38.3418L19.8281 38.3477L25.7656 44.4727L26.0283 44.7432L26.3604 44.5664C28.26 43.5533 30.0748 42.3818 31.8047 41.0527C33.529 39.728 35.1685 38.2671 36.7236 36.6709C38.1991 35.2375 39.549 33.7194 40.7725 32.1162C41.9935 30.5162 43.1505 28.7905 44.2432 26.9414L44.4395 26.6094L44.168 26.3359L37.9326 20.0371L37.9307 20.0361L37.832 19.9307C37.6132 19.6794 37.4681 19.3881 37.3945 19.0498C37.3064 18.6442 37.2946 18.1716 37.3721 17.625L39.0479 9.80859C39.1944 9.26367 39.4442 8.82536 39.791 8.47852C40.115 8.15455 40.4883 8 40.9375 8ZM17.5879 40.2598L11.1504 41.5723L10.75 41.6543V49.2725L11.2725 49.249C13.1838 49.1641 15.1545 48.8676 17.1836 48.3604C19.2112 47.8535 21.0956 47.1976 22.835 46.3916L23.4678 46.0977L22.9873 45.5928L18.0498 40.4053L17.8584 40.2051L17.5879 40.2598ZM41.5732 11.1475L40.1357 18.0225L40.0811 18.2852L40.2695 18.4766L45.332 23.6016L45.8604 24.1357L46.1494 23.4424C47.1972 20.9276 47.9768 18.6856 48.4844 16.7188C48.9926 14.7494 49.25 12.9255 49.25 11.25V10.75H41.6562L41.5732 11.1475Z"
-                        fill="#FF1721"
-                        stroke="#F0F0F0"
-                      />
-                    </svg>
-                    <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
-                      Colombia
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
-                  <div className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px]">
-                    601 6460296
-                    <br />
-                    01 8000 954000
-                  </div>
-                </div>
-              </div>
+              {contactCards.map((card) => {
+                const entryClassName = `${contactEntryBaseClass}${card.breakAll ? " break-all" : ""}`;
 
-              {/* Internacional Card */}
-              <div className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
-                <div className="flex p-4 pb-1 items-start gap-2 w-full">
-                  <div className="flex flex-col items-start gap-3 flex-1">
-                    <svg
-                      width="60"
-                      height="60"
-                      viewBox="0 0 60 60"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M40.9375 8H49.6875C50.2824 8 50.7696 8.16971 51.1738 8.50391L51.3428 8.65723C51.7786 9.09269 52 9.63243 52 10.3125C52 15.0631 50.8539 19.9185 48.5469 24.8828C46.2405 29.8457 42.9632 34.4547 38.709 38.709C34.4547 42.9632 29.8457 46.2405 24.8828 48.5469C19.9185 50.8539 15.0631 52 10.3125 52C9.71756 52 9.23042 51.8303 8.82617 51.4961L8.65723 51.3428C8.22142 50.9073 8 50.3676 8 49.6875V41.25C8 40.7517 8.16367 40.3019 8.50977 39.8848C8.86063 39.4623 9.29178 39.1847 9.81543 39.0449L17.2061 37.4307C17.6543 37.3606 18.1153 37.3952 18.5947 37.541C19.0493 37.6793 19.4563 37.9388 19.8174 38.3359L19.8232 38.3418L19.8281 38.3477L25.7656 44.4727L26.0283 44.7432L26.3604 44.5664C28.26 43.5533 30.0748 42.3818 31.8047 41.0527C33.529 39.728 35.1685 38.2671 36.7236 36.6709C38.1991 35.2375 39.549 33.7194 40.7725 32.1162C41.9935 30.5162 43.1505 28.7905 44.2432 26.9414L44.4395 26.6094L44.168 26.3359L37.9326 20.0371L37.9307 20.0361L37.832 19.9307C37.6132 19.6794 37.4681 19.3881 37.3945 19.0498C37.3064 18.6442 37.2946 18.1716 37.3721 17.625L39.0479 9.80859C39.1944 9.26367 39.4442 8.82536 39.791 8.47852C40.115 8.15455 40.4883 8 40.9375 8ZM17.5879 40.2598L11.1504 41.5723L10.75 41.6543V49.2725L11.2725 49.249C13.1838 49.1641 15.1545 48.8676 17.1836 48.3604C19.2112 47.8535 21.0956 47.1976 22.835 46.3916L23.4678 46.0977L22.9873 45.5928L18.0498 40.4053L17.8584 40.2051L17.5879 40.2598ZM41.5732 11.1475L40.1357 18.0225L40.0811 18.2852L40.2695 18.4766L45.332 23.6016L45.8604 24.1357L46.1494 23.4424C47.1972 20.9276 47.9768 18.6856 48.4844 16.7188C48.9926 14.7494 49.25 12.9255 49.25 11.25V10.75H41.6562L41.5732 11.1475Z"
-                        fill="#FF1721"
-                        stroke="#F0F0F0"
-                      />
-                    </svg>
-                    <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
-                      Internacional
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
-                  <div className="w-full font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px]">
-                    <span className="text-[#666]">USA gratis:</span>{" "}
-                    <span className="text-[#0E0E0E]">+ 1 (855) 488 2509</span>
-                    <br />
-                    <span className="text-[#666]">
-                      Resto del mundo (por cobrar):
-                    </span>{" "}
-                    <span className="text-[#0E0E0E]">+ 1 (855) 488 2509*</span>
-                    <br />
-                    <span className="text-[#666] text-[12px] leading-5 tracking-[0.4px]">
-                      *El valor de la llamada para el resto del mundo será
-                      reembolsado por AXA Asistencia Colombia si el beneficiario
-                      realiza la solicitud correspondiente.
-                    </span>
-                    <br />
-                    <span className="text-[#666]">
-                      WhatsApp (Solicitud de asistencia en viaje):
-                    </span>{" "}
-                    <span className="text-[#0E0E0E]">(+57) 316 280 0725</span>
-                  </div>
-                </div>
-              </div>
+                return (
+                  <div key={card.id} className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
+                    <div className="flex p-4 pb-1 items-start gap-2 w-full">
+                      <div className="flex flex-col items-start gap-3 flex-1">
+                        {card.showIcon ? (
+                          <svg
+                            width="60"
+                            height="60"
+                            viewBox="0 0 60 60"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M40.9375 8H49.6875C50.2824 8 50.7696 8.16971 51.1738 8.50391L51.3428 8.65723C51.7786 9.09269 52 9.63243 52 10.3125C52 15.0631 50.8539 19.9185 48.5469 24.8828C46.2405 29.8457 42.9632 34.4547 38.709 38.709C34.4547 42.9632 29.8457 46.2405 24.8828 48.5469C19.9185 50.8539 15.0631 52 10.3125 52C9.71756 52 9.23042 51.8303 8.82617 51.4961L8.65723 51.3428C8.22142 50.9073 8 50.3676 8 49.6875V41.25C8 40.7517 8.16367 40.3019 8.50977 39.8848C8.86063 39.4623 9.29178 39.1847 9.81543 39.0449L17.2061 37.4307C17.6543 37.3606 18.1153 37.3952 18.5947 37.541C19.0493 37.6793 19.4563 37.9388 19.8174 38.3359L19.8232 38.3418L19.8281 38.3477L25.7656 44.4727L26.0283 44.7432L26.3604 44.5664C28.26 43.5533 30.0748 42.3818 31.8047 41.0527C33.529 39.728 35.1685 38.2671 36.7236 36.6709C38.1991 35.2375 39.549 33.7194 40.7725 32.1162C41.9935 30.5162 43.1505 28.7905 44.2432 26.9414L44.4395 26.6094L44.168 26.3359L37.9326 20.0371L37.9307 20.0361L37.832 19.9307C37.6132 19.6794 37.4681 19.3881 37.3945 19.0498C37.3064 18.6442 37.2946 18.1716 37.3721 17.625L39.0479 9.80859C39.1944 9.26367 39.4442 8.82536 39.791 8.47852C40.115 8.15455 40.4883 8 40.9375 8ZM17.5879 40.2598L11.1504 41.5723L10.75 41.6543V49.2725L11.2725 49.249C13.1838 49.1641 15.1545 48.8676 17.1836 48.3604C19.2112 47.8535 21.0956 47.1976 22.835 46.3916L23.4678 46.0977L22.9873 45.5928L18.0498 40.4053L17.8584 40.2051L17.5879 40.2598ZM41.5732 11.1475L40.1357 18.0225L40.0811 18.2852L40.2695 18.4766L45.332 23.6016L45.8604 24.1357L46.1494 23.4424C47.1972 20.9276 47.9768 18.6856 48.4844 16.7188C48.9926 14.7494 49.25 12.9255 49.25 11.25V10.75H41.6562L41.5732 11.1475Z"
+                              fill="#FF1721"
+                              stroke="#F0F0F0"
+                            />
+                          </svg>
+                        ) : null}
+                        <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
+                          {card.title}
+                        </h3>
+                      </div>
+                    </div>
+                    <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
+                      <div className="flex w-full flex-col gap-1">
+                        {card.entries.map((entry, index) => {
+                          if (entry.type === "text") {
+                            return (
+                              <p key={index} className={entryClassName}>
+                                {entry.text}
+                              </p>
+                            );
+                          }
 
-              {/* Certificaciones y ventas Card */}
-              <div className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
-                <div className="flex p-4 pb-1 items-start gap-2 w-full">
-                  <div className="flex flex-col items-start gap-3 flex-1">
-                    <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
-                      Certificaciones y ventas
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
-                  <div className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px]">
-                    601 6460296 opción 1<br />
-                    601 6462828 opción 3
-                  </div>
-                </div>
-              </div>
+                          if (entry.type === "labelValue") {
+                            return (
+                              <p key={index} className={entryClassName}>
+                                <span className={contactLabelClass}>{entry.label}</span>{" "}
+                                <span className={contactValueClass}>{entry.value}</span>
+                              </p>
+                            );
+                          }
 
-              {/* Reclamos Card */}
-              <div className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
-                <div className="flex p-4 pb-1 items-start gap-2 w-full">
-                  <div className="flex flex-col items-start gap-3 flex-1">
-                    <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
-                      Reclamos
-                    </h3>
+                          return (
+                            <p key={index} className={contactFootnoteClass}>
+                              {entry.text}
+                            </p>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
-                  <div className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px] break-all">
-                    servicioalcliente@axa-assistance.com.co
-                  </div>
-                </div>
-              </div>
-
-              {/* Reembolsos Card */}
-              <div className="flex w-full flex-col items-start rounded-[10px] bg-[#F0F0F0]">
-                <div className="flex p-4 pb-1 items-start gap-2 w-full">
-                  <div className="flex flex-col items-start gap-3 flex-1">
-                    <h3 className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-bold leading-6 md:leading-8">
-                      Reembolsos
-                    </h3>
-                  </div>
-                </div>
-                <div className="flex p-4 pt-1 flex-col justify-center items-center gap-2 w-full">
-                  <div className="w-full text-[#0E0E0E] font-['Source_Sans_Pro'] text-[13px] md:text-[14px] font-normal leading-[20px] md:leading-[22px] tracking-[0.1px] break-all">
-                    med.colombia@axa-assistance.com.co
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
             {/* Close Button */}
