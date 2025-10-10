@@ -171,10 +171,8 @@ export interface SiaFileAddRequestBody {
   sia_dz: string;
   sia_consumer_key: string;
   user_identification: string;
-  form_datetime: string;
   form_code_service: string;
   user_name: string;
-  user_last_name: string;
   user_email: string;
   user_mobile: string;
   form_date: string;

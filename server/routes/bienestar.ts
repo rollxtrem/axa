@@ -162,26 +162,6 @@ const parsePreferredDateTime = (dateText: string, timeText: string) => {
   };
 };
 
-const splitFullName = (fullName: string) => {
-  const parts = fullName
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return { firstName: "", lastName: "" };
-  }
-
-  if (parts.length === 1) {
-    return { firstName: parts[0], lastName: parts[0] };
-  }
-
-  return {
-    firstName: parts[0],
-    lastName: parts.slice(1).join(" "),
-  };
-};
-
 const buildServiceCode = (service: string) => {
   const normalized = service
     .normalize("NFD")
@@ -288,7 +268,6 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
 
   const parsedPreferredDate = parsePreferredDateTime(formData.preferredDate, formData.preferredTime);
-  const formDateTime = parsedPreferredDate?.formDateTime ?? new Date().toISOString();
   const formDate = parsedPreferredDate?.formDate ?? formData.preferredDate;
   const formTime = parsedPreferredDate?.formTime ?? formData.preferredTime;
 
@@ -387,7 +366,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
-  const { firstName, lastName } = splitFullName(formData.fullName);
+  const userFullName = formData.fullName.trim() || formData.fullName;
   const formCodeService = buildServiceCode(formData.service) || formData.service;
 
   const fileAddPayload: SiaFileAddRequestBody = {
@@ -395,10 +374,8 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     sia_dz: siaToken.dz,
     sia_consumer_key: siaToken.consumerKey,
     user_identification: formData.identification,
-    form_datetime: formDateTime,
     form_code_service: formCodeService,
-    user_name: firstName || formData.fullName,
-    user_last_name: lastName || formData.fullName,
+    user_name: userFullName,
     user_email: formData.email,
     user_mobile: formData.phone,
     form_date: formDate,
