@@ -153,8 +153,15 @@ export default function Bienestar() {
       return "Ingresa un correo electrónico válido.";
     }
 
-    if (!formData.phone.trim()) {
+    const trimmedPhone = formData.phone.trim();
+    if (!trimmedPhone) {
       return "Ingresa tu número de teléfono.";
+    }
+
+    const normalizedPhone = trimmedPhone.replace(/[\s()-]/g, "");
+    const colombianMobilePattern = /^(?:\+?57)?3\d{9}$/;
+    if (!colombianMobilePattern.test(normalizedPhone)) {
+      return "Ingresa un número de celular válido de Colombia.";
     }
 
     if (!formData.date.trim()) {
