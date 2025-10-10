@@ -166,8 +166,11 @@ export default function Bienestar() {
       return "Ingresa tu número de teléfono.";
     }
 
-    const normalizedPhone = trimmedPhone.replace(/[\s()-]/g, "");
-    const colombianMobilePattern = /^(?:\+?57)?3\d{9}$/;
+    const digitsOnlyPhone = trimmedPhone.replace(/\D/g, "");
+    const normalizedPhone = digitsOnlyPhone.startsWith("57")
+      ? digitsOnlyPhone.slice(2)
+      : digitsOnlyPhone;
+    const colombianMobilePattern = /^3\d{9}$/;
     if (!colombianMobilePattern.test(normalizedPhone)) {
       return "Ingresa un número de celular válido de Colombia.";
     }
