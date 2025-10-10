@@ -367,7 +367,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   }
 
   const userFullName = formData.fullName.trim() || formData.fullName;
-  const formCodeService = serviceCatalog;
+  const formCodeService = buildServiceCode(formData.service) || formData.service;
 
   const fileAddPayload: SiaFileAddRequestBody = {
     sia_token: siaToken.access_token,
