@@ -26,6 +26,7 @@ const bienestarFormSchema = z.object({
   email: z.string().email(),
   phone: z.string().min(1),
   service: z.string().min(1),
+  serviceCatalog: z.string().min(1),
   preferredDate: z.string().min(1),
   preferredTime: z.string().min(1),
 });
@@ -181,26 +182,6 @@ const splitFullName = (fullName: string) => {
   };
 };
 
-const hasAvailableSiaServices = (items: SiaFileGetResponseItem[]) =>
-  items.some((item) => {
-    const availability = item.ServiciosDisponibles.trim();
-    if (!availability) {
-      return false;
-    }
-
-    if (availability.toUpperCase() === "ILIMITADO") {
-      return true;
-    }
-
-    const numericMatch = availability.match(/-?\d+/);
-    if (!numericMatch) {
-      return false;
-    }
-
-    const value = Number.parseInt(numericMatch[0], 10);
-    return Number.isFinite(value) && value > 0;
-  });
-
 const buildServiceCode = (service: string) => {
   const normalized = service
     .normalize("NFD")
@@ -212,6 +193,14 @@ const buildServiceCode = (service: string) => {
   }
 
   return normalized.replace(/\s+/g, "_").toUpperCase();
+};
+
+const logJson = (label: string, payload: unknown) => {
+  try {
+    console.log(`[Bienestar] ${label}:`, JSON.stringify(payload));
+  } catch (error) {
+    console.log(`[Bienestar] ${label}:`, payload);
+  }
 };
 
 const handleSiaErrorResponse = (res: Response, error: unknown, fallback: string) => {
@@ -265,6 +254,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       email: parsed.data.email.trim(),
       phone: parsed.data.phone.trim(),
       service: parsed.data.service.trim(),
+      serviceCatalog: parsed.data.serviceCatalog.trim().toUpperCase(),
       preferredDate: parsed.data.preferredDate.trim(),
       preferredTime: parsed.data.preferredTime.trim(),
     };
@@ -301,6 +291,8 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       );
     }
 
+    logJson("SIA token response", tokenResponse);
+
     siaToken = {
       access_token: tokenResponse.access_token,
       consumerKey,
@@ -315,7 +307,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
-  let fileGetItems: SiaFileGetResponseItem[] | null = null;
+  let fileGetItems: SiaFileGetResponseItem[];
   try {
     fileGetItems = await FileGet({
       sia_token: siaToken.access_token,
@@ -323,18 +315,62 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       sia_consumer_key: siaToken.consumerKey,
       user_identification: formData.identification,
     });
+
+    logJson("SIA FileGet response", fileGetItems);
+
+    if (!fileGetItems || fileGetItems.length === 0) {
+      throw new SiaServiceError("El usuario no tiene beneficio contratados", 400, fileGetItems);
+    }
   } catch (error) {
     handleSiaErrorResponse(res, error, "Ocurrió un error al consultar FileGet de SIA.");
     return;
   }
 
-  if (!fileGetItems || fileGetItems.length === 0) {
-    res.status(400).json({ error: "No encontramos información en SIA para este usuario." });
+  const normalizedServiceCatalog = formData.serviceCatalog;
+  if (!normalizedServiceCatalog) {
+    const error = new SiaServiceError(
+      "No se pudo determinar el catálogo del servicio seleccionado.",
+      500,
+      { service: formData.service, serviceCatalog: formData.serviceCatalog },
+    );
+    handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
   }
 
-  if (!hasAvailableSiaServices(fileGetItems)) {
-    res.status(400).json({ error: "El usuario no tiene servicios disponibles en SIA." });
+  const matchingService = fileGetItems.find(
+    (item) => item.TipoServicio?.trim().toUpperCase() === normalizedServiceCatalog,
+  );
+
+  if (!matchingService) {
+    const error = new SiaServiceError(
+      "El usuario no tiene acceso a este beneficio",
+      403,
+      { service: formData.service, serviceCatalog: normalizedServiceCatalog, fileGetItems },
+    );
+    handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
+    return;
+  }
+
+  logJson("SIA FileGet matching service", matchingService);
+
+  const availableServicesRaw = matchingService.ServiciosDisponibles?.trim() ?? "";
+  const isUnlimited = availableServicesRaw.toUpperCase() === "ILIMITADO";
+  const availableServicesCount = Number.parseInt(availableServicesRaw, 10);
+  const hasAvailableServices =
+    isUnlimited || (!Number.isNaN(availableServicesCount) && availableServicesCount > 0);
+
+  console.log(
+    `[Bienestar] Servicios disponibles para el catálogo ${normalizedServiceCatalog}:`,
+    availableServicesRaw,
+  );
+
+  if (!hasAvailableServices) {
+    const error = new SiaServiceError(
+      "El usuario no tiene servicios disponibles para este beneficio",
+      403,
+      matchingService,
+    );
+    handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
   }
 
@@ -357,7 +393,9 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   };
 
   try {
-    await FileAdd(fileAddPayload);
+    logJson("SIA FileAdd request", fileAddPayload);
+    const fileAddResponse = await FileAdd(fileAddPayload);
+    logJson("SIA FileAdd response", fileAddResponse);
   } catch (error) {
     handleSiaErrorResponse(res, error, "Ocurrió un error al registrar la solicitud en SIA.");
     return;

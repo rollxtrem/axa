@@ -74,6 +74,7 @@ type BienestarService = {
   badge?: string;
   iconKey?: string;
   modalServiceName?: string;
+  catalog?: string;
 };
 
 type BienestarServicesData = {
@@ -81,6 +82,12 @@ type BienestarServicesData = {
     title?: string;
     services?: BienestarService[];
   };
+};
+
+type SelectedService = {
+  id: string;
+  displayName: string;
+  catalog: string;
 };
 
 const isServiceIconKey = (iconKey: string): iconKey is ServiceIconKey => iconKey in serviceIcons;
@@ -95,13 +102,13 @@ const getServiceIcon = (iconKey?: string): React.ReactNode => {
 
 export default function Bienestar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
   const [formData, setFormData] = useState<FormState>(initialFormState);
   const [formSubmitting, setFormSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [selectedService, setSelectedService] = useState<SelectedService | null>(null);
   const [publicKey, setPublicKey] = useState<CryptoKey | null>(null);
   const [loadingKey, setLoadingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
@@ -110,16 +117,30 @@ export default function Bienestar() {
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
-    (service): service is BienestarService =>
-      Boolean(service.id && service.name && service.description && service.imageSrc),
+    (service): service is BienestarService & { catalog: string } =>
+      Boolean(
+        service.id &&
+          service.name &&
+          service.description &&
+          service.imageSrc &&
+          service.catalog,
+      ),
   );
 
   const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const isDateAfterToday = (date: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const normalizedDate = new Date(date);
+    normalizedDate.setHours(0, 0, 0, 0);
+    return normalizedDate.getTime() > today.getTime();
+  };
+
   const validateForm = (): string | null => {
-    if (!selectedService) {
+    if (!selectedService || !selectedService.catalog) {
       return "Selecciona el servicio que deseas agendar.";
     }
 
@@ -140,12 +161,23 @@ export default function Bienestar() {
       return "Ingresa un correo electrónico válido.";
     }
 
-    if (!formData.phone.trim()) {
+    const trimmedPhone = formData.phone.trim();
+    if (!trimmedPhone) {
       return "Ingresa tu número de teléfono.";
+    }
+
+    const normalizedPhone = trimmedPhone.replace(/[\s()-]/g, "");
+    const colombianMobilePattern = /^(?:\+?57)?3\d{9}$/;
+    if (!colombianMobilePattern.test(normalizedPhone)) {
+      return "Ingresa un número de celular válido de Colombia.";
     }
 
     if (!formData.date.trim()) {
       return "Selecciona la fecha preferida de contacto.";
+    }
+
+    if (!selectedCalendarDate || !isDateAfterToday(selectedCalendarDate)) {
+      return "Selecciona una fecha posterior a la actual.";
     }
 
     if (!formData.time.trim()) {
@@ -177,7 +209,8 @@ export default function Bienestar() {
         identification: formData.identification.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
-        service: selectedService!,
+        service: selectedService.displayName,
+        serviceCatalog: selectedService.catalog,
         preferredDate: formData.date.trim(),
         preferredTime: formData.time.trim(),
       };
@@ -206,7 +239,6 @@ export default function Bienestar() {
       }
 
       setIsModalOpen(false);
-      setIsCalendarOpen(false);
       setConfirmationDetails({
         fullName: payload.fullName,
         service: payload.service,
@@ -216,6 +248,8 @@ export default function Bienestar() {
       setIsConfirmationModalOpen(true);
       setFormData(initialFormState);
       setSelectedService(null);
+      setSelectedCalendarDate(null);
+      setCurrentDate(new Date());
     } catch (error) {
       console.error("Failed to submit bienestar form", error);
       const fallback = "No pudimos enviar tu solicitud.";
@@ -225,14 +259,26 @@ export default function Bienestar() {
     }
   };
 
-  const openModal = (service: string) => {
-    setSelectedService(service);
+  const openModal = (service: BienestarService & { catalog: string }) => {
+    const catalog = service.catalog.trim();
+    if (!catalog) {
+      setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
+      return;
+    }
+
+    const displayName = (service.modalServiceName ?? service.name).trim();
+    setSelectedService({
+      id: service.id,
+      displayName: displayName || service.name,
+      catalog,
+    });
     setIsModalOpen(true);
     setFormError(null);
     setKeyError(null);
     setFormSubmitting(false);
-    setIsCalendarOpen(false);
     setFormData(initialFormState);
+    setSelectedCalendarDate(null);
+    setCurrentDate(new Date());
   };
 
   const closeModal = () => {
@@ -240,8 +286,9 @@ export default function Bienestar() {
     setSelectedService(null);
     setFormError(null);
     setFormSubmitting(false);
-    setIsCalendarOpen(false);
     setFormData(initialFormState);
+    setSelectedCalendarDate(null);
+    setCurrentDate(new Date());
   };
 
   const closeConfirmationModal = () => {
@@ -309,15 +356,6 @@ export default function Bienestar() {
     };
   }, [isModalOpen, keyRetryToken]);
 
-  // Calendar functions
-  const openCalendar = () => {
-    if (formSubmitting || loadingKey || !!keyError) {
-      return;
-    }
-    setIsCalendarOpen(true);
-  };
-  const closeCalendar = () => setIsCalendarOpen(false);
-
   const navigateMonth = (direction: "prev" | "next") => {
     setCurrentDate((prev) => {
       const newDate = new Date(prev);
@@ -326,9 +364,23 @@ export default function Bienestar() {
       } else {
         newDate.setMonth(prev.getMonth() + 1);
       }
+
+      const today = new Date();
+      const earliestMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const candidateMonth = new Date(newDate.getFullYear(), newDate.getMonth(), 1);
+
+      if (candidateMonth < earliestMonth) {
+        return prev;
+      }
+
       return newDate;
     });
   };
+
+  const isSameDay = (first: Date, second: Date) =>
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
 
   const selectDate = (day: number) => {
     const selectedDate = new Date(
@@ -336,13 +388,18 @@ export default function Bienestar() {
       currentDate.getMonth(),
       day,
     );
+
+    if (!isDateAfterToday(selectedDate)) {
+      return;
+    }
+
     const formattedDate = selectedDate.toLocaleDateString("es-ES", {
       day: "2-digit",
       month: "long",
       year: "numeric",
     });
     handleInputChange("date", formattedDate);
-    setIsCalendarOpen(false);
+    setSelectedCalendarDate(selectedDate);
   };
 
   const getDaysInMonth = () => {
@@ -376,22 +433,12 @@ export default function Bienestar() {
     return currentDate.getFullYear();
   };
 
-  // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (isCalendarOpen && !target.closest(".calendar-container")) {
-        setIsCalendarOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isCalendarOpen]);
-
   const isSubmitDisabled = formSubmitting || loadingKey || !!keyError;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isOnEarliestMonth =
+    currentDate.getFullYear() === today.getFullYear() &&
+    currentDate.getMonth() === today.getMonth();
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
@@ -498,7 +545,7 @@ export default function Bienestar() {
                           {service.description}
                         </p>
                         <button
-                          onClick={() => openModal(service.modalServiceName ?? service.name)}
+                          onClick={() => openModal(service)}
                           className="text-[#0c0e45] font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase hover:underline"
                         >
                           Agendar cita
@@ -679,12 +726,17 @@ export default function Bienestar() {
             {/* Form */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pr-1">
               <form onSubmit={handleSubmit} className="flex w-full flex-col gap-6">
+                <input
+                  type="hidden"
+                  name="serviceCatalog"
+                  value={selectedService?.catalog ?? ""}
+                />
                 {selectedService ? (
                   <div className="rounded-[6px] border border-[#6574f8]/60 bg-[#f4f5ff] px-3 py-2">
                     <p className="text-[11px] font-semibold uppercase tracking-[1px] text-[#0c0e45] opacity-80">
                       Servicio seleccionado
                     </p>
-                    <p className="text-sm font-semibold text-[#0e0e0e]">{selectedService}</p>
+                    <p className="text-sm font-semibold text-[#0e0e0e]">{selectedService.displayName}</p>
                   </div>
                 ) : null}
 
@@ -775,19 +827,15 @@ export default function Bienestar() {
                     </div>
 
                     {/* Fecha */}
-                    <div className="relative calendar-container">
-                      <div
-                        className={`h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] ${formSubmitting ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
-                        onClick={formSubmitting ? undefined : openCalendar}
-                        aria-disabled={formSubmitting}
-                      >
+                    <div className="calendar-container flex flex-col gap-2">
+                      <div className={`h-14 px-3 py-2 border border-black/[0.42] rounded-[4px] flex items-center gap-[10px] ${formSubmitting ? "opacity-60" : ""}`}>
                         <div className="flex items-center gap-[10px] flex-1">
                           <input
                             type="text"
                             placeholder="Fecha"
                             value={formData.date}
                             readOnly
-                            className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none cursor-pointer"
+                            className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none"
                           />
                         </div>
                         <div className="flex w-6 h-6 justify-center items-center flex-shrink-0">
@@ -803,111 +851,106 @@ export default function Bienestar() {
                         </div>
                       </div>
 
-                      {/* Calendar Picker */}
-                      {isCalendarOpen && (
-                        <div className="absolute top-full left-0 mt-1 bg-white border border-black/[0.42] rounded-[4px] shadow-lg z-50 p-4 w-[300px]">
-                          {/* Calendar Header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <button
-                              type="button"
-                              onClick={() => navigateMonth("prev")}
-                              disabled={formSubmitting}
-                              className={`p-1 rounded ${formSubmitting ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
+                      <div className="bg-white border border-black/[0.42] rounded-[4px] shadow-lg p-4 w-full max-w-[300px]">
+                        <div className="flex items-center justify-between mb-4">
+                          <button
+                            type="button"
+                            onClick={() => navigateMonth("prev")}
+                            disabled={formSubmitting || isOnEarliestMonth}
+                            className={`p-1 rounded ${formSubmitting || isOnEarliestMonth ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
+                          >
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
                             >
-                              <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M15 18l-6-6 6-6"
-                                  stroke="#0E0E0E"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
+                              <path
+                                d="M15 18l-6-6 6-6"
+                                stroke="#0E0E0E"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
 
-                            <div className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-base font-medium capitalize">
-                              {getMonthName()} {getYear()}
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => navigateMonth("next")}
-                              disabled={formSubmitting}
-                              className={`p-1 rounded ${formSubmitting ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
-                            >
-                              <svg
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M9 18l6-6-6-6"
-                                  stroke="#0E0E0E"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            </button>
+                          <div className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-base font-medium capitalize">
+                            {getMonthName()} {getYear()}
                           </div>
 
-                          {/* Day Labels */}
-                          <div className="grid grid-cols-7 gap-1 mb-2">
-                            {["S", "M", "T", "W", "T", "F", "S"].map(
-                              (day, index) => (
-                                <div
-                                  key={index}
-                                  className="text-center text-[#666] font-['Source_Sans_Pro'] text-sm py-2 font-medium"
+                          <button
+                            type="button"
+                            onClick={() => navigateMonth("next")}
+                            disabled={formSubmitting}
+                            className={`p-1 rounded ${formSubmitting ? "cursor-not-allowed opacity-40" : "hover:bg-gray-100"}`}
+                          >
+                            <svg
+                              width="24"
+                              height="24"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path
+                                d="M9 18l6-6-6-6"
+                                stroke="#0E0E0E"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {["D", "L", "M", "X", "J", "V", "S"].map((day, index) => (
+                            <div
+                              key={index}
+                              className="text-center text-[#666] font-['Source_Sans_Pro'] text-sm py-2 font-medium"
+                            >
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1">
+                          {getDaysInMonth().map((day, index) => {
+                            if (!day) {
+                              return <div key={index} className="h-8" />;
+                            }
+
+                            const dayDate = new Date(
+                              currentDate.getFullYear(),
+                              currentDate.getMonth(),
+                              day,
+                            );
+                            const isSelectable = isDateAfterToday(dayDate);
+                            const isSelected =
+                              selectedCalendarDate && isSameDay(dayDate, selectedCalendarDate);
+
+                            return (
+                              <div key={index} className="h-8 flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => selectDate(day)}
+                                  disabled={!isSelectable || formSubmitting}
+                                  className={`w-8 h-8 flex items-center justify-center font-['Source_Sans_Pro'] text-sm rounded transition-colors ${
+                                    isSelected ? "bg-[#6574f8] text-white" : "text-[#0e0e0e]"
+                                  } ${
+                                    !isSelectable || formSubmitting
+                                      ? "cursor-not-allowed opacity-40"
+                                      : "hover:bg-[#6574f8] hover:text-white cursor-pointer"
+                                  }`}
                                 >
                                   {day}
-                                </div>
-                              ),
-                            )}
-                          </div>
-
-                          {/* Calendar Grid */}
-                          <div className="grid grid-cols-7 gap-1 mb-4">
-                            {getDaysInMonth().map((day, index) => (
-                              <div
-                                key={index}
-                                className="h-8 flex items-center justify-center"
-                              >
-                                {day && (
-                                  <button
-                                    type="button"
-                                    onClick={() => selectDate(day)}
-                                    disabled={formSubmitting}
-                                    className="w-8 h-8 flex items-center justify-center text-[#0e0e0e] font-['Source_Sans_Pro'] text-sm hover:bg-[#6574f8] hover:text-white rounded cursor-pointer transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-                                  >
-                                    {day}
-                                  </button>
-                                )}
+                                </button>
                               </div>
-                            ))}
-                          </div>
-
-                          {/* Calendar Footer */}
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={closeCalendar}
-                              className="flex-1 h-9 px-3 bg-white border border-[#0c0e45] rounded-[50px] flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
-                            >
-                              <span className="text-[#0c0e45] text-xs font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                                CANCELAR
-                              </span>
-                            </button>
-                          </div>
+                            );
+                          })}
                         </div>
-                      )}
+                      </div>
                     </div>
 
                     {/* Hora */}
