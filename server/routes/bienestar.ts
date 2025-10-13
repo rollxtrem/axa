@@ -332,11 +332,13 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
+  logJson("serviceCatalog", serviceCatalog);
   const matchingService = fileGetItems.find(
     (item) => item.TipoServicio?.trim().toUpperCase() === serviceCatalog,
   );
 
   if (!matchingService) {
+    
     const error = new SiaServiceError(
       "El usuario no tiene acceso a este beneficio",
       403,
@@ -368,18 +370,78 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   const userFullName = formData.fullName.trim() || formData.fullName;
   const formCodeService = buildServiceCode(formData.service) || formData.service;
+  const now = new Date();
+
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // +1 porque los meses van de 0 a 11
+  const year = now.getFullYear();
+
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+
+  const now_datetime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+
 
   const fileAddPayload: SiaFileAddRequestBody = {
-    sia_token: siaToken.access_token,
-    sia_dz: siaToken.dz,
-    sia_consumer_key: siaToken.consumerKey,
-    user_identification: formData.identification,
-    form_code_service: formCodeService,
-    user_name: userFullName,
-    user_email: formData.email,
-    user_mobile: formData.phone,
-    form_date: formDate,
-    form_hora: formTime,
+    dz : siaToken.dz,
+    consumerKey : siaToken.consumerKey,
+    idCatalogCountry : "CO",
+    contract : "4430010",
+    policy : formData.identification,
+    vip : false,
+    statusPolicy : "VIGENTE",
+    startDatePolicy : now_datetime,
+    endDatePolicy : now_datetime,
+
+    idCatalogTypeAssistance : "3",
+    idCatalogFile : "989",
+    idCatalogDiagnostic : "058", 
+    idCatalogServices : serviceCatalog,
+
+    idCatalogClassification : serviceCatalog,
+    idCatalogRequiredService : serviceCatalog,
+    idCatalogSinisterCode : "000",
+    idCatalogServiceCode : "000",
+    idCatalogProblem : "173",
+    idCatalogSecondCall : "11",
+    idCatalogTransfer : "L",
+    idCatalogAssignmentType : "16",
+    idCatalogServiceCondition : "13", 
+        
+    name : userFullName,
+    lastname : userFullName,
+    beneficiaryName : userFullName,
+    beneficiaryLastname : userFullName,
+
+    gender : "M",
+    age : 30,
+    email : formData.email,
+    mobile : formData.phone,
+    latitudeOrigin : 4.687425300000000,
+    lengthOrigin : -74.050768700000006,
+    addressOrigin : "CL. 102 # 17A-61",
+    idCityCallOrigin : "18",
+    cityCallOrigin : "BOGOTA",
+    stateCallOrigin : "BOGOTA",
+    latitudeDestiny : 4.687425300000000,
+    lengthDestiny : -74.050768700000006,
+    addressDestiny : "CL. 102 # 17A-61",
+    idCityCallDestiny : "18",
+    stateCallDestiny : "BOGOTA",
+    idStateCallDestiny : "01",
+
+    carPlates : formData.identification,
+        
+    carBrand : "NA",
+    carModel : "NA",
+    carYear : "9999",
+    carColor : "NA",
+    scheduleService : "true",
+    scheduleDate : formDate,
+    scheduleHour : formTime,
+    reasonCalled : "reasonCalled",
+    comment : "comment"
   };
 
   try {

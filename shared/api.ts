@@ -167,16 +167,58 @@ export type SiaFileGetResponseItem = {
 export type SiaFileGetResponse = SiaFileGetResponseItem[];
 
 export interface SiaFileAddRequestBody {
-  sia_token: string;
-  sia_dz: string;
-  sia_consumer_key: string;
-  user_identification: string;
-  form_code_service: string;
-  user_name: string;
-  user_email: string;
-  user_mobile: string;
-  form_date: string;
-  form_hora: string;
+    dz: string;
+    consumerKey: string;
+    idCatalogCountry: string;
+    contract: string;
+    policy: string;
+    vip: boolean;
+    statusPolicy: string;
+    startDatePolicy: string;
+    endDatePolicy: string;
+    idCatalogTypeAssistance: string;
+    idCatalogFile: string;
+    idCatalogDiagnostic: string;
+    idCatalogServices: string;
+    idCatalogClassification: string;
+    idCatalogRequiredService: string;
+    idCatalogSinisterCode: string;
+    idCatalogServiceCode: string;
+    idCatalogProblem: string;
+    idCatalogSecondCall: string;
+    idCatalogTransfer: string;
+    idCatalogAssignmentType: string;
+    idCatalogServiceCondition: string;
+    name: string;
+    lastname: string;
+    beneficiaryName: string;
+    beneficiaryLastname: string;
+    gender: string;
+    age: number;
+    email: string;
+    mobile: string;
+    latitudeOrigin: number;
+    lengthOrigin: number;
+    addressOrigin: string;
+    idCityCallOrigin: string;
+    cityCallOrigin: string;
+    stateCallOrigin: string;
+    latitudeDestiny: number;
+    lengthDestiny: number;
+    addressDestiny: string;
+    idCityCallDestiny: string;
+    stateCallDestiny: string;
+    idStateCallDestiny: string;
+    carPlates: string;
+    carBrand: string;
+    carModel: string;
+    carYear: string;
+    carColor: string;
+    scheduleService: string;
+    scheduleDate: string;
+    scheduleHour: string;
+    reasonCalled: string;
+    comment: string;
 }
 
 export interface SiaFileAddResponse {
