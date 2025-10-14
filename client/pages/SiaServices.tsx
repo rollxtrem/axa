@@ -45,20 +45,24 @@ const SiaServices = () => {
   const [fileAddError, setFileAddError] = useState<string | null>(null);
   const [isSubmittingFileAdd, setIsSubmittingFileAdd] = useState(false);
 
+  const fetchSiaToken = async (): Promise<SiaTokenResponse> => {
+    const response = await fetch("/api/sia/token", { method: "POST" });
+
+    if (!response.ok) {
+      const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
+      const message = errorPayload?.error ?? "No se pudo obtener el token de SIA.";
+      throw new Error(message);
+    }
+
+    return (await response.json()) as SiaTokenResponse;
+  };
+
   const handleRequestToken = async () => {
     setIsRequestingToken(true);
     setTokenError(null);
 
     try {
-      const response = await fetch("/api/sia/token", { method: "POST" });
-
-      if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-        const message = errorPayload?.error ?? "No se pudo obtener el token de SIA.";
-        throw new Error(message);
-      }
-
-      const data: SiaTokenResponse = await response.json();
+      const data = await fetchSiaToken();
       setTokenData(data);
       setFormValues((previous) => ({
         ...previous,
@@ -141,10 +145,33 @@ const SiaServices = () => {
     setFileAddData(null);
 
     try {
+      const token = await fetchSiaToken();
+      setTokenData(token);
+      setTokenError(null);
+
+      const nextSiaToken = token.access_token ? token.access_token.trim() : fileAddValues.sia_token.trim();
+      const nextSiaDz = token.dz ? token.dz.trim() : fileAddValues.sia_dz.trim();
+      const nextConsumerKey = token.consumerKey
+        ? token.consumerKey.trim()
+        : fileAddValues.sia_consumer_key.trim();
+
+      setFormValues((previous) => ({
+        ...previous,
+        sia_token: nextSiaToken,
+        sia_dz: nextSiaDz,
+        sia_consumer_key: nextConsumerKey,
+      }));
+      setFileAddValues((previous) => ({
+        ...previous,
+        sia_token: nextSiaToken,
+        sia_dz: nextSiaDz,
+        sia_consumer_key: nextConsumerKey,
+      }));
+
       const payload: SiaFileAddRequestBody = {
-        sia_token: fileAddValues.sia_token.trim(),
-        sia_dz: fileAddValues.sia_dz.trim(),
-        sia_consumer_key: fileAddValues.sia_consumer_key.trim(),
+        sia_token: nextSiaToken,
+        sia_dz: nextSiaDz,
+        sia_consumer_key: nextConsumerKey,
         user_identification: fileAddValues.user_identification.trim(),
         form_code_service: fileAddValues.form_code_service.trim(),
         user_name: fileAddValues.user_name.trim(),
