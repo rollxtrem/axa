@@ -5,6 +5,7 @@ import type {
   SiaFileAddResponse,
   SiaFileGetRequestBody,
   SiaFileGetResponse,
+  SiaFileAddPayload,
   SiaTokenResponse,
 } from "@shared/api";
 import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
@@ -35,12 +36,24 @@ const sanitizeSiaFileGetBody = (body: unknown): SiaFileGetRequestBody => {
   return parsed;
 };
 
+type SiaFileAddRequiredField =
+  | "sia_token"
+  | "sia_dz"
+  | "sia_consumer_key"
+  | "user_identification"
+  | "form_code_service"
+  | "user_name"
+  | "user_email"
+  | "user_mobile"
+  | "form_date"
+  | "form_hora";
+
 const sanitizeSiaFileAddBody = (body: unknown): SiaFileAddRequestBody => {
   if (typeof body !== "object" || body === null) {
     throw new SiaServiceError("El cuerpo de la solicitud es inválido.", 400);
   }
 
-  const requiredFields: (keyof SiaFileAddRequestBody)[] = [
+  const requiredFields: SiaFileAddRequiredField[] = [
     "sia_token",
     "sia_dz",
     "sia_consumer_key",
@@ -62,6 +75,107 @@ const sanitizeSiaFileAddBody = (body: unknown): SiaFileAddRequestBody => {
     }
 
     parsed[field] = value.trim();
+  }
+
+  const optionalStringFields: (keyof SiaFileAddPayload)[] = [
+    "dz",
+    "consumerKey",
+    "idCatalogCountry",
+    "contract",
+    "policy",
+    "statusPolicy",
+    "startDatePolicy",
+    "endDatePolicy",
+    "idCatalogTypeAssistance",
+    "idCatalogFile",
+    "idCatalogDiagnostic",
+    "idCatalogServices",
+    "idCatalogClassification",
+    "idCatalogRequiredService",
+    "idCatalogSinisterCode",
+    "idCatalogServiceCode",
+    "idCatalogProblem",
+    "idCatalogSecondCall",
+    "idCatalogTransfer",
+    "idCatalogAssignmentType",
+    "idCatalogServiceCondition",
+    "name",
+    "lastname",
+    "beneficiaryName",
+    "beneficiaryLastname",
+    "gender",
+    "email",
+    "mobile",
+    "addressOrigin",
+    "idCityCallOrigin",
+    "cityCallOrigin",
+    "stateCallOrigin",
+    "addressDestiny",
+    "idCityCallDestiny",
+    "stateCallDestiny",
+    "idStateCallDestiny",
+    "carPlates",
+    "carBrand",
+    "carModel",
+    "carYear",
+    "carColor",
+    "scheduleService",
+    "scheduleDate",
+    "scheduleHour",
+    "reasonCalled",
+    "comment",
+  ];
+
+  const optionalBooleanFields: (keyof SiaFileAddPayload)[] = ["vip"];
+
+  const optionalNumberFields: (keyof SiaFileAddPayload)[] = [
+    "age",
+    "latitudeOrigin",
+    "lengthOrigin",
+    "latitudeDestiny",
+    "lengthDestiny",
+  ];
+
+  for (const field of optionalStringFields) {
+    const value = (body as Record<string, unknown>)[field];
+    if (value === undefined) {
+      continue;
+    }
+
+    if (typeof value !== "string") {
+      throw new SiaServiceError(`El campo "${field}" debe ser un texto válido.`, 400);
+    }
+
+    const trimmed = value.trim();
+    if (trimmed) {
+      (parsed as unknown as Record<string, unknown>)[field] = trimmed;
+    }
+  }
+
+  for (const field of optionalBooleanFields) {
+    const value = (body as Record<string, unknown>)[field];
+    if (value === undefined) {
+      continue;
+    }
+
+    if (typeof value !== "boolean") {
+      throw new SiaServiceError(`El campo "${field}" debe ser un valor booleano.`, 400);
+    }
+
+    (parsed as unknown as Record<string, unknown>)[field] = value;
+  }
+
+  for (const field of optionalNumberFields) {
+    const value = (body as Record<string, unknown>)[field];
+    if (value === undefined) {
+      continue;
+    }
+
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      throw new SiaServiceError(`El campo "${field}" debe ser un número válido.`, 400);
+    }
+
+    (parsed as unknown as Record<string, unknown>)[field] = value;
   }
 
   return parsed;
