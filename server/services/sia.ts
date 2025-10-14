@@ -484,6 +484,14 @@ export const FileAdd = async (request: SiaFileAddRequestBody): Promise<SiaFileAd
   }
 
   if (!response.ok) {
+    try {
+      console.error(
+        `[SIA] FileAdd response error (${response.status}):`,
+        JSON.stringify(payload)
+      );
+    } catch (error) {
+      console.error(`[SIA] FileAdd response error (${response.status}):`, payload);
+    }
     throw new SiaServiceError(
       "El servicio FileAdd de SIA respondió con un error.",
       response.status || 500,
