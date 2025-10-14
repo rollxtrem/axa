@@ -16,75 +16,16 @@ const initialFormValues: SiaFileGetRequestBody = {
 };
 
 const initialFileAddValues: SiaFileAddRequestBody = {
-  //sia_token: "",
-  //sia_dz: "",
-  //sia_consumer_key: "",
-  //user_identification: "",
-  //form_code_service: "",
-  //user_name: "",
-  //user_email: "",
-  //user_mobile: "",
-  //form_date: "",
-  //form_hora: "",
-  dz : "{{sia_dz}}",
-  consumerKey : "{{sia_consumer_key}}",
-  idCatalogCountry : "CO",
-  contract : "4430010",
-  policy : "10999123133",
-  vip : false,
-  statusPolicy : "VIGENTE",
-  startDatePolicy : "19/07/2025 12:26:51",
-  endDatePolicy : "19/07/2026 12:26:51",
-
-  idCatalogTypeAssistance : "3",
-  idCatalogFile : "989",
-  idCatalogDiagnostic : "058", 
-  idCatalogServices : "TF",
-
-  idCatalogClassification : "TF",
-  idCatalogRequiredService : "TF",
-  idCatalogSinisterCode : "000",
-  idCatalogServiceCode : "000",
-  idCatalogProblem : "173",
-  idCatalogSecondCall : "11",
-  idCatalogTransfer : "L",
-  idCatalogAssignmentType : "16",
-  idCatalogServiceCondition : "13", 
-      
-  name : "TELEFONICA ",
-  lastname : "CMService",
-  beneficiaryName : "Accidente",
-  beneficiaryLastname : "Local",
-
-  gender : "M",
-  age : 30,
-  email : "N@N.COM",
-  mobile : "3202555980",
-  latitudeOrigin : 4.687425300000000,
-  lengthOrigin : -74.050768700000006,
-  addressOrigin : "CL. 102 # 17A-61",
-  idCityCallOrigin : "18",
-  cityCallOrigin : "BOGOTA",
-  stateCallOrigin : "BOGOTA",
-  latitudeDestiny : 4.687425300000000,
-  lengthDestiny : -74.050768700000006,
-  addressDestiny : "CL. 102 # 17A-61",
-  idCityCallDestiny : "18",
-  stateCallDestiny : "BOGOTA",
-  idStateCallDestiny : "01",
-
-  carPlates : "10999123133",
-      
-  carBrand : "NA",
-  carModel : "NA",
-  carYear : "9999",
-  carColor : "NA",
-  scheduleService : "true",
-  scheduleDate : "2025-09-18",
-  scheduleHour : "18:00",
-  reasonCalled : "TELEFONICA FINANCIERA reasonCalled",
-  comment : "TELEFONICA FINANCIERA comment"
-  
+  sia_token: "",
+  sia_dz: "",
+  sia_consumer_key: "",
+  user_identification: "",
+  form_code_service: "",
+  user_name: "",
+  user_email: "",
+  user_mobile: "",
+  form_date: "",
+  form_hora: "",
 };
 
 const formatJson = (data: unknown) => JSON.stringify(data, null, 2);
@@ -193,19 +134,6 @@ const SiaServices = () => {
       setFileAddValues((previous) => ({ ...previous, [field]: value }));
     };
 
-    const now = new Date();
-
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0'); // +1 porque los meses van de 0 a 11
-    const year = now.getFullYear();
-
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-
-    const now_datetime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
-
-
   const handleSubmitFileAdd = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmittingFileAdd(true);
@@ -214,59 +142,25 @@ const SiaServices = () => {
 
     try {
       const payload: SiaFileAddRequestBody = {
-        dz :fileAddValues.dz ,
-        consumerKey :fileAddValues.consumerKey ,
-        idCatalogCountry :fileAddValues.idCatalogCountry ,
-        contract :fileAddValues.contract ,
-        policy :fileAddValues.policy ,
-        vip :fileAddValues.vip ,
-        statusPolicy :fileAddValues.statusPolicy ,
-        startDatePolicy :fileAddValues.startDatePolicy ,
-        endDatePolicy :fileAddValues.endDatePolicy ,
-        idCatalogTypeAssistance :fileAddValues.idCatalogTypeAssistance ,
-        idCatalogFile :fileAddValues.idCatalogFile ,
-        idCatalogDiagnostic :fileAddValues.idCatalogDiagnostic ,
-        idCatalogServices :fileAddValues.idCatalogServices ,
-        idCatalogClassification :fileAddValues.idCatalogClassification ,
-        idCatalogRequiredService :fileAddValues.idCatalogRequiredService ,
-        idCatalogSinisterCode :fileAddValues.idCatalogSinisterCode ,
-        idCatalogServiceCode :fileAddValues.idCatalogServiceCode ,
-        idCatalogProblem :fileAddValues.idCatalogProblem ,
-        idCatalogSecondCall :fileAddValues.idCatalogSecondCall ,
-        idCatalogTransfer :fileAddValues.idCatalogTransfer ,
-        idCatalogAssignmentType :fileAddValues.idCatalogAssignmentType ,
-        idCatalogServiceCondition :fileAddValues.idCatalogServiceCondition ,
-        name :fileAddValues.name ,
-        lastname :fileAddValues.lastname ,
-        beneficiaryName :fileAddValues.beneficiaryName ,
-        beneficiaryLastname :fileAddValues.beneficiaryLastname ,
-        gender :fileAddValues.gender ,
-        age :fileAddValues.age ,
-        email :fileAddValues.email ,
-        mobile :fileAddValues.mobile ,
-        latitudeOrigin :fileAddValues.latitudeOrigin ,
-        lengthOrigin :fileAddValues.lengthOrigin ,
-        addressOrigin :fileAddValues.addressOrigin ,
-        idCityCallOrigin :fileAddValues.idCityCallOrigin ,
-        cityCallOrigin :fileAddValues.cityCallOrigin ,
-        stateCallOrigin :fileAddValues.stateCallOrigin ,
-        latitudeDestiny :fileAddValues.latitudeDestiny ,
-        lengthDestiny :fileAddValues.lengthDestiny ,
-        addressDestiny :fileAddValues.addressDestiny ,
-        idCityCallDestiny :fileAddValues.idCityCallDestiny ,
-        stateCallDestiny :fileAddValues.stateCallDestiny ,
-        idStateCallDestiny :fileAddValues.idStateCallDestiny ,
-        carPlates :fileAddValues.carPlates ,
-        carBrand :fileAddValues.carBrand ,
-        carModel :fileAddValues.carModel ,
-        carYear :fileAddValues.carYear ,
-        carColor :fileAddValues.carColor ,
-        scheduleService :fileAddValues.scheduleService ,
-        scheduleDate :fileAddValues.scheduleDate ,
-        scheduleHour :fileAddValues.scheduleHour ,
-        reasonCalled :fileAddValues.reasonCalled ,
-        comment :fileAddValues.comment 
+        sia_token: fileAddValues.sia_token.trim(),
+        sia_dz: fileAddValues.sia_dz.trim(),
+        sia_consumer_key: fileAddValues.sia_consumer_key.trim(),
+        user_identification: fileAddValues.user_identification.trim(),
+        form_code_service: fileAddValues.form_code_service.trim(),
+        user_name: fileAddValues.user_name.trim(),
+        user_email: fileAddValues.user_email.trim(),
+        user_mobile: fileAddValues.user_mobile.trim(),
+        form_date: fileAddValues.form_date.trim(),
+        form_hora: fileAddValues.form_hora.trim(),
       };
+
+      if (fileAddValues.startDatePolicy?.trim()) {
+        payload.startDatePolicy = fileAddValues.startDatePolicy.trim();
+      }
+
+      if (fileAddValues.endDatePolicy?.trim()) {
+        payload.endDatePolicy = fileAddValues.endDatePolicy.trim();
+      }
 
       const response = await fetch("/api/sia/file-add", {
         method: "POST",

@@ -4,6 +4,7 @@ import type {
   SiaTokenResponse,
   SiaFileAddRequestBody,
   SiaFileAddResponse,
+  SiaFileAddPayload,
 } from "@shared/api";
 
 const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
@@ -317,76 +318,145 @@ const parseSiaFileAddResponse = (payload: unknown): SiaFileAddResponse => {
   return { Success, Code, Message, File };
 };
 
-export const FileAdd = async ({
-  sia_token,
-  sia_dz,
-  sia_consumer_key,
-  user_identification,
-  form_code_service,
-  user_name,
-  user_email,
-  user_mobile,
-  form_date,
-  form_hora,
-}: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
+export const FileAdd = async (request: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
+  const {
+    sia_token,
+    sia_dz,
+    sia_consumer_key,
+    user_identification,
+    form_code_service,
+    user_name,
+    user_email,
+    user_mobile,
+    form_date,
+    form_hora,
+    ...overrides
+  } = request;
+
+  const trimmedToken = typeof sia_token === "string" ? sia_token.trim() : "";
+  if (!trimmedToken) {
+    throw new SiaServiceError("El token de autenticación para FileAdd es obligatorio.", 400);
+  }
+
   const nowIsoString = new Date().toISOString();
   const formattedStartDate = formatDateTimeForSia(nowIsoString);
   const formattedEndDate = formatDateTimeForSia(nowIsoString);
 
-  const body = {
-    dz: sia_dz,
-    consumerKey: sia_consumer_key,
-    idCatalogCountry: "CO",
-    contract: "4430010",
-    policy: user_identification,
-    vip: false,
-    statusPolicy: "VIGENTE",
-    startDatePolicy: formattedStartDate,
-    endDatePolicy: formattedEndDate,
-    idCatalogTypeAssistance: "3",
-    idCatalogFile: "989",
-    idCatalogDiagnostic: "058",
-    idCatalogServices: form_code_service,
-    idCatalogClassification: form_code_service,
-    idCatalogRequiredService: form_code_service,
-    idCatalogSinisterCode: "000",
-    idCatalogServiceCode: "000",
-    idCatalogProblem: "173",
-    idCatalogSecondCall: "11",
-    idCatalogTransfer: "L",
-    idCatalogAssignmentType: "16",
-    idCatalogServiceCondition: "13",
-    name: user_name,
-    lastname: user_name,
-    beneficiaryName: user_name,
-    beneficiaryLastname: user_name,
-    gender: "M",
-    age: 30,
-    email: user_email,
-    mobile: user_mobile,
-    latitudeOrigin: 4.6874253,
-    lengthOrigin: -74.0507687,
-    addressOrigin: "CL. 102 #17A-61",
-    idCityCallOrigin: "18",
-    cityCallOrigin: "BOGOTA",
-    stateCallOrigin: "BOGOTA",
-    latitudeDestiny: 4.6874253,
-    lengthDestiny: -74.0507687,
-    addressDestiny: "CL. 102 #17A-61",
-    idCityCallDestiny: "18",
-    stateCallDestiny: "BOGOTA",
-    idStateCallDestiny: "01",
-    carPlates: user_identification,
-    carBrand: "NA",
-    carModel: "NA",
-    carYear: "9999",
-    carColor: "NA",
-    scheduleService: "true",
-    scheduleDate: form_date,
-    scheduleHour: form_hora,
-    reasonCalled: "TELEFONICA reasonCalled",
-    comment: "TELEFONICA comment",
-  } as const;
+  const pickString = (value: string | undefined, fallback: string): string => {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+
+    return fallback;
+  };
+
+  const pickBoolean = (value: boolean | undefined, fallback: boolean): boolean =>
+    typeof value === "boolean" ? value : fallback;
+
+  const pickNumber = (value: number | undefined, fallback: number): number =>
+    typeof value === "number" && Number.isFinite(value) ? value : fallback;
+
+  const defaultDz = pickString(sia_dz, "");
+  const defaultConsumerKey = pickString(sia_consumer_key, "");
+  const defaultIdentification = pickString(user_identification, "");
+  const defaultServiceCode = pickString(form_code_service, "");
+  const defaultUserName = pickString(user_name, "");
+  const defaultUserEmail = pickString(user_email, "");
+  const defaultUserMobile = pickString(user_mobile, "");
+  const defaultFormDate = pickString(form_date, "");
+  const defaultFormHour = pickString(form_hora, "");
+
+  if (!defaultDz || !defaultConsumerKey) {
+    throw new SiaServiceError(
+      "Los datos de configuración de SIA para FileAdd son obligatorios.",
+      400,
+    );
+  }
+
+  if (!defaultIdentification || !defaultServiceCode) {
+    throw new SiaServiceError(
+      "La identificación del usuario y el catálogo del servicio son obligatorios para FileAdd.",
+      400,
+    );
+  }
+
+  if (!defaultUserName || !defaultUserEmail || !defaultUserMobile) {
+    throw new SiaServiceError(
+      "Los datos de contacto del usuario para FileAdd son obligatorios.",
+      400,
+    );
+  }
+
+  if (!defaultFormDate || !defaultFormHour) {
+    throw new SiaServiceError(
+      "La fecha y hora del servicio para FileAdd son obligatorias.",
+      400,
+    );
+  }
+
+  const body: SiaFileAddPayload = {
+    dz: pickString(overrides.dz, defaultDz),
+    consumerKey: pickString(overrides.consumerKey, defaultConsumerKey),
+    idCatalogCountry: pickString(overrides.idCatalogCountry, "CO"),
+    contract: pickString(overrides.contract, "4430010"),
+    policy: pickString(overrides.policy, defaultIdentification),
+    vip: pickBoolean(overrides.vip, false),
+    statusPolicy: pickString(overrides.statusPolicy, "VIGENTE"),
+    startDatePolicy: pickString(overrides.startDatePolicy, formattedStartDate),
+    endDatePolicy: pickString(overrides.endDatePolicy, formattedEndDate),
+    idCatalogTypeAssistance: pickString(overrides.idCatalogTypeAssistance, "3"),
+    idCatalogFile: pickString(overrides.idCatalogFile, "989"),
+    idCatalogDiagnostic: pickString(overrides.idCatalogDiagnostic, "058"),
+    idCatalogServices: pickString(overrides.idCatalogServices, defaultServiceCode),
+    idCatalogClassification: pickString(overrides.idCatalogClassification, defaultServiceCode),
+    idCatalogRequiredService: pickString(overrides.idCatalogRequiredService, defaultServiceCode),
+    idCatalogSinisterCode: pickString(overrides.idCatalogSinisterCode, "000"),
+    idCatalogServiceCode: pickString(overrides.idCatalogServiceCode, "000"),
+    idCatalogProblem: pickString(overrides.idCatalogProblem, "173"),
+    idCatalogSecondCall: pickString(overrides.idCatalogSecondCall, "11"),
+    idCatalogTransfer: pickString(overrides.idCatalogTransfer, "L"),
+    idCatalogAssignmentType: pickString(overrides.idCatalogAssignmentType, "16"),
+    idCatalogServiceCondition: pickString(overrides.idCatalogServiceCondition, "13"),
+    name: pickString(overrides.name, defaultUserName),
+    lastname: pickString(overrides.lastname, defaultUserName),
+    beneficiaryName: pickString(overrides.beneficiaryName, defaultUserName),
+    beneficiaryLastname: pickString(overrides.beneficiaryLastname, defaultUserName),
+    gender: pickString(overrides.gender, "M"),
+    age: pickNumber(overrides.age, 30),
+    email: pickString(overrides.email, defaultUserEmail),
+    mobile: pickString(overrides.mobile, defaultUserMobile),
+    latitudeOrigin: pickNumber(overrides.latitudeOrigin, 4.6874253),
+    lengthOrigin: pickNumber(overrides.lengthOrigin, -74.0507687),
+    addressOrigin: pickString(overrides.addressOrigin, "CL. 102 #17A-61"),
+    idCityCallOrigin: pickString(overrides.idCityCallOrigin, "18"),
+    cityCallOrigin: pickString(overrides.cityCallOrigin, "BOGOTA"),
+    stateCallOrigin: pickString(overrides.stateCallOrigin, "BOGOTA"),
+    latitudeDestiny: pickNumber(overrides.latitudeDestiny, 4.6874253),
+    lengthDestiny: pickNumber(overrides.lengthDestiny, -74.0507687),
+    addressDestiny: pickString(overrides.addressDestiny, "CL. 102 #17A-61"),
+    idCityCallDestiny: pickString(overrides.idCityCallDestiny, "18"),
+    stateCallDestiny: pickString(overrides.stateCallDestiny, "BOGOTA"),
+    idStateCallDestiny: pickString(overrides.idStateCallDestiny, "01"),
+    carPlates: pickString(overrides.carPlates, defaultIdentification),
+    carBrand: pickString(overrides.carBrand, "NA"),
+    carModel: pickString(overrides.carModel, "NA"),
+    carYear: pickString(overrides.carYear, "9999"),
+    carColor: pickString(overrides.carColor, "NA"),
+    scheduleService: pickString(overrides.scheduleService, "true"),
+    scheduleDate: pickString(overrides.scheduleDate, defaultFormDate),
+    scheduleHour: pickString(overrides.scheduleHour, defaultFormHour),
+    reasonCalled: pickString(overrides.reasonCalled, "reasonCalled"),
+    comment: pickString(overrides.comment, "comment"),
+  };
+
+  try {
+    console.log("[SIA] FileAdd request:", JSON.stringify(body));
+  } catch (error) {
+    console.log("[SIA] FileAdd request:", body);
+  }
 
   let response: Response;
   try {
@@ -394,7 +464,7 @@ export const FileAdd = async ({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${sia_token}`,
+        Authorization: `Bearer ${trimmedToken}`,
       },
       body: JSON.stringify(body),
     });
@@ -414,6 +484,14 @@ export const FileAdd = async ({
   }
 
   if (!response.ok) {
+    try {
+      console.error(
+        `[SIA] FileAdd response error (${response.status}):`,
+        JSON.stringify(payload)
+      );
+    } catch (error) {
+      console.error(`[SIA] FileAdd response error (${response.status}):`, payload);
+    }
     throw new SiaServiceError(
       "El servicio FileAdd de SIA respondió con un error.",
       response.status || 500,
