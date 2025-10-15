@@ -290,7 +290,7 @@ const normalizeWebAuthnStartResponse = (
 export const startWebAuthnLogin = async (
   email: string
 ): Promise<WebAuthnLoginStartResponse> => {
-  const config = getAuth0ClientConfig();
+  const config = getAuth0Config();
 
   const response = await fetch(`https://${config.domain}/webauthn/login/start`, {
     method: "POST",
@@ -320,7 +320,7 @@ export const startWebAuthnLogin = async (
 export const finishWebAuthnLogin = async (
   payload: WebAuthnLoginFinishRequest
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0ClientConfig();
+  const config = getAuth0Config();
 
   const response = await fetch(`https://${config.domain}/webauthn/login/finish`, {
     method: "POST",
