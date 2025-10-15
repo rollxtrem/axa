@@ -5,6 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
+import {
+  encryptProfileSessionData,
+  setProfileSessionCookie,
+  type ProfileSessionData,
+} from "@/lib/profile-session";
 
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]+$/u;
 const IDENTIFICATION_REGEX = /^\d+$/;
@@ -39,80 +44,7 @@ const profileSchema = z.object({
     }),
 });
 
-const INFO_COOKIE_NAME = "info";
-const ENCRYPTION_PASSPHRASE = "axa-profile-session-key";
-const ENCRYPTION_SALT = "axa-profile-session-salt";
-
 type ProfileFormValues = z.infer<typeof profileSchema>;
-
-const textEncoder = new TextEncoder();
-
-const toBase64 = (input: ArrayBuffer | Uint8Array) => {
-  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
-  let binary = "";
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return window.btoa(binary);
-};
-
-const getKey = async () => {
-  const cryptoApi = window.crypto?.subtle;
-  if (!cryptoApi) {
-    throw new Error("El navegador no soporta las funciones de cifrado requeridas.");
-  }
-
-  const keyMaterial = await cryptoApi.importKey(
-    "raw",
-    textEncoder.encode(ENCRYPTION_PASSPHRASE),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
-  );
-
-  return cryptoApi.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: textEncoder.encode(ENCRYPTION_SALT),
-      iterations: 150000,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-};
-
-const encryptProfileData = async (values: ProfileFormValues) => {
-  const cryptoApi = window.crypto?.subtle;
-  if (!cryptoApi) {
-    throw new Error("El navegador no soporta las funciones de cifrado requeridas.");
-  }
-
-  const key = await getKey();
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encodedPayload = textEncoder.encode(JSON.stringify(values));
-  const encryptedBuffer = await cryptoApi.encrypt(
-    { name: "AES-GCM", iv },
-    key,
-    encodedPayload
-  );
-
-  const ivBase64 = toBase64(iv);
-  const payloadBase64 = toBase64(encryptedBuffer);
-
-  return `${ivBase64}.${payloadBase64}`;
-};
-
-const setInfoCookie = (value: string) => {
-  if (typeof document === "undefined") {
-    throw new Error("No se pudo acceder a la sesión del navegador.");
-  }
-
-  const secureSegment = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${INFO_COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${secureSegment}`;
-};
 
 export default function ProfileForm() {
   const navigate = useNavigate();
@@ -165,8 +97,15 @@ export default function ProfileForm() {
     setServerError(null);
 
     try {
-      const encryptedValue = await encryptProfileData(values);
-      setInfoCookie(encryptedValue);
+      const profilePayload: ProfileSessionData = {
+        name: values.name,
+        email: values.email,
+        identification: values.identification,
+        mobile: values.mobile,
+      };
+
+      const encryptedValue = await encryptProfileSessionData(profilePayload);
+      setProfileSessionCookie(encryptedValue);
       setShowSuccess(true);
       timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
       timeoutsRef.current = [];
