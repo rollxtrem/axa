@@ -4,6 +4,7 @@ import cors, { CorsOptions } from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
 import {
+  handleAuthCallback,
   handleAuthLogin,
   handleAuthRegister,
   handleAuthWebAuthnFinish,
@@ -63,6 +64,7 @@ export function createServer() {
   app.post("/api/sia/file-add", handleSiaFileAdd);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
+  app.post("/api/auth/callback", handleAuthCallback);
   app.post("/api/auth/webauthn/login/start", handleAuthWebAuthnStart);
   app.post("/api/auth/webauthn/login/finish", handleAuthWebAuthnFinish);
   return app;

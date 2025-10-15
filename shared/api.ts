@@ -57,6 +57,12 @@ export interface LoginRequestBody {
   password: string;
 }
 
+export interface AuthCallbackRequestBody {
+  code: string;
+  codeVerifier: string;
+  redirectUri: string;
+}
+
 export interface AuthTokens {
   accessToken: string;
   idToken?: string;
