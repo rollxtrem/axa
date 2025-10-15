@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import bienestarServicesData from "@/data/bienestar-services.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import { useAuth } from "@/context/AuthContext";
+import {
+  readProfileSessionData,
+  type ProfileSessionData,
+} from "@/lib/profile-session";
 import type {
   BienestarFormData,
   BienestarPublicKeyResponse,
@@ -27,6 +32,30 @@ const initialFormState: FormState = {
   phone: "",
   date: "",
   time: "",
+};
+
+const normalizeProfilePhone = (value: string): string => {
+  const digitsOnly = value.replace(/\D/g, "");
+  if (digitsOnly.startsWith("57")) {
+    return digitsOnly.slice(2);
+  }
+  return digitsOnly;
+};
+
+const isProfileComplete = (
+  profile: ProfileSessionData | null,
+): profile is ProfileSessionData => {
+  if (!profile) {
+    return false;
+  }
+
+  const { name, email, identification, mobile } = profile;
+  return Boolean(
+    name?.trim() &&
+      email?.trim() &&
+      identification?.trim() &&
+      mobile?.trim(),
+  );
 };
 
 type ConfirmationState = {
@@ -107,6 +136,8 @@ const getServiceIcon = (iconKey?: string): React.ReactNode => {
 };
 
 export default function Bienestar() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -120,6 +151,9 @@ export default function Bienestar() {
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null);
+  const [profileData, setProfileData] = useState<ProfileSessionData | null>(null);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [loginPromptMode, setLoginPromptMode] = useState<"login" | "profile">("login");
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
@@ -132,6 +166,28 @@ export default function Bienestar() {
           service.catalog,
       ),
   );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isAuthenticated) {
+      setProfileData(null);
+      return;
+    }
+
+    const loadProfile = async () => {
+      const storedProfile = await readProfileSessionData();
+      if (!cancelled) {
+        setProfileData(storedProfile);
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
 
   const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -295,25 +351,72 @@ export default function Bienestar() {
   };
 
   const openModal = (service: BienestarService & { catalog: string }) => {
-    const catalog = service.catalog.trim();
-    if (!catalog) {
-      setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
-      return;
-    }
+    const attemptOpen = async () => {
+      const catalog = service.catalog.trim();
+      if (!catalog) {
+        setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
+        return;
+      }
 
-    const displayName = (service.modalServiceName ?? service.name).trim();
-    setSelectedService({
-      id: service.id,
-      displayName: displayName || service.name,
-      catalog,
-    });
-    setIsModalOpen(true);
-    setFormError(null);
-    setKeyError(null);
-    setFormSubmitting(false);
-    setFormData(initialFormState);
-    setSelectedCalendarDate(null);
-    setCurrentDate(new Date());
+      setFormError(null);
+
+      if (!isAuthenticated) {
+        setLoginPromptMode("login");
+        setIsLoginPromptOpen(true);
+        setSelectedService(null);
+        return;
+      }
+
+      let storedProfile = profileData;
+      if (!storedProfile) {
+        storedProfile = await readProfileSessionData();
+        setProfileData(storedProfile);
+      }
+
+      if (!storedProfile || !isProfileComplete(storedProfile)) {
+        setLoginPromptMode("profile");
+        setIsLoginPromptOpen(true);
+        setSelectedService(null);
+        return;
+      }
+
+      const displayName = (service.modalServiceName ?? service.name).trim();
+      setSelectedService({
+        id: service.id,
+        displayName: displayName || service.name,
+        catalog,
+      });
+
+      setIsModalOpen(true);
+      setKeyError(null);
+      setFormSubmitting(false);
+      setSelectedCalendarDate(null);
+      setCurrentDate(new Date());
+      setFormData({
+        name: storedProfile.name.trim(),
+        identification: storedProfile.identification.trim(),
+        email: storedProfile.email.trim(),
+        phone: normalizeProfilePhone(storedProfile.mobile),
+        date: "",
+        time: "",
+      });
+    };
+
+    void attemptOpen();
+  };
+
+  const closeLoginPrompt = () => {
+    setIsLoginPromptOpen(false);
+  };
+
+  const redirectToLogin = () => {
+    closeLoginPrompt();
+    navigate("/login");
+  };
+
+  const redirectToProfile = () => {
+    closeLoginPrompt();
+    navigate("/profile");
   };
 
   const closeModal = () => {
@@ -1048,6 +1151,67 @@ export default function Bienestar() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isLoginPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-[#0e0e0e] opacity-50"
+            onClick={closeLoginPrompt}
+          ></div>
+
+          <div className="relative bg-white rounded-[20px] w-[414px] flex flex-col shadow-[0_11px_15px_0_rgba(0,0,0,0.20)]">
+            <div className="flex p-4 items-start gap-2 self-stretch bg-white rounded-t-[20px]">
+              <div className="flex-1 text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                {loginPromptMode === "login"
+                  ? "Inicia sesión para agendar"
+                  : "Completa tu perfil"}
+              </div>
+            </div>
+
+            <div className="flex px-4 pb-4 flex-col items-start gap-3 self-stretch">
+              <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
+                {loginPromptMode === "login"
+                  ? "Para agendar un beneficio necesitas iniciar sesión con tu cuenta AXA."
+                  : "Para agendar un beneficio debes completar la información de tu perfil antes de continuar."}
+              </div>
+            </div>
+
+            <div className="flex p-2 justify-end items-center gap-2 self-stretch flex-wrap">
+              {loginPromptMode === "profile" ? (
+                <button
+                  type="button"
+                  onClick={redirectToProfile}
+                  className="flex h-9 px-4 items-center gap-4 rounded bg-[#0c0e45] hover:bg-[#0c0e45]/90 transition-colors cursor-pointer"
+                >
+                  <span className="text-white text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                    IR AL PERFIL
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={redirectToLogin}
+                  className="flex h-9 px-4 items-center gap-4 rounded bg-[#0c0e45] hover:bg-[#0c0e45]/90 transition-colors cursor-pointer"
+                >
+                  <span className="text-white text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                    INICIAR SESIÓN
+                  </span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={closeLoginPrompt}
+                className="flex h-9 px-4 items-center gap-4 rounded border border-[#0c0e45] bg-white hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <span className="text-[#0c0e45] text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                  CANCELAR
+                </span>
+              </button>
             </div>
           </div>
         </div>
