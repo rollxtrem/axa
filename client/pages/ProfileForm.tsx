@@ -39,7 +39,7 @@ const profileSchema = z.object({
     }),
 });
 
-const COOKIE_NAME = "sesion";
+const INFO_COOKIE_NAME = "info";
 const ENCRYPTION_PASSPHRASE = "axa-profile-session-key";
 const ENCRYPTION_SALT = "axa-profile-session-salt";
 
@@ -105,13 +105,13 @@ const encryptProfileData = async (values: ProfileFormValues) => {
   return `${ivBase64}.${payloadBase64}`;
 };
 
-const setSessionCookie = (value: string) => {
+const setInfoCookie = (value: string) => {
   if (typeof document === "undefined") {
     throw new Error("No se pudo acceder a la sesión del navegador.");
   }
 
   const secureSegment = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${secureSegment}`;
+  document.cookie = `${INFO_COOKIE_NAME}=${encodeURIComponent(value)}; Path=/; SameSite=Strict${secureSegment}`;
 };
 
 export default function ProfileForm() {
@@ -166,13 +166,14 @@ export default function ProfileForm() {
 
     try {
       const encryptedValue = await encryptProfileData(values);
-      setSessionCookie(encryptedValue);
+      setInfoCookie(encryptedValue);
       setShowSuccess(true);
       timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
       timeoutsRef.current = [];
       const timeoutId = window.setTimeout(() => setShowSuccess(false), 4000);
       timeoutsRef.current.push(timeoutId);
       reset(values);
+      navigate("/", { replace: true });
     } catch (error) {
       const message =
         error instanceof Error
