@@ -34,6 +34,9 @@ type ConfirmationState = {
   file: string | null;
 };
 
+const CONTACT_OFFICE_MESSAGE =
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+
 const serviceIcons = {
   informatica: (
     <svg
@@ -133,6 +136,10 @@ export default function Bienestar() {
   const handleInputChange = (field: keyof FormState, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
+
+  useEffect(() => {
+    console.log("Bienestar.tsx listo para interactuar");
+  }, []);
 
   const isDateAfterToday = (date: Date) => {
     const today = new Date();
@@ -264,7 +271,24 @@ export default function Bienestar() {
     } catch (error) {
       console.error("Failed to submit bienestar form", error);
       const fallback = "No pudimos enviar tu solicitud.";
-      setFormError(formatApiError(error, fallback));
+      const formattedError = formatApiError(error, fallback);
+
+      if (formattedError === CONTACT_OFFICE_MESSAGE) {
+        setFormError(null);
+        setIsModalOpen(false);
+        setConfirmationState({
+          message: formattedError,
+          file: null,
+        });
+        setIsConfirmationModalOpen(true);
+        setFormData(initialFormState);
+        setSelectedService(null);
+        setSelectedCalendarDate(null);
+        setCurrentDate(new Date());
+        return;
+      }
+
+      setFormError(formattedError);
     } finally {
       setFormSubmitting(false);
     }
