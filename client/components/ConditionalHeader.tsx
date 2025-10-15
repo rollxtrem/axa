@@ -9,7 +9,9 @@ export default function ConditionalHeader() {
 
   if (
     isAuthEnabled &&
-    (location.pathname === "/login" || location.pathname === "/register")
+    (location.pathname === "/login" ||
+      location.pathname === "/register" ||
+      location.pathname === "/profile")
   ) {
     return null;
   }

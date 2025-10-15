@@ -14,13 +14,14 @@ const profileSchema = z.object({
   name: z
     .string({ required_error: "Ingresa tu nombre" })
     .min(1, "Ingresa tu nombre")
-    .max(15, "El nombre no puede tener más de 15 caracteres")
+    .max(50, "El nombre no puede tener más de 50 caracteres")
     .refine((value) => NAME_REGEX.test(value), {
       message: "El nombre solo puede contener letras y espacios",
     }),
   email: z
     .string({ required_error: "Ingresa tu correo electrónico" })
     .min(1, "Ingresa tu correo electrónico")
+    .max(50, "El correo no puede tener más de 50 caracteres")
     .email("Ingresa un correo válido"),
   identification: z
     .string({ required_error: "Ingresa tu identificación" })
@@ -148,7 +149,7 @@ export default function ProfileForm() {
         .replace(/\d+/g, "")
         .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/gu, "")
         .trim()
-        .slice(0, 15);
+        .slice(0, 50);
 
       if (sanitized) {
         setValue("name", sanitized);
@@ -156,7 +157,7 @@ export default function ProfileForm() {
     }
 
     if (user?.email) {
-      setValue("email", user.email);
+      setValue("email", user.email.slice(0, 50));
     }
   }, [setValue, user?.email, user?.name]);
 
@@ -291,7 +292,7 @@ export default function ProfileForm() {
                       type="text"
                       placeholder="Nombre"
                       className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
-                      maxLength={15}
+                      maxLength={50}
                       autoComplete="given-name"
                       {...register("name")}
                     />
@@ -311,7 +312,10 @@ export default function ProfileForm() {
                       type="email"
                       placeholder="Correo electrónico"
                       className="flex-1 text-base font-normal text-[#0e0e0e] leading-6 tracking-[0.5px] bg-transparent border-none outline-none placeholder:text-[#0e0e0e]"
+                      maxLength={50}
                       autoComplete="email"
+                      readOnly
+                      aria-readonly="true"
                       {...register("email")}
                     />
                   </div>
