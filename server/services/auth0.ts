@@ -16,9 +16,12 @@ type Auth0BaseConfig = {
   audience?: string;
 };
 
-type Auth0Config = Auth0BaseConfig & {
+type Auth0ClientConfig = Auth0BaseConfig & {
   clientId: string;
   clientSecret: string;
+};
+
+type Auth0DbConfig = Auth0ClientConfig & {
   dbConnection: string;
 };
 
@@ -122,13 +125,12 @@ export const getAuth0BaseConfig = (): Auth0BaseConfig => {
   };
 };
 
-const getAuth0Config = (): Auth0Config => {
+const getAuth0ClientConfig = (): Auth0ClientConfig => {
   const baseConfig = getAuth0BaseConfig();
   const clientId = process.env.AUTH0_CLIENT_ID?.trim();
   const clientSecret = process.env.AUTH0_CLIENT_SECRET?.trim();
-  const dbConnection = process.env.AUTH0_DB_CONNECTION?.trim();
 
-  if (!clientId || !clientSecret || !dbConnection) {
+  if (!clientId || !clientSecret) {
     throw new Auth0ServiceError(
       "Configuración de Auth0 incompleta. Verifica tus variables de entorno.",
       500
@@ -139,6 +141,22 @@ const getAuth0Config = (): Auth0Config => {
     ...baseConfig,
     clientId,
     clientSecret,
+  };
+};
+
+const getAuth0DbConfig = (): Auth0DbConfig => {
+  const clientConfig = getAuth0ClientConfig();
+  const dbConnection = process.env.AUTH0_DB_CONNECTION?.trim();
+
+  if (!dbConnection) {
+    throw new Auth0ServiceError(
+      "Configuración de Auth0 incompleta. Falta la variable AUTH0_DB_CONNECTION.",
+      500
+    );
+  }
+
+  return {
+    ...clientConfig,
     dbConnection,
   };
 };
@@ -146,7 +164,7 @@ const getAuth0Config = (): Auth0Config => {
 const getManagementAudience = (domain: string) =>
   `https://${domain}${AUTH0_MANAGEMENT_AUDIENCE_SUFFIX}`;
 
-const getManagementToken = async (config: Auth0Config): Promise<string> => {
+const getManagementToken = async (config: Auth0ClientConfig): Promise<string> => {
   const now = Date.now();
   if (managementTokenCache && managementTokenCache.expiresAt > now) {
     return managementTokenCache.token;
@@ -190,7 +208,7 @@ const getManagementToken = async (config: Auth0Config): Promise<string> => {
 export const createAuth0User = async (
   payload: RegisterRequestBody
 ): Promise<RegisterResponseBody> => {
-  const config = getAuth0Config();
+  const config = getAuth0DbConfig();
   const managementToken = await getManagementToken(config);
 
   const response = await fetch(`https://${config.domain}/api/v2/users`, {
@@ -366,7 +384,7 @@ export const finishWebAuthnLogin = async (
 export const loginWithPassword = async (
   payload: LoginRequestBody
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0Config();
+  const config = getAuth0DbConfig();
 
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
