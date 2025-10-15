@@ -16,6 +16,7 @@ import type {
   BienestarSubmissionResponse,
   EncryptedSubmissionRequest,
   SiaFileAddRequestBody,
+  SiaFileAddResponse,
   SiaFileGetResponseItem,
 } from "@shared/api";
 import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
@@ -72,33 +73,10 @@ const buildEmailContent = (data: BienestarFormData) => {
   return { html, text };
 };
 
-const buildUserConfirmationContent = (data: BienestarFormData) => {
-  const html = `
-    <h1>Confirmación de solicitud</h1>
-    <p>Hola ${escapeHtml(data.fullName)},</p>
-    <p>Hemos recibido tu solicitud para el servicio de ${escapeHtml(data.service)}.</p>
-    <p>Estos son los datos que registraste:</p>
-    <ul>
-      <li><strong>Fecha preferida:</strong> ${escapeHtml(data.preferredDate)}</li>
-      <li><strong>Hora preferida:</strong> ${escapeHtml(data.preferredTime)}</li>
-    </ul>
-    <p>Muy pronto uno de nuestros especialistas se pondrá en contacto contigo para confirmar los detalles.</p>
-    <p>Gracias por confiar en AXA.</p>
-  `;
-
-  const text = [
-    "Confirmación de solicitud",
-    "",
-    `Hola ${data.fullName},`,
-    `Hemos recibido tu solicitud para el servicio de ${data.service}.`,
-    "Muy pronto uno de nuestros especialistas se pondrá en contacto contigo para confirmar los detalles.",
-    "",
-    "Datos registrados:",
-    `Fecha preferida: ${data.preferredDate}`,
-    `Hora preferida: ${data.preferredTime}`,
-    "",
-    "Gracias por confiar en AXA.",
-  ].join("\n");
+const buildUserConfirmationContent = (message: string) => {
+  const sanitizedMessage = escapeHtml(message);
+  const html = `<p>${sanitizedMessage}</p>`;
+  const text = message;
 
   return { html, text };
 };
@@ -198,13 +176,38 @@ const logJson = (label: string, payload: unknown) => {
   }
 };
 
-const handleSiaErrorResponse = (res: Response, error: unknown, fallback: string) => {
+const CONTACT_OFFICE_MESSAGE =
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+const SERVICE_REQUEST_ERROR_MESSAGE = "Error al solicitar el servicio";
+
+type SiaErrorOverride = {
+  test: (error: SiaServiceError) => boolean;
+  message: string;
+};
+
+const handleSiaErrorResponse = (
+  res: Response,
+  error: unknown,
+  fallback: string,
+  overrides: SiaErrorOverride[] = []
+) => {
   if (error instanceof SiaServiceError) {
     if (error.status >= 500) {
       console.error(fallback, error);
     }
 
-    res.status(error.status).json({ error: error.message });
+    const override = overrides.find(({ test }) => {
+      try {
+        return test(error);
+      } catch (overrideError) {
+        console.warn("Error evaluating SIA override", overrideError);
+        return false;
+      }
+    });
+
+    const message = override?.message ?? error.message;
+
+    res.status(error.status).json({ error: message });
     return;
   }
 
@@ -265,7 +268,6 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   const fromAddress = process.env.BIENESTAR_EMAIL_FROM ?? undefined;
   const { html, text } = buildEmailContent(formData);
-  const { html: userHtml, text: userText } = buildUserConfirmationContent(formData);
 
   const parsedPreferredDate = parsePreferredDateTime(formData.preferredDate, formData.preferredTime);
   const formDate = parsedPreferredDate?.formDate ?? formData.preferredDate;
@@ -293,7 +295,12 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       dz,
     };
   } catch (error) {
-    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.");
+    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.", [
+      {
+        test: (err) => err.message === "La respuesta de SIA tiene un formato inesperado.",
+        message: SERVICE_REQUEST_ERROR_MESSAGE,
+      },
+    ]);
     return;
   }
 
@@ -313,10 +320,29 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     logJson("SIA FileGet response", fileGetItems);
 
     if (!fileGetItems || fileGetItems.length === 0) {
-      throw new SiaServiceError("El usuario no tiene beneficio contratados", 400, fileGetItems);
+      throw new SiaServiceError(CONTACT_OFFICE_MESSAGE, 400, {
+        reason: "NO_CONTRACTED_BENEFITS",
+        fileGetItems,
+      });
     }
   } catch (error) {
-    handleSiaErrorResponse(res, error, "Ocurrió un error al consultar FileGet de SIA.");
+    handleSiaErrorResponse(res, error, "Ocurrió un error al consultar FileGet de SIA.", [
+      {
+        test: (err) =>
+          err.message === "La respuesta de SIA FileGet tiene un formato inesperado." ||
+          err.message.startsWith("Elemento") ||
+          err.message === "La respuesta de SIA tiene un formato inesperado.",
+        message: CONTACT_OFFICE_MESSAGE,
+      },
+      {
+        test: (err) => err.message === "El servicio FileGet de SIA respondió con un error.",
+        message: CONTACT_OFFICE_MESSAGE,
+      },
+      {
+        test: (err) => err.message === CONTACT_OFFICE_MESSAGE,
+        message: CONTACT_OFFICE_MESSAGE,
+      },
+    ]);
     return;
   }
 
@@ -339,12 +365,12 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   logJson("SIA matchingService ==>", serviceCatalog);
   if (!matchingService) {
-    
-    const error = new SiaServiceError(
-      "El usuario no tiene acceso a este beneficio",
-      403,
-      { service: formData.service, serviceCatalog: normalizedServiceCatalog, fileGetItems },
-    );
+    const error = new SiaServiceError(CONTACT_OFFICE_MESSAGE, 403, {
+      reason: "NO_MATCHING_SERVICE",
+      service: formData.service,
+      serviceCatalog: normalizedServiceCatalog,
+      fileGetItems,
+    });
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
   }
@@ -360,11 +386,10 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   console.log(`[Bienestar] Servicios disponibles para el catálogo ${serviceCatalog}:`, availableServicesRaw);
 
   if (!hasAvailableServices) {
-    const error = new SiaServiceError(
-      "El usuario no tiene servicios disponibles para este beneficio",
-      403,
+    const error = new SiaServiceError(CONTACT_OFFICE_MESSAGE, 403, {
+      reason: "NO_AVAILABLE_SERVICES",
       matchingService,
-    );
+    });
     handleSiaErrorResponse(res, error, "Ocurrió un error al validar los beneficios en SIA.");
     return;
   }
@@ -391,7 +416,12 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       dz,
     };
   } catch (error) {
-    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.");
+    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.", [
+      {
+        test: (err) => err.message === "La respuesta de SIA tiene un formato inesperado.",
+        message: SERVICE_REQUEST_ERROR_MESSAGE,
+      },
+    ]);
     return;
   }
 
@@ -478,14 +508,20 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     comment: "comment",
   };
 
+  let fileAddResponse: SiaFileAddResponse;
   try {
     logJson("SIA FileAdd request", fileAddPayload);
-    const fileAddResponse = await FileAdd(fileAddPayload);
+    fileAddResponse = await FileAdd(fileAddPayload);
     logJson("SIA FileAdd response", fileAddResponse);
   } catch (error) {
     handleSiaErrorResponse(res, error, "Ocurrió un error al registrar la solicitud en SIA.");
     return;
   }
+
+  const expedienteRaw = fileAddResponse.File;
+  const expediente = expedienteRaw.trim() || expedienteRaw;
+  const confirmationMessage = `Estimado cliente, su solicitud ha sido radicada bajo el expediente ${expediente}. Por favor, esté atento a su línea telefónica donde le estaremos informando sobre la prestación de su servicio.`;
+  const { html: userHtml, text: userText } = buildUserConfirmationContent(confirmationMessage);
 
   try {
     await sendEmail({
@@ -508,7 +544,11 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return res.status(502).json({ error: "Failed to send bienestar notification" });
   }
 
-  const response: BienestarSubmissionResponse = { status: "ok" };
+  const response: BienestarSubmissionResponse = {
+    status: "ok",
+    message: confirmationMessage,
+    file: expediente,
+  };
   res.json(response);
 };
 
