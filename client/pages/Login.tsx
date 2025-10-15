@@ -10,11 +10,13 @@ import {
   formatApiError,
   readJsonResponse,
 } from "@/lib/api-client";
+import { auth0ClientConfig, isAuth0ClientConfigValid } from "@/lib/auth0-config";
 import {
   credentialToJSON,
   isWebAuthnSupported,
   prepareWebAuthnLoginOptions,
 } from "@/lib/webauthn";
+import { createPkceChallenge, persistPkceState } from "@/lib/pkce";
 import type {
   LoginResponseBody,
   WebAuthnLoginStartResponse,
@@ -38,6 +40,7 @@ export default function Login() {
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
+  const [isRedirectingToAuth0, setIsRedirectingToAuth0] = useState(false);
 
   const navigate = useNavigate();
   const { login, isLoading, completeLogin } = useAuth();
@@ -62,6 +65,72 @@ export default function Login() {
   const emailValue = watch("email");
 
   const canUsePasskeys = useMemo(() => isWebAuthnSupported(), []);
+  const canUseAuth0 = isAuth0ClientConfigValid;
+
+  const handleAuth0Login = async () => {
+    if (!canUseAuth0) {
+      setServerError(
+        "La configuración de Auth0 no está disponible. Contacta al administrador."
+      );
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      setServerError("Este entorno no soporta redirecciones de autenticación.");
+      return;
+    }
+
+    const { domain, clientId, audience } = auth0ClientConfig;
+
+    if (!domain || !clientId) {
+      setServerError(
+        "La configuración de Auth0 está incompleta. Contacta al administrador."
+      );
+      return;
+    }
+
+    setServerError(null);
+    setShowSuccessNotification(false);
+    setIsRedirectingToAuth0(true);
+
+    try {
+      const redirectUri = `${window.location.origin.replace(/\/$/, "")}/callback`;
+      const { codeVerifier, codeChallenge, state } = await createPkceChallenge();
+
+      persistPkceState({
+        state,
+        codeVerifier,
+        redirectUri,
+        rememberMe: Boolean(rememberMe),
+        createdAt: Date.now(),
+      });
+
+      const authorizeUrl = new URL(`https://${domain}/authorize`);
+      authorizeUrl.searchParams.set("client_id", clientId);
+      authorizeUrl.searchParams.set("response_type", "code");
+      authorizeUrl.searchParams.set("redirect_uri", redirectUri);
+      authorizeUrl.searchParams.set(
+        "scope",
+        "openid email profile offline_access"
+      );
+      authorizeUrl.searchParams.set("state", state);
+      authorizeUrl.searchParams.set("code_challenge", codeChallenge);
+      authorizeUrl.searchParams.set("code_challenge_method", "S256");
+
+      if (audience) {
+        authorizeUrl.searchParams.set("audience", audience);
+      }
+
+      window.location.assign(authorizeUrl.toString());
+    } catch (error) {
+      const message = formatApiError(
+        error,
+        "No se pudo redirigir a Auth0 para iniciar sesión."
+      );
+      setServerError(message);
+      setIsRedirectingToAuth0(false);
+    }
+  };
 
   const handlePasskeyLogin = async () => {
     const normalizedEmail = (emailValue ?? "").trim();
@@ -363,6 +432,25 @@ export default function Login() {
                   </span>
                 </div>
               </button>
+
+              {canUseAuth0 ? (
+                <button
+                  type="button"
+                  onClick={handleAuth0Login}
+                  disabled={
+                    isLoading || isPasskeyLoading || isRedirectingToAuth0
+                  }
+                  className="h-11 px-4 border border-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer text-[#0c0e45] hover:bg-[#0c0e45]/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                      {isRedirectingToAuth0
+                        ? "REDIRIGIENDO..."
+                        : "INGRESAR CON AUTH0"}
+                    </span>
+                  </div>
+                </button>
+              ) : null}
 
               {canUsePasskeys ? (
                 <button

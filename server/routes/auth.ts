@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type {
   ApiErrorResponse,
+  AuthCallbackRequestBody,
   LoginRequestBody,
   LoginResponseBody,
   RegisterRequestBody,
@@ -14,6 +15,7 @@ import type {
 import {
   Auth0ServiceError,
   createAuth0User,
+  exchangeAuthorizationCode,
   finishWebAuthnLogin,
   loginWithPassword,
   startWebAuthnLogin,
@@ -90,6 +92,17 @@ const webAuthnFinishSchema = z
     credential: webAuthnCredentialSchema,
     state: z.string().optional(),
     rememberMe: z.boolean().optional(),
+  })
+  .strict();
+
+const authCallbackSchema = z
+  .object({
+    code: z.string().min(1, "El código de autorización es obligatorio."),
+    codeVerifier: z
+      .string()
+      .min(43, "El code_verifier es obligatorio.")
+      .max(128, "El code_verifier no es válido."),
+    redirectUri: z.string().url("La URL de redirección no es válida."),
   })
   .strict();
 
@@ -184,6 +197,33 @@ export const handleAuthLogin: RequestHandler = async (req, res) => {
     }
 
     console.error("Error al iniciar sesión con Auth0", error);
+
+    return res.status(normalizedStatus).json(serviceError);
+  }
+};
+
+export const handleAuthCallback: RequestHandler = async (req, res) => {
+  const parsed = authCallbackSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    const errorBody = formatValidationError(parsed.error.issues);
+    return res.status(400).json(errorBody);
+  }
+
+  try {
+    const payload = parsed.data as AuthCallbackRequestBody;
+    const result = await exchangeAuthorizationCode(payload);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    const serviceError = handleServiceError(error);
+    const status =
+      error instanceof Auth0ServiceError && error.status ? error.status : 500;
+
+    const normalizedStatus =
+      status === 401 || status === 403 ? status : Math.max(400, status);
+
+    console.error("Error al completar el inicio de sesión con Auth0", error);
 
     return res.status(normalizedStatus).json(serviceError);
   }

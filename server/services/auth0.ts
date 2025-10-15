@@ -290,7 +290,7 @@ const normalizeWebAuthnStartResponse = (
 export const startWebAuthnLogin = async (
   email: string
 ): Promise<WebAuthnLoginStartResponse> => {
-  const config = getAuth0Config();
+  const config = getAuth0ClientConfig();
 
   const response = await fetch(`https://${config.domain}/webauthn/login/start`, {
     method: "POST",
@@ -320,7 +320,7 @@ export const startWebAuthnLogin = async (
 export const finishWebAuthnLogin = async (
   payload: WebAuthnLoginFinishRequest
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0Config();
+  const config = getAuth0ClientConfig();
 
   const response = await fetch(`https://${config.domain}/webauthn/login/finish`, {
     method: "POST",
@@ -432,6 +432,79 @@ export const loginWithPassword = async (
       extractAuth0Message(
         profile,
         "No se pudo recuperar el perfil del usuario."
+      ),
+      profileResponse.status || 500,
+      profile
+    );
+  }
+
+  const tokens: AuthTokens = {
+    accessToken: body.access_token,
+    idToken: body.id_token,
+    refreshToken: body.refresh_token,
+    expiresIn: body.expires_in,
+    tokenType: body.token_type,
+    scope: body.scope,
+  };
+
+  return {
+    tokens,
+    user: profile,
+  };
+};
+
+export const exchangeAuthorizationCode = async ({
+  code,
+  codeVerifier,
+  redirectUri,
+}: {
+  code: string;
+  codeVerifier: string;
+  redirectUri: string;
+}): Promise<LoginResponseBody> => {
+  const config = getAuth0ClientConfig();
+
+  const response = await fetch(`https://${config.domain}/oauth/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      grant_type: "authorization_code",
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      redirect_uri: redirectUri,
+      code_verifier: codeVerifier,
+    }),
+  });
+
+  const body = await parseJson<Auth0TokenResponse>(response);
+
+  if (!response.ok || !body?.access_token) {
+    const message = extractAuth0Message(
+      body,
+      "No se pudo completar el inicio de sesión con Auth0."
+    );
+
+    throw new Auth0ServiceError(
+      message,
+      response.status || 500,
+      body
+    );
+  }
+
+  const profileResponse = await fetch(`https://${config.domain}/userinfo`, {
+    headers: {
+      Authorization: `Bearer ${body.access_token}`,
+    },
+  });
+
+  const profile = await parseJson<Auth0UserProfile>(profileResponse);
+
+  if (!profileResponse.ok || !profile) {
+    throw new Auth0ServiceError(
+      extractAuth0Message(
+        profile,
+        "No se pudo recuperar el perfil del usuario tras autenticarse."
       ),
       profileResponse.status || 500,
       profile
