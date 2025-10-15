@@ -93,7 +93,7 @@ export default function AuthCallback() {
 
         completeLogin(data, { rememberMe: stored.rememberMe });
         clearPkceState();
-        navigate("/", { replace: true });
+        navigate("/profile", { replace: true });
       } catch (error) {
         const message =
           error instanceof Error ? error.message : CALLBACK_ERROR_MESSAGE;
