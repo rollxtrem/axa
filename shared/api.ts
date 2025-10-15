@@ -133,7 +133,11 @@ export interface BienestarFormData {
 
 export type BienestarSubmissionRequest = EncryptedSubmissionRequest;
 
-export type BienestarSubmissionResponse = PqrsSubmissionResponse;
+export interface BienestarSubmissionResponse {
+  status: "ok";
+  message: string;
+  file: string;
+}
 
 export type BienestarPublicKeyResponse = PqrsPublicKeyResponse;
 

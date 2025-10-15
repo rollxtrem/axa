@@ -48,6 +48,11 @@ const KNOWN_ERROR_TRANSLATIONS = new Map<string, string>([
     "Failed to send bienestar notification",
     "No fue posible enviar la notificación de Bienestar. Verifica la configuración del servicio de correo.",
   ],
+  ["Error al solicitar el servicio", "Error al solicitar el servicio"],
+  [
+    "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.",
+    "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.",
+  ],
 ]);
 
 const extractErrorMessageFromBody = (body: unknown): string | null => {

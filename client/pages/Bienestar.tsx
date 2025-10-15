@@ -29,7 +29,10 @@ const initialFormState: FormState = {
   time: "",
 };
 
-type ConfirmationDetails = Pick<BienestarFormData, "fullName" | "service" | "preferredDate" | "preferredTime">;
+type ConfirmationState = {
+  message: string;
+  file: string | null;
+};
 
 const serviceIcons = {
   informatica: (
@@ -113,7 +116,7 @@ export default function Bienestar() {
   const [loadingKey, setLoadingKey] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
   const [keyRetryToken, setKeyRetryToken] = useState(0);
-  const [confirmationDetails, setConfirmationDetails] = useState<ConfirmationDetails | null>(null);
+  const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null);
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
@@ -241,12 +244,17 @@ export default function Bienestar() {
         throw new Error("No recibimos confirmación de la solicitud. Intenta nuevamente.");
       }
 
+      const confirmationMessage = (data.message ?? "").trim();
+      const expediente = typeof data.file === "string" ? data.file.trim() || data.file : null;
+
+      if (!confirmationMessage) {
+        throw new Error("No recibimos confirmación del expediente generado.");
+      }
+
       setIsModalOpen(false);
-      setConfirmationDetails({
-        fullName: payload.fullName,
-        service: payload.service,
-        preferredDate: payload.preferredDate,
-        preferredTime: payload.preferredTime,
+      setConfirmationState({
+        message: confirmationMessage,
+        file: expediente,
       });
       setIsConfirmationModalOpen(true);
       setFormData(initialFormState);
@@ -296,7 +304,7 @@ export default function Bienestar() {
 
   const closeConfirmationModal = () => {
     setIsConfirmationModalOpen(false);
-    setConfirmationDetails(null);
+    setConfirmationState(null);
   };
 
   const handleRetryLoadKey = () => {
@@ -1041,18 +1049,12 @@ export default function Bienestar() {
 
             {/* Modal Content */}
             <div className="flex px-4 pb-4 flex-col items-start gap-3 self-stretch">
-              {confirmationDetails ? (
-                <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
-                  <p>
-                    ¡Gracias, {confirmationDetails.fullName}! Hemos recibido tu solicitud para el servicio de {confirmationDetails.service}.
-                  </p>
-                  <p className="mt-2">
-                    En breve uno de nuestros especialistas se comunicará contigo para confirmar los detalles.
-                  </p>
-                  <p className="mt-2">
-                    Preferencias registradas: {confirmationDetails.preferredDate}
-                    {confirmationDetails.preferredTime ? ` a las ${confirmationDetails.preferredTime}.` : "."}
-                  </p>
+              {confirmationState ? (
+                <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px] space-y-2">
+                  <p>{confirmationState.message}</p>
+                  {confirmationState.file && (
+                    <p className="font-semibold">Expediente: {confirmationState.file}</p>
+                  )}
                 </div>
               ) : (
                 <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
