@@ -5,6 +5,8 @@ import type {
   LoginResponseBody,
   RegisterRequestBody,
   RegisterResponseBody,
+  WebAuthnLoginFinishRequest,
+  WebAuthnLoginStartResponse,
 } from "@shared/api";
 
 export const AUTH0_MANAGEMENT_AUDIENCE_SUFFIX = "/api/v2/";
@@ -32,6 +34,18 @@ type Auth0TokenResponse = {
   expires_in: number;
   token_type: string;
   scope?: string;
+};
+
+type Auth0WebAuthnStartResponse = {
+  publicKeyCredentialRequestOptions?: WebAuthnLoginStartResponse["options"];
+  publicKey?: WebAuthnLoginStartResponse["options"];
+  state?: string;
+  expires_at?: string;
+  [key: string]: unknown;
+};
+
+type Auth0WebAuthnFinishResponse = Auth0TokenResponse & {
+  [key: string]: unknown;
 };
 
 export class Auth0ServiceError extends Error {
@@ -216,6 +230,136 @@ export const createAuth0User = async (
   return {
     user: body,
     message: "Usuario registrado correctamente en Auth0.",
+  };
+};
+
+const normalizeWebAuthnStartResponse = (
+  body: Auth0WebAuthnStartResponse | undefined,
+  status: number
+): WebAuthnLoginStartResponse => {
+  if (!body) {
+    throw new Auth0ServiceError(
+      "No se recibieron opciones de autenticación WebAuthn.",
+      status || 500
+    );
+  }
+
+  const candidateOptions = (body as Record<string, unknown>).options;
+
+  const options =
+    body.publicKeyCredentialRequestOptions ??
+    body.publicKey ??
+    (isRecord(candidateOptions)
+      ? ((candidateOptions as unknown) as WebAuthnLoginStartResponse["options"])
+      : undefined);
+
+  if (!options) {
+    throw new Auth0ServiceError(
+      "La respuesta de Auth0 no incluye las opciones WebAuthn necesarias.",
+      status || 500,
+      body
+    );
+  }
+
+  return {
+    options,
+    state: typeof body.state === "string" ? body.state : undefined,
+    expiresAt:
+      typeof body.expires_at === "string" ? body.expires_at : undefined,
+  };
+};
+
+export const startWebAuthnLogin = async (
+  email: string
+): Promise<WebAuthnLoginStartResponse> => {
+  const config = getAuth0Config();
+
+  const response = await fetch(`https://${config.domain}/webauthn/login/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: config.clientId,
+      username: email,
+    }),
+  });
+
+  const body = await parseJson<Auth0WebAuthnStartResponse>(response);
+
+  if (!response.ok) {
+    throw new Auth0ServiceError(
+      extractAuth0Message(
+        body,
+        "No se pudo iniciar la autenticación WebAuthn."
+      ),
+      response.status || 500,
+      body
+    );
+  }
+
+  return normalizeWebAuthnStartResponse(body, response.status || 200);
+};
+
+export const finishWebAuthnLogin = async (
+  payload: WebAuthnLoginFinishRequest
+): Promise<LoginResponseBody> => {
+  const config = getAuth0Config();
+
+  const response = await fetch(`https://${config.domain}/webauthn/login/finish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      credential: payload.credential,
+      username: payload.email,
+      state: payload.state,
+    }),
+  });
+
+  const body = await parseJson<Auth0WebAuthnFinishResponse>(response);
+
+  if (!response.ok || !body?.access_token) {
+    throw new Auth0ServiceError(
+      extractAuth0Message(
+        body,
+        "No se pudo validar la autenticación WebAuthn."
+      ),
+      response.status || 500,
+      body
+    );
+  }
+
+  const profileResponse = await fetch(`https://${config.domain}/userinfo`, {
+    headers: {
+      Authorization: `Bearer ${body.access_token}`,
+    },
+  });
+
+  const profile = await parseJson<Auth0UserProfile>(profileResponse);
+
+  if (!profileResponse.ok || !profile) {
+    throw new Auth0ServiceError(
+      extractAuth0Message(
+        profile,
+        "No se pudo recuperar el perfil del usuario tras autenticarse."
+      ),
+      profileResponse.status || 500,
+      profile
+    );
+  }
+
+  const tokens: AuthTokens = {
+    accessToken: body.access_token,
+    idToken: body.id_token,
+    refreshToken: body.refresh_token,
+    expiresIn: body.expires_in,
+    tokenType: body.token_type,
+    scope: body.scope,
+  };
+
+  return {
+    tokens,
+    user: profile,
   };
 };
 

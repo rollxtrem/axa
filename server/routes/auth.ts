@@ -7,11 +7,16 @@ import type {
   LoginResponseBody,
   RegisterRequestBody,
   RegisterResponseBody,
+  WebAuthnLoginFinishRequest,
+  WebAuthnLoginStartRequest,
+  WebAuthnLoginStartResponse,
 } from "@shared/api";
 import {
   Auth0ServiceError,
   createAuth0User,
+  finishWebAuthnLogin,
   loginWithPassword,
+  startWebAuthnLogin,
 } from "../services/auth0";
 
 const registerSchema = z
@@ -31,6 +36,60 @@ const loginSchema = z
   .object({
     email: z.string().email("El correo electrónico no es válido"),
     password: z.string().min(1, "La contraseña es obligatoria"),
+  })
+  .strict();
+
+const base64UrlRegex = /^[A-Za-z0-9_-]+=*$/;
+
+const webAuthnCredentialSchema = z
+  .object({
+    id: z.string().min(1, "El identificador de la credencial es obligatorio."),
+    rawId: z
+      .string()
+      .min(1, "El identificador bruto de la credencial es obligatorio.")
+      .regex(base64UrlRegex, "rawId debe estar codificado en base64url."),
+    type: z.literal("public-key"),
+    authenticatorAttachment: z
+      .string()
+      .nullable()
+      .optional(),
+    clientExtensionResults: z.record(z.unknown()).optional(),
+    response: z
+      .object({
+        clientDataJSON: z
+          .string()
+          .min(1, "clientDataJSON es obligatorio.")
+          .regex(base64UrlRegex, "clientDataJSON debe estar en base64url."),
+        authenticatorData: z
+          .string()
+          .min(1, "authenticatorData es obligatorio.")
+          .regex(base64UrlRegex, "authenticatorData debe estar en base64url."),
+        signature: z
+          .string()
+          .min(1, "signature es obligatoria.")
+          .regex(base64UrlRegex, "signature debe estar en base64url."),
+        userHandle: z
+          .string()
+          .regex(base64UrlRegex, "userHandle debe estar en base64url.")
+          .nullable()
+          .optional(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const webAuthnStartSchema = z
+  .object({
+    email: z.string().email("El correo electrónico no es válido"),
+  })
+  .strict();
+
+const webAuthnFinishSchema = z
+  .object({
+    email: z.string().email("El correo electrónico no es válido"),
+    credential: webAuthnCredentialSchema,
+    state: z.string().optional(),
+    rememberMe: z.boolean().optional(),
   })
   .strict();
 
@@ -125,6 +184,69 @@ export const handleAuthLogin: RequestHandler = async (req, res) => {
     }
 
     console.error("Error al iniciar sesión con Auth0", error);
+
+    return res.status(normalizedStatus).json(serviceError);
+  }
+};
+
+export const handleAuthWebAuthnStart: RequestHandler = async (req, res) => {
+  const parsed = webAuthnStartSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    const errorBody = formatValidationError(parsed.error.issues);
+    return res.status(400).json(errorBody);
+  }
+
+  try {
+    const payload = parsed.data as WebAuthnLoginStartRequest;
+    const result: WebAuthnLoginStartResponse = await startWebAuthnLogin(
+      payload.email
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    const serviceError = handleServiceError(error);
+    const status =
+      error instanceof Auth0ServiceError && error.status
+        ? error.status
+        : 500;
+
+    console.error("Error al iniciar autenticación WebAuthn", error);
+
+    return res.status(Math.max(400, status)).json(serviceError);
+  }
+};
+
+export const handleAuthWebAuthnFinish: RequestHandler = async (req, res) => {
+  const parsed = webAuthnFinishSchema.safeParse(req.body);
+
+  if (!parsed.success) {
+    const errorBody = formatValidationError(parsed.error.issues);
+    return res.status(400).json(errorBody);
+  }
+
+  try {
+    const payload = parsed.data as WebAuthnLoginFinishRequest;
+    const result = await finishWebAuthnLogin(payload);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    const serviceError = handleServiceError(error);
+    const status =
+      error instanceof Auth0ServiceError && error.status
+        ? error.status
+        : 500;
+
+    const normalizedStatus =
+      status === 401 || status === 403 ? status : Math.max(400, status);
+
+    if (normalizedStatus === 401 || normalizedStatus === 403) {
+      serviceError.message =
+        serviceError.message ||
+        "No se pudo validar la credencial WebAuthn proporcionada.";
+    }
+
+    console.error("Error al finalizar autenticación WebAuthn", error);
 
     return res.status(normalizedStatus).json(serviceError);
   }
