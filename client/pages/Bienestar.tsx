@@ -137,6 +137,10 @@ export default function Bienestar() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  useEffect(() => {
+    console.log("Bienestar.tsx listo para interactuar");
+  }, []);
+
   const isDateAfterToday = (date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
