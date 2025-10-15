@@ -3,7 +3,12 @@ import express from "express";
 import cors, { CorsOptions } from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
-import { handleAuthLogin, handleAuthRegister } from "./routes/auth";
+import {
+  handleAuthLogin,
+  handleAuthRegister,
+  handleAuthWebAuthnFinish,
+  handleAuthWebAuthnStart,
+} from "./routes/auth";
 import { handleEnvironmentVariables } from "./routes/environment";
 import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
@@ -58,5 +63,7 @@ export function createServer() {
   app.post("/api/sia/file-add", handleSiaFileAdd);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
+  app.post("/api/auth/webauthn/login/start", handleAuthWebAuthnStart);
+  app.post("/api/auth/webauthn/login/finish", handleAuthWebAuthnFinish);
   return app;
 }
