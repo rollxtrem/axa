@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,6 +41,7 @@ export default function Login() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
   const [isRedirectingToAuth0, setIsRedirectingToAuth0] = useState(false);
+  const autoRedirectAttempted = useRef(false);
 
   const navigate = useNavigate();
   const { login, isLoading, completeLogin } = useAuth();
@@ -67,7 +68,7 @@ export default function Login() {
   const canUsePasskeys = useMemo(() => isWebAuthnSupported(), []);
   const canUseAuth0 = isAuth0ClientConfigValid;
 
-  const handleAuth0Login = async () => {
+  const handleAuth0Login = useCallback(async () => {
     if (!canUseAuth0) {
       setServerError(
         "La configuración de Auth0 no está disponible. Contacta al administrador."
@@ -130,7 +131,16 @@ export default function Login() {
       setServerError(message);
       setIsRedirectingToAuth0(false);
     }
-  };
+  }, [canUseAuth0, rememberMe]);
+
+  useEffect(() => {
+    if (!canUseAuth0 || autoRedirectAttempted.current) {
+      return;
+    }
+
+    autoRedirectAttempted.current = true;
+    void handleAuth0Login();
+  }, [canUseAuth0, handleAuth0Login]);
 
   const handlePasskeyLogin = async () => {
     const normalizedEmail = (emailValue ?? "").trim();
