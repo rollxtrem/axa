@@ -1,10 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
+import {
+  apiFetch,
+  formatApiError,
+  readJsonResponse,
+} from "@/lib/api-client";
+import {
+  credentialToJSON,
+  isWebAuthnSupported,
+  prepareWebAuthnLoginOptions,
+} from "@/lib/webauthn";
+import type {
+  LoginResponseBody,
+  WebAuthnLoginStartResponse,
+} from "@shared/api";
 
 const loginSchema = z.object({
   email: z
@@ -23,9 +37,10 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [showSuccessNotification, setShowSuccessNotification] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isPasskeyLoading, setIsPasskeyLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, completeLogin } = useAuth();
 
   const {
     register,
@@ -44,6 +59,112 @@ export default function Login() {
   });
 
   const rememberMe = watch("rememberMe");
+  const emailValue = watch("email");
+
+  const canUsePasskeys = useMemo(() => isWebAuthnSupported(), []);
+
+  const handlePasskeyLogin = async () => {
+    const normalizedEmail = (emailValue ?? "").trim();
+
+    if (!canUsePasskeys) {
+      setServerError(
+        "Tu navegador no soporta passkeys. Prueba con otra opción de inicio de sesión."
+      );
+      return;
+    }
+
+    if (!normalizedEmail) {
+      setServerError("Ingresa tu correo electrónico para usar tu passkey.");
+      return;
+    }
+
+    if (!navigator.credentials || !window.PublicKeyCredential) {
+      setServerError(
+        "Este dispositivo no es compatible con passkeys. Usa tu correo y contraseña."
+      );
+      return;
+    }
+
+    setServerError(null);
+    setShowSuccessNotification(false);
+    setIsPasskeyLoading(true);
+
+    try {
+      const startResponse = await apiFetch(
+        "/api/auth/webauthn/login/start",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail }),
+        }
+      );
+
+      const { data: startData, errorMessage: startError } =
+        await readJsonResponse<WebAuthnLoginStartResponse>(startResponse);
+
+      if (!startResponse.ok || !startData) {
+        const message = startError
+          ? startError
+          : "No se pudo iniciar la autenticación con passkey.";
+        throw new Error(message);
+      }
+
+      const { publicKeyOptions, state } =
+        prepareWebAuthnLoginOptions(startData);
+
+      const credential = await navigator.credentials.get({
+        publicKey: publicKeyOptions,
+      });
+
+      if (!credential) {
+        throw new Error(
+          "No se recibió ninguna credencial WebAuthn. Inténtalo nuevamente."
+        );
+      }
+
+      const credentialPayload = credentialToJSON(
+        credential as PublicKeyCredential
+      );
+
+      const finishResponse = await apiFetch(
+        "/api/auth/webauthn/login/finish",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: normalizedEmail,
+            credential: credentialPayload,
+            state,
+            rememberMe,
+          }),
+        }
+      );
+
+      const { data: finishData, errorMessage: finishError } =
+        await readJsonResponse<LoginResponseBody>(finishResponse);
+
+      if (!finishResponse.ok || !finishData) {
+        const message = finishError
+          ? finishError
+          : "No se pudo validar tu passkey. Inténtalo nuevamente.";
+        throw new Error(message);
+      }
+
+      completeLogin(finishData, { rememberMe });
+      setShowSuccessNotification(true);
+      reset({ email: "", password: "", rememberMe });
+      navigate("/");
+      setTimeout(() => setShowSuccessNotification(false), 4000);
+    } catch (err) {
+      const message = formatApiError(
+        err,
+        "No se pudo iniciar sesión con tu passkey."
+      );
+      setServerError(message);
+    } finally {
+      setIsPasskeyLoading(false);
+    }
+  };
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
@@ -230,17 +351,38 @@ export default function Login() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
-                  {isLoading ? "INGRESANDO..." : "INICIAR SESIÓN"}
-                </span>
-              </div>
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                type="submit"
+                disabled={isLoading || isPasskeyLoading}
+                className="h-11 px-4 bg-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer hover:bg-[#0c0e45]/90 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-white text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                    {isLoading ? "INGRESANDO..." : "INICIAR SESIÓN"}
+                  </span>
+                </div>
+              </button>
+
+              {canUsePasskeys ? (
+                <button
+                  type="button"
+                  onClick={handlePasskeyLogin}
+                  disabled={isPasskeyLoading || isLoading || !emailValue}
+                  className="h-11 px-4 border border-[#0c0e45] rounded-[50px] flex items-center justify-center gap-4 cursor-pointer text-[#0c0e45] hover:bg-[#0c0e45]/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="text-sm font-bold leading-9 tracking-[1.25px] uppercase text-center">
+                      {isPasskeyLoading ? "VALIDANDO..." : "USAR PASSKEY"}
+                    </span>
+                  </div>
+                </button>
+              ) : (
+                <p className="text-xs text-[#666] text-center">
+                  Tu navegador no soporta passkeys. Usa tu contraseña para ingresar.
+                </p>
+              )}
+            </div>
           </form>
         </div>
 

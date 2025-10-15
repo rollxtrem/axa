@@ -81,6 +81,66 @@ export interface LoginResponseBody {
   user: Auth0UserProfile;
 }
 
+export type WebAuthnAuthenticatorTransport =
+  | "usb"
+  | "nfc"
+  | "ble"
+  | "internal"
+  | "cable"
+  | "hybrid"
+  | "smart-card"
+  | "lightning"
+  | "unknown"
+  | string;
+
+export interface WebAuthnPublicKeyCredentialDescriptorJSON {
+  id: string;
+  type: "public-key";
+  transports?: WebAuthnAuthenticatorTransport[];
+}
+
+export interface WebAuthnPublicKeyCredentialRequestOptionsJSON {
+  challenge: string;
+  timeout?: number;
+  rpId?: string;
+  allowCredentials?: WebAuthnPublicKeyCredentialDescriptorJSON[];
+  userVerification?: "required" | "preferred" | "discouraged";
+  extensions?: Record<string, unknown>;
+}
+
+export interface WebAuthnLoginStartRequest {
+  email: string;
+}
+
+export interface WebAuthnLoginStartResponse {
+  options: WebAuthnPublicKeyCredentialRequestOptionsJSON;
+  state?: string;
+  expiresAt?: string;
+}
+
+export interface WebAuthnAuthenticatorAssertionResponseJSON {
+  clientDataJSON: string;
+  authenticatorData: string;
+  signature: string;
+  userHandle?: string | null;
+}
+
+export interface WebAuthnCredentialRequestJSON {
+  id: string;
+  rawId: string;
+  type: "public-key";
+  authenticatorAttachment?: string | null;
+  clientExtensionResults?: Record<string, unknown>;
+  response: WebAuthnAuthenticatorAssertionResponseJSON;
+}
+
+export interface WebAuthnLoginFinishRequest {
+  email: string;
+  credential: WebAuthnCredentialRequestJSON;
+  state?: string;
+  rememberMe?: boolean;
+}
+
 export interface PqrsFormData {
   fullName: string;
   email: string;

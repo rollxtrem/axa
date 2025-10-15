@@ -42,6 +42,10 @@ type AuthContextType = {
   ) => Promise<RegisterResponseBody>;
   logout: () => void;
   error?: string;
+  completeLogin: (
+    result: LoginResponseBody,
+    options?: { rememberMe?: boolean }
+  ) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -116,6 +120,9 @@ const createDisabledAuthContextValue = (): AuthContextType => ({
   },
   logout: () => undefined,
   error: undefined,
+  completeLogin: () => {
+    throw new Error(AUTH_DISABLED_MESSAGE);
+  },
 });
 
 const DISABLED_AUTH_CONTEXT_VALUE = createDisabledAuthContextValue();
@@ -155,6 +162,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<AuthState>(() => readStoredState());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+
+  const completeLogin = useCallback(
+    (
+      result: LoginResponseBody,
+      options?: { rememberMe?: boolean }
+    ) => {
+      setAuthState({
+        tokens: result.tokens,
+        user: result.user,
+        persist: Boolean(options?.rememberMe),
+      });
+    },
+    []
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -199,11 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const result = data as LoginResponseBody;
 
-        setAuthState({
-          tokens: result.tokens,
-          user: result.user,
-          persist: rememberMe,
-        });
+        completeLogin(result, { rememberMe });
 
         return result;
       } catch (err) {
@@ -217,7 +234,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    []
+    [completeLogin]
   );
 
   const registerAccount = useCallback(
@@ -275,8 +292,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register: registerAccount,
       logout,
       error,
+      completeLogin,
     }),
-    [authState, error, isLoading, login, logout, registerAccount]
+    [
+      authState,
+      completeLogin,
+      error,
+      isLoading,
+      login,
+      logout,
+      registerAccount,
+    ]
   );
 
   return (
