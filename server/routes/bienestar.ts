@@ -337,6 +337,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     (item) => item.TipoServicio?.trim().toUpperCase() === serviceCatalog,
   );
 
+  logJson("SIA matchingService ==>", serviceCatalog);
   if (!matchingService) {
     
     const error = new SiaServiceError(
@@ -368,6 +369,36 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return;
   }
 
+
+  try {
+    const tokenResponse = await requestSiaToken();
+    const consumerKey = tokenResponse.consumerKey?.trim();
+    const dz = tokenResponse.dz?.trim();
+
+    if (!consumerKey || !dz) {
+      throw new SiaServiceError(
+        "La respuesta del servicio de SIA no contiene los datos requeridos.",
+        502,
+        tokenResponse,
+      );
+    }
+
+    logJson("SIA token response", tokenResponse);
+
+    siaToken = {
+      access_token: tokenResponse.access_token,
+      consumerKey,
+      dz,
+    };
+  } catch (error) {
+    handleSiaErrorResponse(res, error, "Ocurrió un error al obtener el token de SIA.");
+    return;
+  }
+
+  if (!siaToken) {
+    return;
+  }
+  
   const userFullName = formData.fullName.trim() || formData.fullName;
   const now = new Date();
 
