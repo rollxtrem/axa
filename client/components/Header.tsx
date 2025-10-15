@@ -18,6 +18,134 @@ const createInitialPqrsState = (): PqrsFormData => ({
   description: "",
 });
 
+const INFO_COOKIE_NAME = "info";
+const ENCRYPTION_PASSPHRASE = "axa-profile-session-key";
+const ENCRYPTION_SALT = "axa-profile-session-salt";
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+type StoredProfileInfo = {
+  name?: string;
+  email?: string;
+  identification?: string;
+  mobile?: string;
+};
+
+const decodeBase64 = (value: string) => {
+  const binary = window.atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes;
+};
+
+const deriveProfileKey = async (cryptoApi: SubtleCrypto) => {
+  const keyMaterial = await cryptoApi.importKey(
+    "raw",
+    textEncoder.encode(ENCRYPTION_PASSPHRASE),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+
+  return cryptoApi.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: textEncoder.encode(ENCRYPTION_SALT),
+      iterations: 150000,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+};
+
+const decryptInfoCookie = async (cookieValue: string): Promise<StoredProfileInfo | null> => {
+  const cryptoApi = window.crypto?.subtle;
+  if (!cryptoApi) {
+    throw new Error("El navegador no soporta las funciones de cifrado requeridas.");
+  }
+
+  const separatorIndex = cookieValue.indexOf(".");
+  if (separatorIndex === -1) {
+    return null;
+  }
+
+  const ivBase64 = cookieValue.slice(0, separatorIndex);
+  const payloadBase64 = cookieValue.slice(separatorIndex + 1);
+
+  if (!ivBase64 || !payloadBase64) {
+    return null;
+  }
+
+  const key = await deriveProfileKey(cryptoApi);
+  const iv = decodeBase64(ivBase64);
+  const ciphertext = decodeBase64(payloadBase64);
+
+  const decryptedBuffer = await cryptoApi.decrypt({ name: "AES-GCM", iv }, key, ciphertext);
+  const decoded = textDecoder.decode(decryptedBuffer);
+
+  const parsed = JSON.parse(decoded) as Partial<StoredProfileInfo> | null;
+  if (!parsed || typeof parsed !== "object") {
+    return null;
+  }
+
+  const coerceString = (value: unknown) => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  };
+
+  return {
+    name: coerceString(parsed.name),
+    email: coerceString(parsed.email),
+    identification: coerceString(parsed.identification),
+    mobile: coerceString(parsed.mobile),
+  };
+};
+
+const getInfoCookieValue = () => {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const cookies = document.cookie ? document.cookie.split(";") : [];
+  const prefix = `${INFO_COOKIE_NAME}=`;
+
+  for (const rawCookie of cookies) {
+    const cookie = rawCookie.trim();
+    if (cookie.startsWith(prefix)) {
+      return decodeURIComponent(cookie.slice(prefix.length));
+    }
+  }
+
+  return null;
+};
+
+const loadProfileInfoFromCookie = async (): Promise<StoredProfileInfo | null> => {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return null;
+  }
+
+  const cookieValue = getInfoCookieValue();
+  if (!cookieValue) {
+    return null;
+  }
+
+  try {
+    return await decryptInfoCookie(cookieValue);
+  } catch (error) {
+    console.error("Failed to decrypt profile info cookie", error);
+    return null;
+  }
+};
+
 type ContactEntry =
   | { type: "text"; text: string }
   | { type: "labelValue"; label: string; value: string }
@@ -108,6 +236,50 @@ export default function Header() {
       cancelled = true;
     };
   }, [showPqrs, pqrsPublicKey]);
+
+  useEffect(() => {
+    if (!showPqrs) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const prefillFromCookie = async () => {
+      const profileInfo = await loadProfileInfoFromCookie();
+      if (!profileInfo || cancelled) {
+        return;
+      }
+
+      setPqrsForm((previous) => {
+        const isBlank = (value: string) => value.trim().length === 0;
+        const next: PqrsFormData = { ...previous };
+
+        if (profileInfo.name && isBlank(previous.fullName)) {
+          next.fullName = profileInfo.name;
+        }
+
+        if (profileInfo.email && isBlank(previous.email)) {
+          next.email = profileInfo.email;
+        }
+
+        if (profileInfo.mobile && isBlank(previous.phone)) {
+          next.phone = profileInfo.mobile;
+        }
+
+        if (profileInfo.identification && isBlank(previous.documentNumber)) {
+          next.documentNumber = profileInfo.identification;
+        }
+
+        return next;
+      });
+    };
+
+    void prefillFromCookie();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showPqrs]);
 
   const handlePqrsChange = (field: keyof PqrsFormData) =>
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
