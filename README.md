@@ -321,6 +321,7 @@ Sigue estos pasos para aprovechar la integración con Auth0 recién agregada y e
    - `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` y `AUTH0_CLIENT_SECRET` siempre son obligatorias.
    - `AUTH0_DB_CONNECTION` solo es necesaria para el registro y el inicio de sesión con usuario y contraseña; los flujos de WebAuthn únicamente requieren el dominio y las credenciales del cliente.
    - Define `AUTH0_AUDIENCE` si tus tokens deben tener como audiencia una API personalizada. Si se omite, el backend aceptará el audience del _Management API_ de Auth0.
+   - Las redirecciones del frontend utilizan `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` y opcionalmente `VITE_AUTH0_AUDIENCE` para construir el enlace hacia `/authorize`. Estos valores suelen coincidir con los del backend.
    - Ejemplo de configuración para el tenant de desarrollo:
 
      ```env
@@ -328,6 +329,9 @@ Sigue estos pasos para aprovechar la integración con Auth0 recién agregada y e
      AUTH0_CLIENT_ID=sApJYhUMEVH64YWfkXD9HZRn2IF5ZARq
      AUTH0_CLIENT_SECRET=NUzdPuD_tVNY7GpsYUc8WhoPzpjppRI5Qq5rSHHIQYwjGyCTsot0T02YcdgekwIv
      AUTH0_DB_CONNECTION=Username-Password-Authentication
+     VITE_AUTH0_DOMAIN=axa-partners-colpatria-co-customers-dev.us.auth0.com
+     VITE_AUTH0_CLIENT_ID=sApJYhUMEVH64YWfkXD9HZRn2IF5ZARq
+     VITE_AUTH0_AUDIENCE=https://axa-partners-colpatria-co-customers-dev.us.auth0.com/api/v2/
      ```
 
      Para usar el tenant de pruebas, sustituye los valores por los proporcionados por el equipo (`axa-partners-colpatria-co-customers-test...`).
