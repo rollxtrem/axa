@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import ProfileForm from "./pages/ProfileForm";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "@/context/AuthContext";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/callback" element={<AuthCallback />} />
+            <Route path="/profile" element={<ProfileForm />} />
             {authConfig.isAuthEnabled ? (
               <Route path="/register" element={<Register />} />
             ) : null}
