@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import coursesData from "@/data/formacion-courses.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import { useAuth } from "@/context/AuthContext";
+import {
+  readProfileSessionData,
+  type ProfileSessionData,
+} from "@/lib/profile-session";
 import type {
   FormacionFormData,
   FormacionPublicKeyResponse,
@@ -87,7 +92,25 @@ const courseIcons: Record<CourseIconKey, JSX.Element> = {
 
 const courses = coursesData as CourseConfig[];
 
+const isProfileComplete = (
+  profile: ProfileSessionData | null,
+): profile is ProfileSessionData => {
+  if (!profile) {
+    return false;
+  }
+
+  const { name, email, identification, mobile } = profile;
+  return Boolean(
+    name?.trim() &&
+      email?.trim() &&
+      identification?.trim() &&
+      mobile?.trim(),
+  );
+};
+
 export default function Formacion() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormacionFormState>({
@@ -102,17 +125,79 @@ export default function Formacion() {
   const [keyRetryToken, setKeyRetryToken] = useState(0);
   const [alertMessage, setAlertMessage] = useState<AlertMessage | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [profileData, setProfileData] = useState<ProfileSessionData | null>(null);
+  const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
+  const [loginPromptMode, setLoginPromptMode] = useState<"login" | "profile">("login");
   const slidesPerView = 3;
   const totalSlides = Math.ceil(courses.length / slidesPerView);
 
-  const openModal = (course: string) => {
-    setSelectedCourse(course);
-    setIsModalOpen(true);
-    setFormError(null);
-    if (keyError) {
-      setKeyError(null);
-      setPublicKey(null);
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!isAuthenticated) {
+      setProfileData(null);
+      return;
     }
+
+    const loadProfile = async () => {
+      const storedProfile = await readProfileSessionData();
+      if (!cancelled) {
+        setProfileData(storedProfile);
+      }
+    };
+
+    void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  const openModal = (course: string) => {
+    const attemptOpen = async () => {
+      const trimmedCourse = course.trim();
+      if (!trimmedCourse) {
+        setFormError("Selecciona un curso antes de enviar tu inscripción.");
+        return;
+      }
+
+      setFormError(null);
+
+      if (!isAuthenticated) {
+        setLoginPromptMode("login");
+        setIsLoginPromptOpen(true);
+        setSelectedCourse(null);
+        return;
+      }
+
+      let storedProfile = profileData;
+      if (!storedProfile) {
+        storedProfile = await readProfileSessionData();
+        setProfileData(storedProfile);
+      }
+
+      if (!storedProfile || !isProfileComplete(storedProfile)) {
+        setLoginPromptMode("profile");
+        setIsLoginPromptOpen(true);
+        setSelectedCourse(null);
+        return;
+      }
+
+      setSelectedCourse(trimmedCourse);
+      setFormData({
+        fullName: storedProfile.name.trim(),
+        email: storedProfile.email.trim(),
+      });
+      setFormSubmitting(false);
+      if (keyError) {
+        setKeyError(null);
+        setPublicKey(null);
+      }
+      setLoadingKey(false);
+      setIsModalOpen(true);
+    };
+
+    void attemptOpen();
   };
 
   const closeModal = () => {
@@ -138,6 +223,20 @@ export default function Formacion() {
     setKeyError(null);
     setPublicKey(null);
     setKeyRetryToken((token) => token + 1);
+  };
+
+  const closeLoginPrompt = () => {
+    setIsLoginPromptOpen(false);
+  };
+
+  const redirectToLogin = () => {
+    closeLoginPrompt();
+    navigate("/login");
+  };
+
+  const redirectToProfile = () => {
+    closeLoginPrompt();
+    navigate("/profile");
   };
 
   useEffect(() => {
@@ -655,6 +754,67 @@ export default function Formacion() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isLoginPromptOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-[#0e0e0e] opacity-50"
+            onClick={closeLoginPrompt}
+          ></div>
+
+          <div className="relative bg-white rounded-[20px] w-[414px] flex flex-col shadow-[0_11px_15px_0_rgba(0,0,0,0.20)]">
+            <div className="flex p-4 items-start gap-2 self-stretch bg-white rounded-t-[20px]">
+              <div className="flex-1 text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                {loginPromptMode === "login"
+                  ? "Inicia sesión para inscribirte"
+                  : "Completa tu perfil"}
+              </div>
+            </div>
+
+            <div className="flex px-4 pb-4 flex-col items-start gap-3 self-stretch">
+              <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
+                {loginPromptMode === "login"
+                  ? "Para inscribirte a un curso necesitas iniciar sesión con tu cuenta AXA."
+                  : "Para inscribirte a un curso debes completar la información de tu perfil antes de continuar."}
+              </div>
+            </div>
+
+            <div className="flex p-2 justify-end items-center gap-2 self-stretch flex-wrap">
+              {loginPromptMode === "profile" ? (
+                <button
+                  type="button"
+                  onClick={redirectToProfile}
+                  className="flex h-9 px-4 items-center gap-4 rounded bg-[#0c0e45] hover:bg-[#0c0e45]/90 transition-colors cursor-pointer"
+                >
+                  <span className="text-white text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                    IR AL PERFIL
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={redirectToLogin}
+                  className="flex h-9 px-4 items-center gap-4 rounded bg-[#0c0e45] hover:bg-[#0c0e45]/90 transition-colors cursor-pointer"
+                >
+                  <span className="text-white text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                    INICIAR SESIÓN
+                  </span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={closeLoginPrompt}
+                className="flex h-9 px-4 items-center gap-4 rounded border border-[#0c0e45] bg-white hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <span className="text-[#0c0e45] text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                  CANCELAR
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       )}
