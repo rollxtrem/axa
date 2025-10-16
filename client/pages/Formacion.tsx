@@ -16,7 +16,7 @@ import type {
   FormacionSubmissionResponse,
 } from "@shared/api";
 
-type FormacionFormState = Pick<FormacionFormData, "fullName" | "email">;
+type FormacionFormState = Pick<FormacionFormData, "fullName" | "identification" | "email">;
 
 type AlertMessage = {
   type: "success" | "error";
@@ -115,6 +115,7 @@ export default function Formacion() {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormacionFormState>({
     fullName: "",
+    identification: "",
     email: "",
   });
   const [formSubmitting, setFormSubmitting] = useState(false);
@@ -186,6 +187,7 @@ export default function Formacion() {
       setSelectedCourse(trimmedCourse);
       setFormData({
         fullName: storedProfile.name.trim(),
+        identification: storedProfile.identification.trim(),
         email: storedProfile.email.trim(),
       });
       setFormSubmitting(false);
@@ -203,7 +205,7 @@ export default function Formacion() {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedCourse(null);
-    setFormData({ fullName: "", email: "" });
+    setFormData({ fullName: "", identification: "", email: "" });
     setFormError(null);
     setFormSubmitting(false);
     setPublicKey(null);
@@ -313,6 +315,7 @@ export default function Formacion() {
     try {
       const payload: FormacionFormData = {
         fullName: formData.fullName.trim(),
+        identification: formData.identification.trim(),
         email: formData.email.trim(),
         course: selectedCourse,
       };
@@ -686,6 +689,21 @@ export default function Formacion() {
                       onChange={handleInputChange}
                       placeholder="Nombre y apellido"
                       autoComplete="name"
+                      disabled={formSubmitting}
+                      className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px] disabled:bg-gray-100"
+                      required
+                    />
+                  </div>
+
+                  {/* Identification Input */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="identification"
+                      value={formData.identification}
+                      onChange={handleInputChange}
+                      placeholder="Cédula"
+                      autoComplete="off"
                       disabled={formSubmitting}
                       className="w-full h-14 px-3 py-2 border border-black/42 rounded focus:outline-none focus:border-[#0c0e45] text-[#0e0e0e] font-['Source_Sans_Pro'] text-base leading-6 tracking-[0.5px] disabled:bg-gray-100"
                       required

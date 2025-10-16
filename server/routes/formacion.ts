@@ -20,6 +20,7 @@ import type {
 
 const formacionFormSchema = z.object({
   fullName: z.string().min(1),
+  identification: z.string().min(1),
   email: z.string().email(),
   course: z.string().min(1),
 });
@@ -34,6 +35,7 @@ const buildEmailContent = (data: FormacionFormData) => {
     <p>Se ha recibido una nueva inscripción a través del portal de formación.</p>
     <ul>
       <li><strong>Nombre:</strong> ${escapeHtml(data.fullName)}</li>
+      <li><strong>Cédula:</strong> ${escapeHtml(data.identification)}</li>
       <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
       <li><strong>Curso seleccionado:</strong> ${escapeHtml(data.course)}</li>
     </ul>
@@ -43,6 +45,7 @@ const buildEmailContent = (data: FormacionFormData) => {
     "Nueva inscripción a curso",
     "",
     `Nombre: ${data.fullName}`,
+    `Cédula: ${data.identification}`,
     `Correo: ${data.email}`,
     `Curso seleccionado: ${data.course}`,
   ].join("\n");
@@ -97,6 +100,7 @@ const buildUserConfirmationContent = (data: FormacionFormData, course?: CourseDe
     <p>Resumen de tu inscripción:</p>
     <ul>
       <li><strong>Nombre:</strong> ${escapeHtml(data.fullName)}</li>
+      <li><strong>Cédula:</strong> ${escapeHtml(data.identification)}</li>
       <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
       <li><strong>Curso seleccionado:</strong> ${escapeHtml(data.course)}</li>
     </ul>
@@ -113,6 +117,7 @@ const buildUserConfirmationContent = (data: FormacionFormData, course?: CourseDe
     "",
     "Resumen de tu inscripción:",
     `Nombre: ${data.fullName}`,
+    `Cédula: ${data.identification}`,
     `Correo: ${data.email}`,
     `Curso seleccionado: ${data.course}`,
   ];
