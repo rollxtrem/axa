@@ -11,6 +11,10 @@ import {
 import { apiFetch } from "@/lib/api-client";
 
 import { authConfig } from "@/lib/auth-config";
+import {
+  auth0ClientConfig,
+  isAuth0ClientConfigValid,
+} from "@/lib/auth0-config";
 
 import type {
   ApiErrorResponse,
@@ -279,6 +283,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setAuthState({});
     setError(undefined);
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+
+    const homeUrl = `${window.location.origin}/`;
+
+    if (isAuth0ClientConfigValid) {
+      const { domain, clientId } = auth0ClientConfig;
+
+      if (domain && clientId) {
+        const logoutUrl = new URL(`https://${domain}/v2/logout`);
+        logoutUrl.searchParams.set("client_id", clientId);
+        logoutUrl.searchParams.set("returnTo", homeUrl);
+
+        window.location.assign(logoutUrl.toString());
+        return;
+      }
+    }
+
+    window.location.assign(homeUrl);
   }, []);
 
   const contextValue = useMemo<AuthContextType>(
