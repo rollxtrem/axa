@@ -178,6 +178,7 @@ export interface PqrsPublicKeyResponse {
 
 export interface FormacionFormData {
   fullName: string;
+  identification: string;
   email: string;
   course: string;
 }
