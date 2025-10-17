@@ -1,10 +1,11 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import contactInfoData from "@/data/contact-info.json";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
 import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
+import { readProfileSessionData } from "@/lib/profile-session";
 import type { PqrsFormData } from "@shared/api";
 
 const createInitialPqrsState = (): PqrsFormData => ({
@@ -24,6 +25,12 @@ const ENCRYPTION_SALT = "axa-profile-session-salt";
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
+
+const sanitizeName = (value: string) =>
+  value
+    .replace(/\d+/g, "")
+    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/gu, "")
+    .trim();
 
 type StoredProfileInfo = {
   name?: string;
@@ -179,8 +186,41 @@ export default function Header() {
   const [pqrsPublicKey, setPqrsPublicKey] = useState<CryptoKey | null>(null);
   const [pqrsLoadingKey, setPqrsLoadingKey] = useState(false);
   const [pqrsKeyError, setPqrsKeyError] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout, user, isAuthenticated, isAuthEnabled } = useAuth();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadProfileName = async () => {
+      if (!isAuthenticated) {
+        setProfileName(null);
+        return;
+      }
+
+      try {
+        const profile = await readProfileSessionData();
+        if (cancelled) {
+          return;
+        }
+
+        const trimmedName = profile?.name?.trim();
+        setProfileName(trimmedName && trimmedName.length > 0 ? trimmedName : null);
+      } catch (error) {
+        if (!cancelled) {
+          setProfileName(null);
+        }
+      }
+    };
+
+    void loadProfileName();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, location.pathname, location.search]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -371,17 +411,27 @@ export default function Header() {
   const isPqrsSubmitDisabled = pqrsSubmitting || pqrsLoadingKey || !!pqrsKeyError;
 
   const greetingSource = isAuthenticated
-    ? (typeof user?.name === "string" && user.name.trim().length > 0
+    ? profileName && profileName.trim().length > 0
+      ? profileName
+      : typeof user?.name === "string" && user.name.trim().length > 0
         ? user.name
         : typeof user?.nickname === "string" && user.nickname.trim().length > 0
           ? user.nickname
-          : typeof user?.email === "string"
-            ? user.email.split("@")[0]
-            : "usuario")
+          : "usuario"
     : undefined;
 
-  const greetingName =
-    greetingSource?.split(" ")[0]?.trim().toLowerCase() ?? "usuario";
+  const greetingName = (() => {
+    if (!greetingSource) {
+      return "usuario";
+    }
+
+    const sanitized = sanitizeName(greetingSource);
+    if (!sanitized) {
+      return "usuario";
+    }
+
+    return sanitized.split(" ")[0]?.trim().toLowerCase() || "usuario";
+  })();
 
   const handleLogout = () => {
     logout();

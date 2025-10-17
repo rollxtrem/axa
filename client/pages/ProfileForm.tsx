@@ -76,22 +76,10 @@ export default function ProfileForm() {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (user?.name) {
-      const sanitized = user.name
-        .replace(/\d+/g, "")
-        .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/gu, "")
-        .trim()
-        .slice(0, 50);
-
-      if (sanitized) {
-        setValue("name", sanitized);
-      }
-    }
-
     if (user?.email) {
       setValue("email", user.email.slice(0, 50));
     }
-  }, [setValue, user?.email, user?.name]);
+  }, [setValue, user?.email]);
 
   const onSubmit = async (values: ProfileFormValues) => {
     setServerError(null);
