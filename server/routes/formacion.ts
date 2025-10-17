@@ -9,6 +9,7 @@ import {
   normalizePem,
 } from "./utils/encrypted-request";
 import { sendEmail } from "../services/email";
+import { FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
 import coursesData from "../../client/data/formacion-courses.json";
 import type {
   EncryptedSubmissionRequest,
@@ -28,6 +29,9 @@ const formacionFormSchema = z.object({
 type _EncryptedRequestMatchesSchema = FormacionSubmissionRequest extends z.infer<typeof encryptedRequestSchema>
   ? true
   : never;
+
+const CONTACT_OFFICE_MESSAGE =
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
 
 const buildEmailContent = (data: FormacionFormData) => {
   const html = `
@@ -164,7 +168,12 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: "Invalid form payload", details: parsed.error.flatten() });
     }
-    formData = parsed.data as FormacionFormData;
+    formData = {
+      fullName: parsed.data.fullName.trim(),
+      identification: parsed.data.identification.trim(),
+      email: parsed.data.email.trim(),
+      course: parsed.data.course.trim(),
+    };
   } catch (error) {
     console.error("Failed to decrypt formación payload", error);
     return res.status(400).json({ error: "Unable to decrypt form payload" });
@@ -173,6 +182,59 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
   const recipients = formatRecipients(process.env.FORMACION_EMAIL_TO);
   if (recipients.length === 0) {
     return res.status(500).json({ error: "FORMACION_EMAIL_TO is not configured" });
+  }
+
+  let siaToken: { access_token: string; consumerKey: string; dz: string };
+  try {
+    const tokenResponse = await requestSiaToken();
+    const consumerKey = tokenResponse.consumerKey?.trim();
+    const dz = tokenResponse.dz?.trim();
+
+    if (!consumerKey || !dz) {
+      throw new SiaServiceError(
+        "La respuesta del servicio de SIA no contiene los datos requeridos.",
+        502,
+        tokenResponse,
+      );
+    }
+
+    siaToken = {
+      access_token: tokenResponse.access_token,
+      consumerKey,
+      dz,
+    };
+  } catch (error) {
+    console.error("Failed to obtain SIA token for formación", error);
+    if (error instanceof SiaServiceError) {
+      return res.status(error.status || 500).json({ error: error.message });
+    }
+
+    return res.status(500).json({ error: "Ocurrió un error al obtener el token de SIA." });
+  }
+
+  try {
+    const fileGetItems = await FileGet({
+      sia_token: siaToken.access_token,
+      sia_dz: siaToken.dz,
+      sia_consumer_key: siaToken.consumerKey,
+      user_identification: formData.identification,
+    });
+
+    if (!Array.isArray(fileGetItems) || fileGetItems.length === 0) {
+      console.warn("SIA FileGet returned no products for formación", {
+        identification: formData.identification,
+        fileGetItems,
+      });
+      return res.status(403).json({ error: CONTACT_OFFICE_MESSAGE });
+    }
+  } catch (error) {
+    console.error("Failed to validate formación benefits in SIA", error);
+
+    if (error instanceof SiaServiceError) {
+      return res.status(error.status || 500).json({ error: CONTACT_OFFICE_MESSAGE });
+    }
+
+    return res.status(500).json({ error: CONTACT_OFFICE_MESSAGE });
   }
 
   const { html, text } = buildEmailContent(formData);
