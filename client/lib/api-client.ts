@@ -8,6 +8,9 @@ const normalizePath = (path: string) => {
 
 const sanitizeUrlValue = (value: string) => value.replace(/\s+/g, "").replace(/\/+$/, "");
 
+const CONTACT_OFFICE_MESSAGE =
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
+
 const KNOWN_ERROR_TRANSLATIONS = new Map<string, string>([
   ["PQRS public key is not configured", "El servidor no tiene configurada la llave pública de PQRS (PQRS_PUBLIC_KEY)."],
   ["PQRS private key is not configured", "El servidor no tiene configurada la llave privada de PQRS (PQRS_PRIVATE_KEY)."],
@@ -51,7 +54,11 @@ const KNOWN_ERROR_TRANSLATIONS = new Map<string, string>([
   ["Error al solicitar el servicio", "Error al solicitar el servicio"],
   [
     "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.",
-    "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.",
+    CONTACT_OFFICE_MESSAGE,
+  ],
+  [
+    "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto",
+    CONTACT_OFFICE_MESSAGE,
   ],
 ]);
 
