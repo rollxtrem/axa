@@ -25,6 +25,12 @@ const ENCRYPTION_SALT = "axa-profile-session-salt";
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
+const sanitizeName = (value: string) =>
+  value
+    .replace(/\d+/g, "")
+    .replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s]/gu, "")
+    .trim();
+
 type StoredProfileInfo = {
   name?: string;
   email?: string;
@@ -375,13 +381,21 @@ export default function Header() {
         ? user.name
         : typeof user?.nickname === "string" && user.nickname.trim().length > 0
           ? user.nickname
-          : typeof user?.email === "string"
-            ? user.email.split("@")[0]
-            : "usuario")
+          : "usuario")
     : undefined;
 
-  const greetingName =
-    greetingSource?.split(" ")[0]?.trim().toLowerCase() ?? "usuario";
+  const greetingName = (() => {
+    if (!greetingSource) {
+      return "usuario";
+    }
+
+    const sanitized = sanitizeName(greetingSource);
+    if (!sanitized) {
+      return "usuario";
+    }
+
+    return sanitized.split(" ")[0]?.trim().toLowerCase() || "usuario";
+  })();
 
   const handleLogout = () => {
     logout();
