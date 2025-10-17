@@ -59,12 +59,34 @@ const isProfileComplete = (
 };
 
 type ConfirmationState = {
+  title: string;
   message: string;
   file: string | null;
 };
 
+const DEFAULT_CONFIRMATION_TITLE = "¡Confirmación de solicitud!";
+const ALERT_TITLE = "¡Alerta!";
 const CONTACT_OFFICE_MESSAGE =
   "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+
+const SIA_ERROR_KEYWORDS = ["SIA", "Error al solicitar el servicio"];
+
+const isSiaIntegrationErrorMessage = (value: unknown): value is string => {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  if (normalized === CONTACT_OFFICE_MESSAGE) {
+    return true;
+  }
+
+  return SIA_ERROR_KEYWORDS.some((keyword) => normalized.includes(keyword));
+};
 
 const serviceIcons = {
   informatica: (
@@ -296,11 +318,25 @@ export default function Bienestar() {
       const { data, errorMessage } = await readJsonResponse<BienestarSubmissionResponse | null>(response);
 
       if (!response.ok) {
-        const message = translateApiErrorMessage(
-          errorMessage,
-          "No pudimos enviar tu solicitud. Intenta nuevamente."
-        );
-        throw new Error(message);
+        const isSiaError = isSiaIntegrationErrorMessage(errorMessage);
+        const message = isSiaError
+          ? CONTACT_OFFICE_MESSAGE
+          : translateApiErrorMessage(
+              errorMessage,
+              "No pudimos enviar tu solicitud. Intenta nuevamente."
+            );
+
+        const errorToThrow = new Error(message);
+        if (isSiaError) {
+          const enhancedError = errorToThrow as Error & {
+            isSiaIntegrationError?: boolean;
+            originalSiaMessage?: string | null;
+          };
+          enhancedError.isSiaIntegrationError = true;
+          enhancedError.originalSiaMessage = typeof errorMessage === "string" ? errorMessage : null;
+        }
+
+        throw errorToThrow;
       }
 
       if (!data || data.status !== "ok") {
@@ -316,6 +352,7 @@ export default function Bienestar() {
 
       setIsModalOpen(false);
       setConfirmationState({
+        title: DEFAULT_CONFIRMATION_TITLE,
         message: confirmationMessage,
         file: expediente,
       });
@@ -328,12 +365,29 @@ export default function Bienestar() {
       console.error("Failed to submit bienestar form", error);
       const fallback = "No pudimos enviar tu solicitud.";
       const formattedError = formatApiError(error, fallback);
+      const isSiaIntegrationError =
+        Boolean(error) &&
+        typeof error === "object" &&
+        "isSiaIntegrationError" in error &&
+        Boolean((error as { isSiaIntegrationError?: boolean }).isSiaIntegrationError);
 
-      if (formattedError === CONTACT_OFFICE_MESSAGE) {
+      if (isSiaIntegrationError) {
+        const originalMessage =
+          typeof (error as { originalSiaMessage?: unknown }).originalSiaMessage === "string"
+            ? (error as { originalSiaMessage: string }).originalSiaMessage.trim()
+            : null;
+        if (originalMessage) {
+          console.error("SIA integration error detail:", originalMessage);
+        }
+      }
+
+      if (formattedError === CONTACT_OFFICE_MESSAGE || isSiaIntegrationError) {
+        console.warn(CONTACT_OFFICE_MESSAGE);
         setFormError(null);
         setIsModalOpen(false);
         setConfirmationState({
-          message: formattedError,
+          title: ALERT_TITLE,
+          message: CONTACT_OFFICE_MESSAGE,
           file: null,
         });
         setIsConfirmationModalOpen(true);
@@ -1231,7 +1285,7 @@ export default function Bienestar() {
             {/* Modal Header */}
             <div className="flex p-4 items-start gap-2 self-stretch bg-white rounded-t-[20px]">
               <div className="flex-1 text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
-                ¡Confirmación de solicitud!
+                {confirmationState?.title ?? DEFAULT_CONFIRMATION_TITLE}
               </div>
             </div>
 
