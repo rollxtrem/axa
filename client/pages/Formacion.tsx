@@ -23,6 +23,10 @@ type AlertMessage = {
   message: string;
 };
 
+const CONTACT_OFFICE_MESSAGE =
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+const ALERT_TITLE = "!Alerta!";
+
 type CourseIconKey = "digital-skills" | "financial-education" | "digital-marketing";
 
 type CourseConfig = {
@@ -311,6 +315,7 @@ export default function Formacion() {
 
     setFormSubmitting(true);
     setFormError(null);
+    setAlertMessage(null);
 
     try {
       const payload: FormacionFormData = {
@@ -355,6 +360,16 @@ export default function Formacion() {
         error,
         "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
       );
+
+      if (message === CONTACT_OFFICE_MESSAGE) {
+        closeModal();
+        setAlertMessage({
+          type: "error",
+          message: `${ALERT_TITLE} ${CONTACT_OFFICE_MESSAGE}`,
+        });
+        return;
+      }
+
       setFormError(message);
     } finally {
       setFormSubmitting(false);
