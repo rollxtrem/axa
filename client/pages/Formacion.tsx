@@ -24,8 +24,26 @@ type AlertMessage = {
 };
 
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
+const CONTACT_OFFICE_DETAIL_TRIGGER = "detalle: la respuesta de sia no es un json válido";
 const ALERT_TITLE = "¡Alerta!";
+
+const isContactOfficeMessage = (value: string) => {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return false;
+  }
+
+  const normalizedValue = trimmedValue.toLocaleLowerCase();
+  const normalizedMessage = CONTACT_OFFICE_MESSAGE.toLocaleLowerCase();
+
+  if (normalizedValue.replace(/\.+$/, "") === normalizedMessage) {
+    return true;
+  }
+
+  return normalizedValue.includes(CONTACT_OFFICE_DETAIL_TRIGGER);
+};
 
 type CourseIconKey = "digital-skills" | "financial-education" | "digital-marketing";
 
@@ -370,7 +388,7 @@ export default function Formacion() {
         "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
       );
 
-      if (message === CONTACT_OFFICE_MESSAGE) {
+      if (isContactOfficeMessage(message)) {
         console.warn(message);
         closeModal();
         setAlertMessage(null);
