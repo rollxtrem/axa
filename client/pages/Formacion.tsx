@@ -24,8 +24,11 @@ type AlertMessage = {
 };
 
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
 const ALERT_TITLE = "¡Alerta!";
+
+const isContactOfficeMessage = (value: string) =>
+  value.trim().replace(/\.+$/, "") === CONTACT_OFFICE_MESSAGE;
 
 type CourseIconKey = "digital-skills" | "financial-education" | "digital-marketing";
 
@@ -370,7 +373,7 @@ export default function Formacion() {
         "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
       );
 
-      if (message === CONTACT_OFFICE_MESSAGE) {
+      if (isContactOfficeMessage(message)) {
         console.warn(message);
         closeModal();
         setAlertMessage(null);
