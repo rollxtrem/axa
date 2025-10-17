@@ -24,8 +24,11 @@ type AlertMessage = {
 };
 
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
-const ALERT_TITLE = "!Alerta!";
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
+const ALERT_TITLE = "¡Alerta!";
+
+const isContactOfficeMessage = (value: string) =>
+  value.trim().replace(/\.+$/, "") === CONTACT_OFFICE_MESSAGE;
 
 type CourseIconKey = "digital-skills" | "financial-education" | "digital-marketing";
 
@@ -133,6 +136,9 @@ export default function Formacion() {
   const [profileData, setProfileData] = useState<ProfileSessionData | null>(null);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [loginPromptMode, setLoginPromptMode] = useState<"login" | "profile">("login");
+  const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
+  const [confirmationTitle, setConfirmationTitle] = useState<string | null>(null);
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
   const slidesPerView = 3;
   const totalSlides = Math.ceil(courses.length / slidesPerView);
 
@@ -243,6 +249,12 @@ export default function Formacion() {
   const redirectToProfile = () => {
     closeLoginPrompt();
     navigate("/profile");
+  };
+
+  const closeConfirmationModal = () => {
+    setIsConfirmationModalOpen(false);
+    setConfirmationTitle(null);
+    setConfirmationMessage(null);
   };
 
   useEffect(() => {
@@ -361,12 +373,14 @@ export default function Formacion() {
         "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
       );
 
-      if (message === CONTACT_OFFICE_MESSAGE) {
+      if (isContactOfficeMessage(message)) {
+        console.warn(message);
         closeModal();
-        setAlertMessage({
-          type: "error",
-          message: `${ALERT_TITLE} ${CONTACT_OFFICE_MESSAGE}`,
-        });
+        setAlertMessage(null);
+        setFormError(null);
+        setConfirmationTitle(ALERT_TITLE);
+        setConfirmationMessage(CONTACT_OFFICE_MESSAGE);
+        setIsConfirmationModalOpen(true);
         return;
       }
 
@@ -846,6 +860,43 @@ export default function Formacion() {
                 <span className="text-[#0c0e45] text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
                   CANCELAR
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isConfirmationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-[#0e0e0e] opacity-50"
+            onClick={closeConfirmationModal}
+          ></div>
+
+          <div className="relative bg-white rounded-[20px] w-[414px] flex flex-col shadow-[0_11px_15px_0_rgba(0,0,0,0.20)]">
+            <div className="flex p-4 items-start gap-2 self-stretch bg-white rounded-t-[20px]">
+              <div className="flex-1 text-[#0e0e0e] font-['Source_Sans_Pro'] text-[23px] font-semibold leading-8">
+                {confirmationTitle ?? ALERT_TITLE}
+              </div>
+            </div>
+
+            <div className="flex px-4 pb-4 flex-col items-start gap-3 self-stretch">
+              <div className="self-stretch text-[#0e0e0e] font-['Source_Sans_Pro'] text-[15px] leading-[22px] tracking-[0.15px]">
+                {confirmationMessage ?? CONTACT_OFFICE_MESSAGE}
+              </div>
+            </div>
+
+            <div className="flex p-2 justify-end items-center gap-2 self-stretch">
+              <button
+                type="button"
+                onClick={closeConfirmationModal}
+                className="flex h-9 px-4 items-center gap-4 rounded cursor-pointer hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex py-[11px] items-center gap-2 self-stretch">
+                  <span className="text-[#0c0e45] text-center font-['Source_Sans_Pro'] text-sm font-bold leading-9 tracking-[1.25px] uppercase">
+                    ENTENDIDO
+                  </span>
+                </div>
               </button>
             </div>
           </div>
