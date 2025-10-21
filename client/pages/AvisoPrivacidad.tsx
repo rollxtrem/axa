@@ -627,10 +627,8 @@ export default function AvisoPrivacidad() {
                   pointerEvents: "auto",
                 }}
               >
-                <a
-                  href={`https://cdn.builder.io/o/assets%2F${encodedBuilderPublicKey}%2F8b1be5fcd60f49bdbfc969301f2ca7fc?alt=media&token=5022c0df-5c99-41c0-b448-2dd45d432ccc&apiKey=${builderPublicKey}`}
-                  download="Terminos-y-Condiciones.pdf"
-                  target="_blank"
+                <Link
+                  to="/terminos-condiciones"
                   style={{
                     display: "block",
                     fontWeight: "400",
@@ -641,7 +639,7 @@ export default function AvisoPrivacidad() {
                   }}
                 >
                   Términos y Condiciones
-                </a>
+                </Link>
                 <div
                   style={{
                     display: "block",
