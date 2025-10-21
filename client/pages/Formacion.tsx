@@ -391,7 +391,7 @@ export default function Formacion() {
         "Ocurrió un error inesperado al enviar tu inscripción. Intenta nuevamente."
       );
 
-      if (isContactOfficeMessage(message)) {
+      //if (isContactOfficeMessage(message)) {
         console.warn(message);
         closeModal();
         setAlertMessage(null);
@@ -400,9 +400,9 @@ export default function Formacion() {
         setConfirmationMessage(CONTACT_OFFICE_MESSAGE);
         setIsConfirmationModalOpen(true);
         return;
-      }
+      //}
 
-      setFormError(message);
+      //setFormError(message);
     } finally {
       setFormSubmitting(false);
     }
