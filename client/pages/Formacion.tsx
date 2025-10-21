@@ -27,6 +27,9 @@ const CONTACT_OFFICE_MESSAGE =
   "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
 const CONTACT_OFFICE_DETAIL_TRIGGER = "detalle: la respuesta de sia no es un json válido";
 const ALERT_TITLE = "¡Alerta!";
+const COURSE_ACTIVATION_TITLE = "Información importante";
+const COURSE_ACTIVATION_MESSAGE =
+  "Estimado asegurado, recuerda que este curso solo estará disponible para su aprendizaje por 30 días, después de la activación, espera el correo que llegara al siguiente día hábil y accede al curso";
 
 const isContactOfficeMessage = (value: string) => {
   const trimmedValue = value.trim();
@@ -376,10 +379,10 @@ export default function Formacion() {
         throw new Error("No recibimos confirmación de la inscripción. Intenta nuevamente.");
       }
 
-      setAlertMessage({
-        type: "success",
-        message: "Tu inscripción fue enviada correctamente. Pronto nos pondremos en contacto contigo.",
-      });
+      setAlertMessage(null);
+      setConfirmationTitle(COURSE_ACTIVATION_TITLE);
+      setConfirmationMessage(COURSE_ACTIVATION_MESSAGE);
+      setIsConfirmationModalOpen(true);
       closeModal();
     } catch (error) {
       console.error("Error submitting formación form", error);
