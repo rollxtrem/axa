@@ -14,6 +14,10 @@ Una aplicación completa de registro e inicio de sesión desarrollada con React,
 - ✅ **Tailwind CSS** para estilos
 - ✅ **Express server** integrado
 
+## 🧠 Memoria del Proyecto
+
+Consulta el archivo [`docs/MEMORIA.md`](docs/MEMORIA.md) para obtener un resumen actualizado del estado funcional, integraciones y próximos pasos del portal.
+
 ## 📋 Prerrequisitos
 
 Antes de comenzar, asegúrate de tener instalado:
