@@ -18,6 +18,7 @@ import Bienestar from "./pages/Bienestar";
 import Formacion from "./pages/Formacion";
 import PoliticaCookies from "./pages/PoliticaCookies";
 import AvisoPrivacidad from "./pages/AvisoPrivacidad";
+import TerminosCondiciones from "./pages/TerminosCondiciones";
 import SiaServices from "./pages/SiaServices";
 import { authConfig } from "@/lib/auth-config";
 import { AppInsightsTracker } from "@/components/AppInsightsTracker";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/formacion" element={<Formacion />} />
             <Route path="/politica-cookies" element={<PoliticaCookies />} />
             <Route path="/aviso-privacidad" element={<AvisoPrivacidad />} />
+            <Route path="/terminos-condiciones" element={<TerminosCondiciones />} />
             <Route path="/sia" element={<SiaServices />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
