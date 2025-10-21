@@ -1,0 +1,62 @@
+[
+  {
+    "id": "colombia",
+    "title": "Bogotá",
+    "showIcon": true,
+    "entries": [
+      { "type": "text", "text": "6014235757" },
+      { "type": "text", "text": "Línea nacional" },
+      { "type": "text", "text": "01 8000 512620 " }
+    ]
+  },
+  {
+    "id": "internacional",
+    "title": "Internacional",
+    "showIcon": true,
+    "entries": [
+      { "type": "labelValue", "label": "USA gratis:", "value": "+ 1 (855) 488 2509" },
+      { "type": "labelValue", "label": "Resto del mundo (por cobrar):", "value": "+ 1 (855) 488 2509*" },
+      {
+        "type": "footnote",
+        "text": "*El valor de la llamada para el resto del mundo será reembolsado por AXA Asistencia Colombia si el beneficiario realiza la solicitud correspondiente."
+      },
+      {
+        "type": "labelValue",
+        "label": "WhatsApp (Solicitud de asistencia en viaje):",
+        "value": "(+57) 316 280 0725"
+      }
+    ]
+  },
+  {
+    "id": "certificaciones-ventas",
+    "title": "Certificaciones y ventas",
+    "entries": [
+      { "type": "text", "text": "601 6460296 opción 1" },
+      { "type": "text", "text": "601 6462828 opción 3" }
+    ]
+  },
+  {
+    "id": "reclamos",
+    "title": "Reclamos",
+    "entries": [
+      { "type": "text", "text": "servicioalcliente@axa-assistance.com.co" }
+    ],
+    "breakAll": true
+  },
+  {
+    "id": "reembolsos",
+    "title": "Reembolsos",
+    "entries": [
+      { "type": "text", "text": "med.colombia@axa-assistance.com.co" }
+    ],
+    "breakAll": true
+  },
+  {
+    "id": "reembolsos 2",
+    "title": "Reembolsos 2",
+    "entries": [
+      { "type": "text", "text": "med.colombia@axa-assistance.com.co" }
+    ],
+    "breakAll": true
+  }
+]

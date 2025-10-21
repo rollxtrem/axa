@@ -2,7 +2,7 @@
   {
     "id": "educacion-digital",
     "title": "Business  Intellingence con Power BI",
-    "duration": "8 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Aprende a tu ritmo con herramientas y cursos online que potencian tus habilidades digitales.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/15162605f6d6c658fb4d45b2ec649d9c0ff11619?width=746",
@@ -13,7 +13,7 @@
   {
     "id": "educacion-financiera",
     "title": "Curso Emprendimiento tipo prototipo",
-    "duration": "8 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Aprende a manejar tus finanzas personales, inversiones y planificación financiera.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6cdf72c2d1802d55cec62224a4d7d86931228283?width=746",
@@ -24,7 +24,7 @@
   {
     "id": "marketing-digital",
     "title": "Curso de Chat-GPT",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
@@ -35,7 +35,7 @@
   {
     "id": "marketing-digital",
     "title": "Curso de presentaciones efectivas",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
@@ -46,7 +46,7 @@
   {
     "id": "marketing-digital",
     "title": "Introducción a la IA",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
@@ -57,7 +57,7 @@
    {
     "id": "marketing-digital",
     "title": "Curso Ingles B2",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
@@ -69,7 +69,7 @@
    {
     "id": "marketing-digital",
     "title": "Neuromarketing",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",
@@ -81,7 +81,7 @@
    {
     "id": "marketing-digital",
     "title": " Curso de Programación",
-    "duration": "6 semanas",
+    "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "https://api.builder.io/api/v1/image/assets/TEMP/6d3d6983a2e3351f0bceecdb07b6b3572805c452?width=746",

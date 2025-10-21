@@ -149,20 +149,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 24/7 Section */}
-      <section className="bg-white py-8 md:py-[52px]">
-        <div className="flex justify-center items-center px-4 md:px-8 lg:px-[142px]">
-          <div className="text-center">
-            <div className="text-[#FF1721] font-['Publico_Text_Web'] text-[36px] md:text-[57px] leading-[40px] md:leading-[60px] tracking-[0.5px] mb-1">
-              24/7
-            </div>
-            <div className="text-[#666] font-['Source_Sans_Pro'] text-[18px] md:text-[23px] font-semibold leading-[24px] md:leading-[32px]">
-              Atención disponible
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-[#0E0E0E] text-white py-6">
         <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-[140px]">
