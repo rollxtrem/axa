@@ -24,8 +24,8 @@ type AlertMessage = {
 };
 
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
-const CONTACT_OFFICE_DETAIL_TRIGGER = "detalle: la respuesta de sia no es un json válido";
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+const CONTACT_OFFICE_DETAIL_TRIGGER = "respuesta de sia no es un json válido";
 const ALERT_TITLE = "¡Alerta!";
 
 const isContactOfficeMessage = (value: string) => {
