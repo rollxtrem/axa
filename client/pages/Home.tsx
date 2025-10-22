@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
@@ -10,7 +12,7 @@ export default function Home() {
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Background Images */}
           <img
-            src="/img/background_overlay.png"
+            src={asset("img/background_overlay.png")}
             alt="Background overlay"
             className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
           />
@@ -69,7 +71,7 @@ export default function Home() {
           <div className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden shadow-sm">
             <div className="w-full h-[110px] relative">
               <img
-                src="/img/bienestar.png"
+                src={asset("img/bienestar.png")}
                 alt="Bienestar"
                 className="w-full h-full object-cover"
               />
@@ -110,7 +112,7 @@ export default function Home() {
           <div className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden shadow-sm">
             <div className="w-full h-[110px] relative">
               <img
-                src="/img/formacion.png"
+                src={asset("img/formacion.png")}
                 alt="Formación"
                 className="w-full h-full object-cover"
               />
@@ -155,7 +157,7 @@ export default function Home() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="/img/axa_logo.png"
+                src={asset("img/axa_logo.png")}
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />
