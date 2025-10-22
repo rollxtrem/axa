@@ -447,7 +447,7 @@ export default function Header() {
         <div className="flex items-center gap-[7px]">
           <div className="flex w-[42px] h-[42px] justify-center items-center aspect-square relative">
             <img
-              src="/img/axa_logo.png"
+              src="https://api.builder.io/api/v1/image/assets/TEMP/8d00000f5bcb9510b7507406e5894f3d5a75c9af?width=84"
               alt="AXA Logo"
               className="w-[42px] h-[42px] flex-shrink-0 absolute left-0 top-0"
             />

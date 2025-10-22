@@ -639,7 +639,7 @@ export default function Bienestar() {
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Hero Image */}
           <img
-            src="/img/servicios_asistencia.png"
+            src="/images/servicios_asistencia.png"
             alt="Servicios de asistencia"
             className="absolute right-0 md:left-[548px] top-[-12px] w-[600px] md:w-[1180px] h-[320px] md:h-[466px] object-cover"
           />
@@ -822,7 +822,7 @@ export default function Bienestar() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="/img/axa_logo.png"
+                src="/images/axa_logo.png"
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />

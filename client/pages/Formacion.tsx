@@ -417,7 +417,7 @@ export default function Formacion() {
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Hero Image */}
           <img
-            src="/img/formacion_desarrollo.png"
+            src="/images/formacion_desarrollo.png"
             alt="Formación y desarrollo"
             className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
           />
@@ -648,7 +648,7 @@ export default function Formacion() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="/img/axa_logo.png"
+                src="/images/axa_logo.png"
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />

@@ -583,7 +583,7 @@ export default function AvisoPrivacidad() {
               }}
             >
               <img
-                src="/img/axa_logo.png"
+                src="/images/axa_logo.png"
                 alt="AXA Logo"
                 style={{
                   width: "42px",

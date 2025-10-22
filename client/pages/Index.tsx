@@ -129,7 +129,7 @@ export default function Index() {
           <div className="flex flex-col items-center gap-10 w-full">
             <div className="w-20 h-20 flex items-center justify-center">
               <img
-                src="/img/logo_axa.png"
+                src="/images/logo_axa.png"
                 alt="Logo AXA"
                 className="w-20 h-20 object-contain"
               />
