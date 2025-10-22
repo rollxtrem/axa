@@ -10,7 +10,7 @@ export default function Home() {
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Background Images */}
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/aa522e475c35958159de6477a0c62dd213728f3c?width=2302"
+            src="/img/background_overlay.png"
             alt="Background overlay"
             className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
           />
@@ -69,7 +69,7 @@ export default function Home() {
           <div className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden shadow-sm">
             <div className="w-full h-[110px] relative">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/8498c1d75b9f3087ea110a2f85e6bf01552d528d?width=746"
+                src="/img/bienestar.png"
                 alt="Bienestar"
                 className="w-full h-full object-cover"
               />
@@ -110,7 +110,7 @@ export default function Home() {
           <div className="w-full max-w-[373px] bg-white rounded-[10px] overflow-hidden shadow-sm">
             <div className="w-full h-[110px] relative">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/cced39f395f6e1425bb10f30116d78d708dcaac4?width=746"
+                src="/img/formacion.png"
                 alt="Formación"
                 className="w-full h-full object-cover"
               />
@@ -155,7 +155,7 @@ export default function Home() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/8d00000f5bcb9510b7507406e5894f3d5a75c9af?width=84"
+                src="/img/axa_logo.png"
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />

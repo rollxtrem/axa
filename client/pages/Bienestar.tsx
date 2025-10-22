@@ -381,7 +381,7 @@ export default function Bienestar() {
         }
       }
 
-      if (formattedError === CONTACT_OFFICE_MESSAGE || isSiaIntegrationError) {
+      //if (formattedError === CONTACT_OFFICE_MESSAGE || isSiaIntegrationError) {
         console.warn(CONTACT_OFFICE_MESSAGE);
         setFormError(null);
         setIsModalOpen(false);
@@ -395,8 +395,8 @@ export default function Bienestar() {
         setSelectedService(null);
         setSelectedCalendarDate(null);
         setCurrentDate(new Date());
-        return;
-      }
+        //return;
+      //}
 
       setFormError(formattedError);
     } finally {
@@ -639,7 +639,7 @@ export default function Bienestar() {
         <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
           {/* Hero Image */}
           <img
-            src="https://api.builder.io/api/v1/image/assets/TEMP/66f3a0736c9f4f678097338f1bdb8b8014ecef83?width=1794"
+            src="/img/servicios_asistencia.png"
             alt="Servicios de asistencia"
             className="absolute right-0 md:left-[548px] top-[-12px] w-[600px] md:w-[1180px] h-[320px] md:h-[466px] object-cover"
           />
@@ -822,7 +822,7 @@ export default function Bienestar() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/8d00000f5bcb9510b7507406e5894f3d5a75c9af?width=84"
+                src="/img/axa_logo.png"
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />

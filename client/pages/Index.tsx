@@ -129,7 +129,7 @@ export default function Index() {
           <div className="flex flex-col items-center gap-10 w-full">
             <div className="w-20 h-20 flex items-center justify-center">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/bae8fa4aa12914ed9829bce1bf8c98ab4df57ce2?width=160"
+                src="/img/logo_axa.png"
                 alt="Logo AXA"
                 className="w-20 h-20 object-contain"
               />

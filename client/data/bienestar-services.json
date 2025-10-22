@@ -7,7 +7,7 @@
         "name": "Informática",
         "badge": "",
         "description": "Asesoría especializada en ciberseguridad y protección de datos personales.",
-        "imageSrc": "https://api.builder.io/api/v1/image/assets/TEMP/0fe5e04f99c4cc66351c3aad3b43f3bf88f598b6?width=746",
+        "imageSrc": "/img/informatica.png",
         "iconKey": "informatica",
         "catalog": "FI"
       },
@@ -16,7 +16,7 @@
         "name": "Financiera",
         "badge": "",
         "description": "Orientación profesional en temas financieros, inversiones y planificación.",
-        "imageSrc": "https://api.builder.io/api/v1/image/assets/TEMP/f3cacc7de060f01ab81918ce68cba47441b7b7dd?width=746",
+        "imageSrc": "/img/financiera.png",
         "iconKey": "financiera",
         "catalog": "TF"
       }

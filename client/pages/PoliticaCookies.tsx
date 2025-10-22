@@ -299,7 +299,7 @@ export default function PoliticaCookies() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-4">
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/8d00000f5bcb9510b7507406e5894f3d5a75c9af?width=84"
+                src="/img/axa_logo.png"
                 alt="AXA Logo"
                 className="w-[42px] h-[42px] rounded-[3px]"
               />

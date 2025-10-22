@@ -583,7 +583,7 @@ export default function AvisoPrivacidad() {
               }}
             >
               <img
-                src="https://api.builder.io/api/v1/image/assets/TEMP/8d00000f5bcb9510b7507406e5894f3d5a75c9af?width=84"
+                src="/img/axa_logo.png"
                 alt="AXA Logo"
                 style={{
                   width: "42px",
