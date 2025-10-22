@@ -99,15 +99,19 @@ Ejemplo para personalizar correos y credenciales SMTP del dominio `beneficios.ax
 # Valores globales (fallback)
 SMTP_DEFAULT_FROM=jescudero.external@axapartners.com
 PQRS_EMAIL_TO=rollxtrem@gmail.com
+NOMBRE_APP="Portal de Beneficios"
 
 # Overrides específicos para beneficios.axa.com → TENANT_ID: BENEFICIOS_AXA_COM
 SMTP_DEFAULT_FROM__BENEFICIOS_AXA_COM=beneficios@axa.com
 PQRS_EMAIL_TO__BENEFICIOS_AXA_COM=soporte@axa.com
 AUTH0_CLIENT_ID__BENEFICIOS_AXA_COM=cliente-especifico
 AUTH0_CLIENT_SECRET__BENEFICIOS_AXA_COM=secreto-super-seguro
+NOMBRE_APP__BENEFICIOS_AXA_COM="Portal AXA Beneficios"
 ```
 
-En `.env.example` encontrarás comentarios adicionales y ejemplos de nombres de variables con sufijo para guiarte durante la configuración.【F:.env.example†L9-L31】
+En `.env.example` encontrarás comentarios adicionales y ejemplos de nombres de variables con sufijo para guiarte durante la configuración.【F:.env.example†L9-L36】
+
+`NOMBRE_APP` controla el nombre mostrado en el banner principal del home y también admite sufijos `__TENANT_ID` para personalizar la marca por dominio.【F:client/pages/Home.tsx†L1-L74】【F:server/routes/config.ts†L1-L18】
 
 ### 4. Iniciar el Servidor de Desarrollo
 

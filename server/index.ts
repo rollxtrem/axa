@@ -14,6 +14,7 @@ import {
   handleAuthWebAuthnStart,
 } from "./routes/auth";
 import { handleEnvironmentVariables } from "./routes/environment";
+import { handleGetAppConfig } from "./routes/config";
 import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
@@ -61,6 +62,7 @@ export function createServer() {
   });
 
   app.get("/env", handleEnvironmentVariables);
+  app.get("/api/config/app", handleGetAppConfig);
   app.get("/api/demo", requireAuth, handleDemo);
   app.post("/api/email/send", requireAuth, handleSendEmail);
   app.get("/api/pqrs/public-key", handleGetPqrsPublicKey);
