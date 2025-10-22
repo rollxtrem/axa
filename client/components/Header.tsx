@@ -457,18 +457,6 @@ export default function Header() {
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-[18px]">
           <div className="flex items-center gap-[8px] relative">
-            {/* CONTÁCTANOS Button */}
-            <button
-              onClick={() => setShowContact(true)}
-              className="flex h-[28px] px-4 items-center gap-4 rounded-[4px] hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex py-[11px] items-center gap-2 self-stretch">
-                <span className="text-[#0C0E45] text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase">
-                  CONTÁCTANOS
-                </span>
-              </div>
-            </button>
-
             {/* PQRs Button */}
             <button
               onClick={openPqrsModal}
@@ -502,28 +490,6 @@ export default function Header() {
                 </Link>
               )
             ) : null}
-
-            {/* Contact Icon - positioned as in Figma */}
-            <svg
-              className="w-3 h-3 aspect-square absolute top-2"
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <g clipPath="url(#clip0_4590_648)">
-                <path
-                  d="M5.33333 4H6.66667V5.33333H5.33333V4ZM8 4H9.33333V5.33333H8V4ZM11.3333 8.33333C10.5 8.33333 9.7 8.2 8.95333 7.95333C8.88667 7.93333 8.81333 7.92 8.74667 7.92C8.57333 7.92 8.40667 7.98667 8.27333 8.11333L6.80667 9.58C4.92 8.62 3.37333 7.08 2.41333 5.19333L3.88 3.72C4.06667 3.54 4.12 3.28 4.04667 3.04667C3.8 2.3 3.66667 1.5 3.66667 0.666667C3.66667 0.3 3.36667 0 3 0H0.666667C0.3 0 0 0.3 0 0.666667C0 6.92667 5.07333 12 11.3333 12C11.7 12 12 11.7 12 11.3333V9C12 8.63333 11.7 8.33333 11.3333 8.33333ZM1.35333 1.33333H2.35333C2.4 1.92 2.5 2.5 2.66 3.06L1.86 3.86667C1.58667 3.06 1.41333 2.21333 1.35333 1.33333ZM10.6667 10.6467C9.78667 10.5867 8.93333 10.4133 8.13333 10.14L8.93333 9.34C9.5 9.5 10.08 9.6 10.6667 9.64V10.6467ZM10.6667 4H12V5.33333H10.6667V4Z"
-                  fill="#0C0E45"
-                />
-              </g>
-              <defs>
-                <clipPath id="clip0_4590_648">
-                  <rect width="12" height="12" fill="white" />
-                </clipPath>
-              </defs>
-            </svg>
 
             {/* PQRS Icon - positioned as in Figma */}
             <svg
@@ -680,16 +646,6 @@ export default function Header() {
             </div>
 
             <div className="flex flex-col gap-4 w-full">
-              <button
-                onClick={() => {
-                  setShowMobileMenu(false);
-                  setShowContact(true);
-                }}
-                className="text-left text-[#0C0E45] font-['Source_Sans_Pro'] text-[16px] font-bold py-2"
-              >
-                CONTÁCTANOS
-              </button>
-
               <button
                 onClick={() => {
                   setShowMobileMenu(false);
