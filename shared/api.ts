@@ -16,6 +16,10 @@ export interface NodeVersionResponse {
   runtime: string;
 }
 
+export interface AppConfigResponse {
+  appName: string | null;
+}
+
 export interface SendEmailRequestBody {
   to: string | string[];
   subject: string;

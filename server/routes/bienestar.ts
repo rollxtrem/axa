@@ -20,6 +20,7 @@ import type {
   SiaFileGetResponseItem,
 } from "@shared/api";
 import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
+import { getTenantContext, resolveTenantEnv } from "../utils/tenant-env";
 
 const bienestarFormSchema = z.object({
   fullName: z.string().min(1),
@@ -261,12 +262,13 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "Unable to decrypt form payload" });
   }
 
-  const recipients = formatRecipients(process.env.BIENESTAR_EMAIL_TO);
+  const tenant = getTenantContext(req);
+  const recipients = formatRecipients(resolveTenantEnv("BIENESTAR_EMAIL_TO", tenant));
   if (recipients.length === 0) {
     return res.status(500).json({ error: "BIENESTAR_EMAIL_TO is not configured" });
   }
 
-  const fromAddress = process.env.BIENESTAR_EMAIL_FROM ?? undefined;
+  const fromAddress = resolveTenantEnv("BIENESTAR_EMAIL_FROM", tenant) ?? undefined;
   const { html, text } = buildEmailContent(formData);
 
   const parsedPreferredDate = parsePreferredDateTime(formData.preferredDate, formData.preferredTime);
@@ -530,7 +532,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       text,
       html,
       from: fromAddress,
-    });
+    }, { tenant });
 
     await sendEmail({
       to: [formData.email],
@@ -538,7 +540,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
       text: userText,
       html: userHtml,
       from: fromAddress,
-    });
+    }, { tenant });
   } catch (error) {
     console.error("Failed to send bienestar email", error);
     return res.status(502).json({ error: "Failed to send bienestar notification" });

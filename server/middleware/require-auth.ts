@@ -6,6 +6,7 @@ import {
   Auth0ServiceError,
   getAuth0BaseConfig,
 } from "../services/auth0";
+import { getTenantContext } from "../utils/tenant-env";
 
 const CLOCK_TOLERANCE_SECONDS = 60;
 const JWKS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -316,7 +317,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
   let config: { domain: string; audience?: string | undefined };
 
   try {
-    config = getAuth0BaseConfig();
+    const tenant = getTenantContext(req);
+    config = getAuth0BaseConfig(tenant);
   } catch (error) {
     if (error instanceof Auth0ServiceError) {
       console.error("La autenticación del servidor no está configurada correctamente", error);

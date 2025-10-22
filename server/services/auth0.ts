@@ -8,6 +8,7 @@ import type {
   WebAuthnLoginFinishRequest,
   WebAuthnLoginStartResponse,
 } from "@shared/api";
+import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
 
 export const AUTH0_MANAGEMENT_AUDIENCE_SUFFIX = "/api/v2/";
 
@@ -28,6 +29,10 @@ type Auth0DbConfig = Auth0ClientConfig & {
 type ManagementTokenCache = {
   token: string;
   expiresAt: number;
+};
+
+type Auth0RequestOptions = {
+  tenant?: TenantContext | null;
 };
 
 type Auth0TokenResponse = {
@@ -63,7 +68,8 @@ export class Auth0ServiceError extends Error {
   }
 }
 
-let managementTokenCache: ManagementTokenCache | null = null;
+const managementTokenCache = new Map<string, ManagementTokenCache>();
+const getManagementCacheKey = (config: Auth0ClientConfig) => `${config.domain}::${config.clientId}`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -108,9 +114,9 @@ const extractAuth0Message = (body: unknown, fallback: string): string => {
 const normalizeDomain = (domain: string): string =>
   domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-export const getAuth0BaseConfig = (): Auth0BaseConfig => {
-  const domain = process.env.AUTH0_DOMAIN?.trim();
-  const audience = process.env.AUTH0_AUDIENCE?.trim();
+export const getAuth0BaseConfig = (tenant?: TenantContext | null): Auth0BaseConfig => {
+  const domain = resolveTenantEnv("AUTH0_DOMAIN", tenant);
+  const audience = resolveTenantEnv("AUTH0_AUDIENCE", tenant);
 
   if (!domain) {
     throw new Auth0ServiceError(
@@ -125,10 +131,10 @@ export const getAuth0BaseConfig = (): Auth0BaseConfig => {
   };
 };
 
-const getAuth0ClientConfig = (): Auth0ClientConfig => {
-  const baseConfig = getAuth0BaseConfig();
-  const clientId = process.env.AUTH0_CLIENT_ID?.trim();
-  const clientSecret = process.env.AUTH0_CLIENT_SECRET?.trim();
+const getAuth0ClientConfig = (tenant?: TenantContext | null): Auth0ClientConfig => {
+  const baseConfig = getAuth0BaseConfig(tenant);
+  const clientId = resolveTenantEnv("AUTH0_CLIENT_ID", tenant);
+  const clientSecret = resolveTenantEnv("AUTH0_CLIENT_SECRET", tenant);
 
   if (!clientId || !clientSecret) {
     throw new Auth0ServiceError(
@@ -144,9 +150,9 @@ const getAuth0ClientConfig = (): Auth0ClientConfig => {
   };
 };
 
-const getAuth0DbConfig = (): Auth0DbConfig => {
-  const clientConfig = getAuth0ClientConfig();
-  const dbConnection = process.env.AUTH0_DB_CONNECTION?.trim();
+const getAuth0DbConfig = (tenant?: TenantContext | null): Auth0DbConfig => {
+  const clientConfig = getAuth0ClientConfig(tenant);
+  const dbConnection = resolveTenantEnv("AUTH0_DB_CONNECTION", tenant);
 
   if (!dbConnection) {
     throw new Auth0ServiceError(
@@ -166,8 +172,10 @@ const getManagementAudience = (domain: string) =>
 
 const getManagementToken = async (config: Auth0ClientConfig): Promise<string> => {
   const now = Date.now();
-  if (managementTokenCache && managementTokenCache.expiresAt > now) {
-    return managementTokenCache.token;
+  const cacheKey = getManagementCacheKey(config);
+  const cached = managementTokenCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.token;
   }
 
   const response = await fetch(`https://${config.domain}/oauth/token`, {
@@ -197,18 +205,19 @@ const getManagementToken = async (config: Auth0ClientConfig): Promise<string> =>
   const expiresInSeconds = body.expires_in ?? 0;
   const expiresAt = Date.now() + Math.max(expiresInSeconds - 60, 30) * 1000;
 
-  managementTokenCache = {
+  managementTokenCache.set(cacheKey, {
     token: body.access_token,
     expiresAt,
-  };
+  });
 
   return body.access_token;
 };
 
 export const createAuth0User = async (
-  payload: RegisterRequestBody
+  payload: RegisterRequestBody,
+  options: Auth0RequestOptions = {},
 ): Promise<RegisterResponseBody> => {
-  const config = getAuth0DbConfig();
+  const config = getAuth0DbConfig(options.tenant);
   const managementToken = await getManagementToken(config);
 
   const response = await fetch(`https://${config.domain}/api/v2/users`, {
@@ -288,9 +297,10 @@ const normalizeWebAuthnStartResponse = (
 };
 
 export const startWebAuthnLogin = async (
-  email: string
+  email: string,
+  options: Auth0RequestOptions = {},
 ): Promise<WebAuthnLoginStartResponse> => {
-  const config = getAuth0ClientConfig();
+  const config = getAuth0ClientConfig(options.tenant);
 
   const response = await fetch(`https://${config.domain}/webauthn/login/start`, {
     method: "POST",
@@ -318,9 +328,10 @@ export const startWebAuthnLogin = async (
 };
 
 export const finishWebAuthnLogin = async (
-  payload: WebAuthnLoginFinishRequest
+  payload: WebAuthnLoginFinishRequest,
+  options: Auth0RequestOptions = {},
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0ClientConfig();
+  const config = getAuth0ClientConfig(options.tenant);
 
   const response = await fetch(`https://${config.domain}/webauthn/login/finish`, {
     method: "POST",
@@ -382,9 +393,10 @@ export const finishWebAuthnLogin = async (
 };
 
 export const loginWithPassword = async (
-  payload: LoginRequestBody
+  payload: LoginRequestBody,
+  options: Auth0RequestOptions = {},
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0DbConfig();
+  const config = getAuth0DbConfig(options.tenant);
 
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
@@ -453,16 +465,19 @@ export const loginWithPassword = async (
   };
 };
 
-export const exchangeAuthorizationCode = async ({
-  code,
-  codeVerifier,
-  redirectUri,
-}: {
-  code: string;
-  codeVerifier: string;
-  redirectUri: string;
-}): Promise<LoginResponseBody> => {
-  const config = getAuth0ClientConfig();
+export const exchangeAuthorizationCode = async (
+  {
+    code,
+    codeVerifier,
+    redirectUri,
+  }: {
+    code: string;
+    codeVerifier: string;
+    redirectUri: string;
+  },
+  options: Auth0RequestOptions = {},
+): Promise<LoginResponseBody> => {
+  const config = getAuth0ClientConfig(options.tenant);
 
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",

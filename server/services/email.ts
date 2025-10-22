@@ -3,6 +3,8 @@ import tls from "node:tls";
 import { once } from "node:events";
 import crypto from "node:crypto";
 
+import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
+
 export interface EmailMessageInput {
   to: string[];
   subject: string;
@@ -269,7 +271,11 @@ function buildMimeMessage(config: SmtpResolvedConfig, input: EmailMessageInput) 
   return { payload, messageId, recipients };
 }
 
-function resolveSmtpConfig(): SmtpResolvedConfig {
+export type EmailSendOptions = {
+  tenant?: TenantContext | null;
+};
+
+function resolveSmtpConfig(tenant?: TenantContext | null): SmtpResolvedConfig {
   const requestedEnvironment = (process.env.SMTP_ENVIRONMENT ?? process.env.EMAIL_ENVIRONMENT ?? "preproduction").toLowerCase();
   const nodeEnv = process.env.NODE_ENV ?? "development";
   const useProduction = requestedEnvironment === "production" || (requestedEnvironment === "auto" && nodeEnv === "production");
@@ -286,17 +292,19 @@ function resolveSmtpConfig(): SmtpResolvedConfig {
         pass: "X}8Q+viWUn$bSL(Uz|A5",
       };
 
-  const host = process.env.SMTP_HOST ?? defaults.host;
-  const port = Number.parseInt(process.env.SMTP_PORT ?? "25", 10);
+  const host = resolveTenantEnv("SMTP_HOST", tenant) ?? defaults.host;
+  const portValue = resolveTenantEnv("SMTP_PORT", tenant) ?? "25";
+  const port = Number.parseInt(portValue, 10);
   if (Number.isNaN(port)) {
     throw new Error("Invalid SMTP_PORT value. It must be a valid number.");
   }
 
-  const user = process.env.SMTP_USER ?? defaults.user;
-  const pass = process.env.SMTP_PASSWORD ?? process.env.SMTP_PASS ?? defaults.pass;
-  const clientName = process.env.SMTP_CLIENT_NAME ?? "axa-application";
-  const rejectUnauthorized = (process.env.SMTP_REJECT_UNAUTHORIZED ?? "true").toLowerCase() !== "false";
-  const defaultFrom = process.env.SMTP_DEFAULT_FROM;
+  const user = resolveTenantEnv("SMTP_USER", tenant) ?? defaults.user;
+  const pass =
+    resolveTenantEnv("SMTP_PASSWORD", tenant) ?? resolveTenantEnv("SMTP_PASS", tenant) ?? defaults.pass;
+  const clientName = resolveTenantEnv("SMTP_CLIENT_NAME", tenant) ?? "axa-application";
+  const rejectUnauthorized = (resolveTenantEnv("SMTP_REJECT_UNAUTHORIZED", tenant) ?? "true").toLowerCase() !== "false";
+  const defaultFrom = resolveTenantEnv("SMTP_DEFAULT_FROM", tenant);
 
   return {
     host,
@@ -312,8 +320,11 @@ function resolveSmtpConfig(): SmtpResolvedConfig {
   };
 }
 
-export async function sendEmail(message: EmailMessageInput): Promise<EmailSendResult> {
-  const config = resolveSmtpConfig();
+export async function sendEmail(
+  message: EmailMessageInput,
+  options: EmailSendOptions = {},
+): Promise<EmailSendResult> {
+  const config = resolveSmtpConfig(options.tenant);
   const fromAddress = message.from ?? config.fromAddress;
   if (!fromAddress) {
     throw new Error("Sender address is required. Provide it in the request or via SMTP_DEFAULT_FROM env variable.");

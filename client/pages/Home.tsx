@@ -1,8 +1,51 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { apiFetch, readJsonResponse } from "@/lib/api-client";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 
+import type { AppConfigResponse } from "@shared/api";
+
 export default function Home() {
+  const [appName, setAppName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    const loadAppConfig = async () => {
+      try {
+        const response = await apiFetch("/api/config/app");
+        if (!response.ok) {
+          console.warn("No se pudo obtener la configuración de la aplicación", {
+            status: response.status,
+            statusText: response.statusText,
+          });
+          return;
+        }
+
+        const { data } = await readJsonResponse<AppConfigResponse>(response);
+        if (isCancelled) {
+          return;
+        }
+
+        const normalizedName = data?.appName?.trim();
+        setAppName(normalizedName && normalizedName.length > 0 ? normalizedName : null);
+      } catch (error) {
+        if (!isCancelled) {
+          console.warn("Error al cargar la configuración de la aplicación", error);
+        }
+      }
+    };
+
+    void loadAppConfig();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  const displayAppName = appName ?? "Portal de Beneficios";
+
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
       {/* Hero Banner */}
@@ -41,8 +84,8 @@ export default function Home() {
               </h4>
             </div>
             <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
-              Bienvenido al portal de Beneficios, accede a las diferentes
-              asistencias que tenemos diseñadas para ti.
+              Bienvenido a <span className="font-semibold">{displayAppName}</span>, accede a
+              las diferentes asistencias que tenemos diseñadas para ti.
             </p>
           </div>
         </div>

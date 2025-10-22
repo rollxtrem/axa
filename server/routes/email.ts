@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
+import { getTenantContext } from "../utils/tenant-env";
 import type { SendEmailRequestBody, SendEmailResponse } from "@shared/api";
 
 const emailRequestSchema = z
@@ -48,6 +49,7 @@ export const handleSendEmail: RequestHandler = async (req, res) => {
   }
 
   try {
+    const tenant = getTenantContext(req);
     const result = await sendEmail({
       to: normalizedTo,
       subject,
@@ -56,7 +58,7 @@ export const handleSendEmail: RequestHandler = async (req, res) => {
       from,
       cc: normalizeRecipients(cc),
       bcc: normalizeRecipients(bcc),
-    });
+    }, { tenant });
 
     const responseBody: SendEmailResponse = {
       messageId: result.messageId,
