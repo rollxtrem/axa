@@ -458,6 +458,10 @@ export default function Header() {
         <div className="hidden lg:flex items-center gap-[18px]">
           <div className="flex items-center gap-[8px] relative">
             {/* PQRs Button */}
+              <div className="flex py-[11px] items-center gap-2 self-stretch">
+              </div>
+
+            {/* PQRs Button */}
             <button
               onClick={openPqrsModal}
               className="flex h-[28px] px-4 items-center gap-4 rounded-[4px] hover:bg-gray-50 transition-colors"
