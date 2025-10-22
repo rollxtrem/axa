@@ -351,7 +351,7 @@ Sigue estos pasos para aprovechar la integración con Auth0 recién agregada y e
    - `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` y `AUTH0_CLIENT_SECRET` siempre son obligatorias.
    - `AUTH0_DB_CONNECTION` solo es necesaria para el registro y el inicio de sesión con usuario y contraseña; los flujos de WebAuthn únicamente requieren el dominio y las credenciales del cliente.
    - Define `AUTH0_AUDIENCE` si tus tokens deben tener como audiencia una API personalizada. Si se omite, el backend aceptará el audience del _Management API_ de Auth0.
-   - Las redirecciones del frontend utilizan `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_CLIENT_ID` y opcionalmente `VITE_AUTH0_AUDIENCE` para construir el enlace hacia `/authorize`. Estos valores suelen coincidir con los del backend.
+   - Las redirecciones del frontend utilizan `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` y opcionalmente `AUTH0_AUDIENCE` para construir el enlace hacia `/authorize`. Estos valores suelen coincidir con los del backend.
    - Ejemplo de configuración para el tenant de desarrollo:
 
      ```env
@@ -359,9 +359,9 @@ Sigue estos pasos para aprovechar la integración con Auth0 recién agregada y e
     AUTH0_CLIENT_ID=PbjNbLVFdS0ex4qfmFR8TMTgemGu8yjB
     AUTH0_CLIENT_SECRET=tQuqK4YrAxeKUuOjzsG5UGzcUMS7TuF_raq5bnTu1T4uY8mu7WWLfWDX_-r3ORrE
      AUTH0_DB_CONNECTION=Username-Password-Authentication
-    VITE_AUTH0_DOMAIN=dev-wdtec.us.auth0.com
-    VITE_AUTH0_CLIENT_ID=PbjNbLVFdS0ex4qfmFR8TMTgemGu8yjB
-    VITE_AUTH0_AUDIENCE=https://dev-wdtec.us.auth0.com/api/v2/
+    AUTH0_DOMAIN=dev-wdtec.us.auth0.com
+    AUTH0_CLIENT_ID=PbjNbLVFdS0ex4qfmFR8TMTgemGu8yjB
+    AUTH0_AUDIENCE=https://dev-wdtec.us.auth0.com/api/v2/
      ```
 
      Para usar el tenant de pruebas, sustituye los valores por los proporcionados por el equipo (`axa-partners-colpatria-co-customers-test...`).
