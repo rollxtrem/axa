@@ -20,6 +20,7 @@ import {
   loginWithPassword,
   startWebAuthnLogin,
 } from "../services/auth0";
+import { getTenantContext } from "../utils/tenant-env";
 
 const registerSchema = z
   .object({
@@ -141,7 +142,8 @@ export const handleAuthRegister: RequestHandler = async (req, res) => {
 
   try {
     const payload = parsed.data as RegisterRequestBody;
-    const result: RegisterResponseBody = await createAuth0User(payload);
+    const tenant = getTenantContext(req);
+    const result: RegisterResponseBody = await createAuth0User(payload, { tenant });
 
     return res.status(201).json(result);
   } catch (error) {
@@ -177,7 +179,8 @@ export const handleAuthLogin: RequestHandler = async (req, res) => {
 
   try {
     const payload = parsed.data as LoginRequestBody;
-    const result: LoginResponseBody = await loginWithPassword(payload);
+    const tenant = getTenantContext(req);
+    const result: LoginResponseBody = await loginWithPassword(payload, { tenant });
 
     return res.status(200).json(result);
   } catch (error) {
@@ -212,7 +215,8 @@ export const handleAuthCallback: RequestHandler = async (req, res) => {
 
   try {
     const payload = parsed.data as AuthCallbackRequestBody;
-    const result = await exchangeAuthorizationCode(payload);
+    const tenant = getTenantContext(req);
+    const result = await exchangeAuthorizationCode(payload, { tenant });
 
     return res.status(200).json(result);
   } catch (error) {
@@ -239,8 +243,10 @@ export const handleAuthWebAuthnStart: RequestHandler = async (req, res) => {
 
   try {
     const payload = parsed.data as WebAuthnLoginStartRequest;
+    const tenant = getTenantContext(req);
     const result: WebAuthnLoginStartResponse = await startWebAuthnLogin(
-      payload.email
+      payload.email,
+      { tenant }
     );
 
     return res.status(200).json(result);
@@ -267,7 +273,8 @@ export const handleAuthWebAuthnFinish: RequestHandler = async (req, res) => {
 
   try {
     const payload = parsed.data as WebAuthnLoginFinishRequest;
-    const result = await finishWebAuthnLogin(payload);
+    const tenant = getTenantContext(req);
+    const result = await finishWebAuthnLogin(payload, { tenant });
 
     return res.status(200).json(result);
   } catch (error) {

@@ -10,6 +10,7 @@ import {
 } from "./utils/encrypted-request";
 import { sendEmail } from "../services/email";
 import { FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
+import { getTenantContext, resolveTenantEnv } from "../utils/tenant-env";
 import coursesData from "../../client/data/formacion-courses.json";
 import type {
   EncryptedSubmissionRequest,
@@ -179,7 +180,8 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "Unable to decrypt form payload" });
   }
 
-  const recipients = formatRecipients(process.env.FORMACION_EMAIL_TO);
+  const tenant = getTenantContext(req);
+  const recipients = formatRecipients(resolveTenantEnv("FORMACION_EMAIL_TO", tenant));
   if (recipients.length === 0) {
     return res.status(500).json({ error: "FORMACION_EMAIL_TO is not configured" });
   }
@@ -240,7 +242,7 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
   const { html, text } = buildEmailContent(formData);
   const courseDefinition = findCourseDefinition(formData.course);
   const { html: userHtml, text: userText } = buildUserConfirmationContent(formData, courseDefinition);
-  const fromAddress = process.env.FORMACION_EMAIL_FROM ?? undefined;
+  const fromAddress = resolveTenantEnv("FORMACION_EMAIL_FROM", tenant) ?? undefined;
 
   try {
     await sendEmail({
@@ -248,8 +250,8 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
       subject: `Nueva inscripción curso - ${formData.course}`,
       text,
       html,
-      from: process.env.FORMACION_EMAIL_FROM ?? undefined,
-    });
+      from: fromAddress,
+    }, { tenant });
 
     await sendEmail({
       to: [formData.email],
@@ -257,7 +259,7 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
       text: userText,
       html: userHtml,
       from: fromAddress,
-    });
+    }, { tenant });
   } catch (error) {
     console.error("Failed to send formación email", error);
     return res.status(502).json({ error: "Failed to send formación notification" });
