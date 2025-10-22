@@ -87,6 +87,28 @@ VITE_PUBLIC_BUILDER_KEY="tu-clave-publica"
 
 El código del frontend utiliza esta variable para interpolar dinámicamente la clave en las URLs que apuntan a los activos almacenados en Builder.io, por lo que no necesitas modificar cada enlace manualmente cuando cambie la clave. En caso de que la variable no esté definida, se usa la clave por defecto incluida en el repositorio para mantener la compatibilidad.【F:client/lib/builder.ts†L1-L14】【F:client/pages/Home.tsx†L2-L3】【F:client/pages/Home.tsx†L182-L197】
 
+### Configuración multi-tenant por host
+
+El backend identifica el tenant activo a partir del host recibido en cada petición (cabeceras `host` o `x-forwarded-host`). Ese valor se normaliza a mayúsculas y se reemplazan los caracteres no alfanuméricos por guiones bajos para formar un identificador (`TENANT_ID`).【F:server/utils/tenant-env.ts†L17-L61】
+
+Todas las variables de entorno sensibles a tenant admiten un sufijo `__TENANT_ID`. Si existe una versión con el sufijo se utiliza para ese host; de lo contrario se aplica el valor global definido sin sufijo.【F:server/utils/tenant-env.ts†L69-L96】
+
+Ejemplo para personalizar correos y credenciales SMTP del dominio `beneficios.axa.com`:
+
+```env
+# Valores globales (fallback)
+SMTP_DEFAULT_FROM=jescudero.external@axapartners.com
+PQRS_EMAIL_TO=rollxtrem@gmail.com
+
+# Overrides específicos para beneficios.axa.com → TENANT_ID: BENEFICIOS_AXA_COM
+SMTP_DEFAULT_FROM__BENEFICIOS_AXA_COM=beneficios@axa.com
+PQRS_EMAIL_TO__BENEFICIOS_AXA_COM=soporte@axa.com
+AUTH0_CLIENT_ID__BENEFICIOS_AXA_COM=cliente-especifico
+AUTH0_CLIENT_SECRET__BENEFICIOS_AXA_COM=secreto-super-seguro
+```
+
+En `.env.example` encontrarás comentarios adicionales y ejemplos de nombres de variables con sufijo para guiarte durante la configuración.【F:.env.example†L9-L31】
+
 ### 4. Iniciar el Servidor de Desarrollo
 
 ```bash

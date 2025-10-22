@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
+import { getTenantContext, resolveTenantEnv } from "../utils/tenant-env";
 import type {
   EncryptedSubmissionRequest,
   PqrsFormData,
@@ -114,7 +115,8 @@ export const handleSubmitPqrs: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "Unable to decrypt PQRS payload" });
   }
 
-  const recipients = formatRecipients(process.env.PQRS_EMAIL_TO);
+  const tenant = getTenantContext(req);
+  const recipients = formatRecipients(resolveTenantEnv("PQRS_EMAIL_TO", tenant));
   if (recipients.length === 0) {
     return res.status(500).json({ error: "PQRS_EMAIL_TO is not configured" });
   }
@@ -127,8 +129,8 @@ export const handleSubmitPqrs: RequestHandler = async (req, res) => {
       subject: `Nueva solicitud PQRS - ${pqrsData.subject}`,
       text,
       html,
-      from: process.env.PQRS_EMAIL_FROM ?? undefined,
-    });
+      from: resolveTenantEnv("PQRS_EMAIL_FROM", tenant) ?? undefined,
+    }, { tenant });
   } catch (error) {
     console.error("Failed to send PQRS email", error);
     return res.status(502).json({ error: "Failed to send PQRS notification" });
