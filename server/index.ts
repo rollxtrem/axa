@@ -1,6 +1,9 @@
 import "dotenv/config";
 import express from "express";
 import cors, { CorsOptions } from "cors";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { handleDemo } from "./routes/demo";
 import { handleSendEmail } from "./routes/email";
 import {
@@ -20,6 +23,9 @@ import { requireAuth } from "./middleware/require-auth";
 export function createServer() {
   const app = express();
 
+  const moduleDirname = path.dirname(fileURLToPath(import.meta.url));
+  const publicDir = path.resolve(moduleDirname, "../public");
+
   const corsOptions: CorsOptions = {
     origin: "*",
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -38,6 +44,10 @@ export function createServer() {
   });
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+  }
 
   // Health check endpoint for Azure App Service warmup probes
   app.get("/health", (_req, res) => {
