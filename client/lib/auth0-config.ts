@@ -15,9 +15,9 @@ const readEnvValue = (key: string): string | undefined => {
 
 const normalizeDomain = (domain: string) => domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
-const domain = readEnvValue("VITE_AUTH0_DOMAIN");
-const clientId = readEnvValue("VITE_AUTH0_CLIENT_ID");
-const audienceFromEnv = readEnvValue("VITE_AUTH0_AUDIENCE");
+const domain = readEnvValue("AUTH0_DOMAIN");
+const clientId = readEnvValue("AUTH0_CLIENT_ID");
+const audienceFromEnv = readEnvValue("AUTH0_AUDIENCE");
 
 const computedAudience = domain
   ? `https://${normalizeDomain(domain)}/api/v2/`
