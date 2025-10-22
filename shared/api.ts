@@ -20,6 +20,12 @@ export interface AppConfigResponse {
   appName: string | null;
 }
 
+export interface Auth0ClientConfigResponse {
+  domain: string | null;
+  clientId: string | null;
+  audience: string | null;
+}
+
 export interface SendEmailRequestBody {
   to: string | string[];
   subject: string;

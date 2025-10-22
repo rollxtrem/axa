@@ -12,8 +12,9 @@ import { apiFetch } from "@/lib/api-client";
 
 import { authConfig } from "@/lib/auth-config";
 import {
-  auth0ClientConfig,
-  isAuth0ClientConfigValid,
+  getAuth0ClientConfig,
+  hasValidAuth0ClientConfig,
+  loadAuth0ClientConfig,
 } from "@/lib/auth0-config";
 
 import type {
@@ -167,6 +168,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  useEffect(() => {
+    void loadAuth0ClientConfig().catch(() => {
+      // Los errores ya se registran dentro de loadAuth0ClientConfig.
+    });
+  }, []);
+
   const completeLogin = useCallback(
     (
       result: LoginResponseBody,
@@ -292,17 +299,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const homeUrl = `${window.location.origin}/`;
 
-    if (isAuth0ClientConfigValid) {
-      const { domain, clientId } = auth0ClientConfig;
+    const config = getAuth0ClientConfig();
+    if (hasValidAuth0ClientConfig(config)) {
+      const { domain, clientId } = config;
 
-      if (domain && clientId) {
-        const logoutUrl = new URL(`https://${domain}/v2/logout`);
-        logoutUrl.searchParams.set("client_id", clientId);
-        logoutUrl.searchParams.set("returnTo", homeUrl);
+      const logoutUrl = new URL(`https://${domain}/v2/logout`);
+      logoutUrl.searchParams.set("client_id", clientId);
+      logoutUrl.searchParams.set("returnTo", homeUrl);
 
-        window.location.assign(logoutUrl.toString());
-        return;
-      }
+      window.location.assign(logoutUrl.toString());
+      return;
     }
 
     window.location.assign(homeUrl);
