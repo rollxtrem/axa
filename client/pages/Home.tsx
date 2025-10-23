@@ -49,18 +49,18 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
-        <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px]">
+        <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block items-center px-4 md:px-8 py-10 md:py-0">
           {/* Background Images */}
           <img
             src="/images/background_overlay.png"
             alt="Background overlay"
-            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
+            className="w-full max-w-[360px] sm:max-w-[460px] md:max-w-none md:absolute md:left-[-214px] md:top-0 md:w-[1012px] md:h-[466px] object-cover"
           />
 
           {/* Blue angled overlay */}
           <svg
-            className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[466px] fill-[#0c0e45]"
+            className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
             viewBox="0 0 957 435"
             preserveAspectRatio="none"
           >
@@ -72,7 +72,7 @@ export default function Home() {
           </svg>
 
           {/* Hero Content */}
-          <div className="absolute right-4 md:left-[759px] top-[30px] md:top-[51px] w-full max-w-[350px] md:w-[470px] text-center md:text-right text-white px-4 md:px-0">
+          <div className="relative z-10 w-full max-w-[470px] text-center md:text-right text-white px-4 md:px-0 mt-8 md:mt-0 md:absolute md:left-[759px] md:top-[51px]">
             <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
               <h4 className="inline">
                 <div>
@@ -83,7 +83,7 @@ export default function Home() {
                 <br />
               </h4>
             </div>
-            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
+            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-4 md:mt-0">
               Bienvenido a <span className="font-semibold">{displayAppName}</span>, accede a
               las diferentes asistencias que tenemos diseñadas para ti.
             </p>
