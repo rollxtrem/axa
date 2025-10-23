@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { RequestHandler, Response } from "express";
 import { z } from "zod";
 
@@ -37,39 +40,75 @@ type _EncryptedRequestMatchesSchema = BienestarSubmissionRequest extends z.infer
   ? true
   : never;
 
-const buildEmailContent = (data: BienestarFormData) => {
-  const html = `
-    <h1>Nueva solicitud de bienestar</h1>
-    <p>Se ha recibido una nueva solicitud de agendamiento a través del portal de bienestar.</p>
-    <h2>Datos de contacto</h2>
-    <ul>
-      <li><strong>Nombre:</strong> ${escapeHtml(data.fullName)}</li>
-      <li><strong>Identificación:</strong> ${escapeHtml(data.identification)}</li>
-      <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
-      <li><strong>Teléfono:</strong> ${escapeHtml(data.phone)}</li>
-    </ul>
-    <h2>Detalles de la cita</h2>
-    <ul>
-      <li><strong>Servicio:</strong> ${escapeHtml(data.service)}</li>
-      <li><strong>Fecha preferida:</strong> ${escapeHtml(data.preferredDate)}</li>
-      <li><strong>Hora preferida:</strong> ${escapeHtml(data.preferredTime)}</li>
-    </ul>
-  `;
+const moduleDirname = path.dirname(fileURLToPath(import.meta.url));
+const templatesDir = path.resolve(moduleDirname, "../plantillas");
 
-  const text = [
-    "Nueva solicitud de bienestar",
-    "",
-    "Datos de contacto:",
-    `Nombre: ${data.fullName}`,
-    `Identificación: ${data.identification}`,
-    `Correo: ${data.email}`,
-    `Teléfono: ${data.phone}`,
-    "",
-    "Detalles de la cita:",
-    `Servicio: ${data.service}`,
-    `Fecha preferida: ${data.preferredDate}`,
-    `Hora preferida: ${data.preferredTime}`,
-  ].join("\n");
+const loadTemplate = (filename: string) => {
+  const templatePath = path.resolve(templatesDir, filename);
+  try {
+    return fs.readFileSync(templatePath, "utf8");
+  } catch (error) {
+    console.error(`Failed to load email template at ${templatePath}`, error);
+    throw new Error("Unable to load Bienestar email template");
+  }
+};
+
+const bienestarHtmlTemplate = loadTemplate("bienestar.html");
+
+const bienestarTextTemplate = `Nueva solicitud de bienestar
+
+Se ha recibido una nueva solicitud de agendamiento a través del portal de bienestar.
+
+Datos de contacto
+Nombre: {{fullName}}
+Identificación: {{identification}}
+Correo: {{email}}
+Teléfono: {{phone}}
+
+Detalles de la cita
+Servicio: {{service}}
+Catálogo del servicio: {{serviceCatalog}}
+Fecha preferida: {{preferredDate}}
+Hora preferida: {{preferredTime}}
+
+----------------------------------------
+Advertencia legal: El contenido de este mensaje, incluidos los ficheros adjuntos, es confidencial. Si usted ha recibido o accedido a este mensaje por error, le rogamos que nos comunique esta incidencia por la misma vía y proceda a destruir el mensaje de forma inmediata. Cualquier opinión contenida en este mensaje es responsabilidad de su autor y no representa necesariamente la opinión de AXA PARTNERS COLOMBIA. Su dirección de correo y demás datos de contacto se encuentran recogidos en nuestros ficheros con la finalidad de gestionar la relación contractual y/o mantenerlo informado. Entendemos que usted consiente el tratamiento de los citados datos con dicha finalidad, y estos serán tratados conforme a nuestra Política de Privacidad (https://www.axapartners.co/es/pagina/politica-de-privacidad). Puede ejercer sus derechos en materia de protección de datos de acuerdo con la Ley 1581 de 2012, dirigiéndose por escrito al correo electrónico: dataprivacy@axa-assistance.com.co. Tenga presente que cualquier uso de datos que no esté circunscrito a las finalidades descritas en las políticas, o que se realice sin el consentimiento previo de los titulares, está sujeto a las sanciones previstas en la normativa colombiana.`;
+
+const renderTemplate = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce(
+    (acc, [key, value]) => acc.split(`{{${key}}}`).join(value),
+    template,
+  );
+
+const buildEmailContent = (data: BienestarFormData) => {
+  const serviceCatalogValue = data.serviceCatalog.trim()
+    ? data.serviceCatalog
+    : "No especificado";
+
+  const htmlValues = {
+    fullName: escapeHtml(data.fullName),
+    identification: escapeHtml(data.identification),
+    email: escapeHtml(data.email),
+    phone: escapeHtml(data.phone),
+    service: escapeHtml(data.service),
+    serviceCatalog: escapeHtml(serviceCatalogValue),
+    preferredDate: escapeHtml(data.preferredDate),
+    preferredTime: escapeHtml(data.preferredTime),
+  };
+
+  const textValues = {
+    fullName: data.fullName,
+    identification: data.identification,
+    email: data.email,
+    phone: data.phone,
+    service: data.service,
+    serviceCatalog: serviceCatalogValue,
+    preferredDate: data.preferredDate,
+    preferredTime: data.preferredTime,
+  };
+
+  const html = renderTemplate(bienestarHtmlTemplate, htmlValues);
+  const text = renderTemplate(bienestarTextTemplate, textValues);
 
   return { html, text };
 };
