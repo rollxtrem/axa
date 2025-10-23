@@ -71,6 +71,9 @@ const CONTACT_OFFICE_MESSAGE =
 
 const SIA_ERROR_KEYWORDS = ["SIA", "Error al solicitar el servicio"];
 
+const DATA_TREATMENT_POLICY_URL =
+  "https://axabeneficios.axa-assistance.com.co/politica-de-tratamiento-de-datos.pdf";
+
 const isSiaIntegrationErrorMessage = (value: unknown): value is string => {
   if (typeof value !== "string") {
     return false;
@@ -176,6 +179,7 @@ export default function Bienestar() {
   const [profileData, setProfileData] = useState<ProfileSessionData | null>(null);
   const [isLoginPromptOpen, setIsLoginPromptOpen] = useState(false);
   const [loginPromptMode, setLoginPromptMode] = useState<"login" | "profile">("login");
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const bienestarServices = bienestarServicesData as BienestarServicesData;
   const phoneAssistance = bienestarServices.phoneAssistance;
   const phoneAssistanceServices = (phoneAssistance?.services ?? []).filter(
@@ -288,6 +292,11 @@ export default function Bienestar() {
       return;
     }
 
+    if (!termsAccepted) {
+      setFormError("Debes aceptar los términos para continuar.");
+      return;
+    }
+
     if (!publicKey) {
       setFormError("No pudimos preparar tu solicitud. Intenta nuevamente más tarde.");
       return;
@@ -351,6 +360,7 @@ export default function Bienestar() {
       }
 
       setIsModalOpen(false);
+      setTermsAccepted(false);
       setConfirmationState({
         title: DEFAULT_CONFIRMATION_TITLE,
         message: confirmationMessage,
@@ -385,6 +395,7 @@ export default function Bienestar() {
         console.warn(CONTACT_OFFICE_MESSAGE);
         setFormError(null);
         setIsModalOpen(false);
+        setTermsAccepted(false);
         setConfirmationState({
           title: ALERT_TITLE,
           message: CONTACT_OFFICE_MESSAGE,
@@ -446,6 +457,7 @@ export default function Bienestar() {
       setFormSubmitting(false);
       setSelectedCalendarDate(null);
       setCurrentDate(new Date());
+      setTermsAccepted(false);
       setFormData({
         name: storedProfile.name.trim(),
         identification: storedProfile.identification.trim(),
@@ -481,6 +493,7 @@ export default function Bienestar() {
     setFormData(initialFormState);
     setSelectedCalendarDate(null);
     setCurrentDate(new Date());
+    setTermsAccepted(false);
   };
 
   const closeConfirmationModal = () => {
@@ -625,7 +638,7 @@ export default function Bienestar() {
     return currentDate.getFullYear();
   };
 
-  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError;
+  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError || !termsAccepted;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const isOnEarliestMonth =
@@ -1174,6 +1187,49 @@ export default function Bienestar() {
                     </div>
                   </div>
                 </div>
+
+                <div className="space-y-3 text-[11px] leading-[16px] text-[#4b4b4b] font-['Source_Sans_Pro']">
+                  <p>
+                    Nota legal: Le informamos que los datos de carácter personal que usted nos proporcione al completar este
+                    formulario serán tratados conforme la normativa vigente en materia de protección de datos en Colombia,
+                    incluyendo la Ley 1581 de 2012, el Decreto Reglamentario 1377 de 2013 y demás normas aplicables.
+                  </p>
+                  <p>
+                    Asimismo, declara haber sido informado de sus derechos de acceso, rectificación, consulta, oposición y
+                    supresión, los cuales podrá ejercer conforme a lo establecido en nuestra
+                    {" "}
+                    <a
+                      href={DATA_TREATMENT_POLICY_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                    >
+                      Política de Tratamiento de Datos
+                    </a>
+                    , documento que ha leído, entendido y aceptado. Declara que la información proporcionada es veraz,
+                    completa, exacta, actualizada y verificable.
+                  </p>
+                  <p>
+                    Finalmente, puede ejercer sus derechos en materia de protección de datos al correo
+                    {" "}
+                    <a href="mailto:dataprivacy@axa-assistance.com.co" className="underline">
+                      dataprivacy@axa-assistance.com.co
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-2 text-xs text-[#0e0e0e] font-['Source_Sans_Pro']">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(event) => setTermsAccepted(event.target.checked)}
+                    disabled={formSubmitting}
+                    required
+                    className="mt-0.5"
+                  />
+                  <span>He leído y acepto los términos.</span>
+                </label>
 
                 {/* Buttons */}
                 <div className="flex flex-col gap-3">
