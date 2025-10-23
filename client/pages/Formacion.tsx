@@ -510,9 +510,6 @@ export default function Formacion() {
                       <h4 className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[20px] font-semibold leading-8">
                         {course.title}
                       </h4>
-                      <span className="bg-[#6574f8] text-white text-[10px] px-3 py-1 rounded-[10px]">
-                        {course.duration}
-                      </span>
                     </div>
                     <span className="border border-[#6574f8] text-[#0e0e0e] text-[10px] px-3 py-1 rounded-[10px] self-start">
                       {course.level}
