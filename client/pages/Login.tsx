@@ -11,6 +11,30 @@ import { createPkceChallenge, persistPkceState } from "@/lib/pkce";
 export default function Login() {
   const redirectAttemptedRef = useRef(false);
 
+  const resolveRedirectUri = (configuredRedirect?: string) => {
+    if (configuredRedirect) {
+      return configuredRedirect;
+    }
+
+    if (typeof window === "undefined" || !window.location) {
+      throw new Error(
+        "No se pudo determinar la URL de redirección predeterminada para Auth0."
+      );
+    }
+
+    const { location } = window;
+    const origin =
+      location.origin || `${location.protocol}//${location.host}` || "";
+
+    if (!origin) {
+      throw new Error(
+        "El navegador no expuso un origen válido para construir la redirección de Auth0."
+      );
+    }
+
+    return `${origin.replace(/\/$/, "")}/callback`;
+  };
+
   useEffect(() => {
     if (redirectAttemptedRef.current) {
       return;
@@ -45,7 +69,40 @@ export default function Login() {
         }
 
         const { domain, clientId, audience } = config;
-        const redirectUri = `${window.location.origin.replace(/\/$/, "")}/callback`;
+        let redirectUri: string;
+
+        try {
+          redirectUri = resolveRedirectUri(config.redirectUri);
+        } catch (error) {
+          console.error(
+            "No se pudo determinar la URL de redirección para Auth0.",
+            error
+          );
+          return;
+        }
+
+        if (config.redirectUri) {
+          try {
+            const configuredUrl = new URL(config.redirectUri);
+            const currentOrigin = window.location.origin;
+
+            if (configuredUrl.origin !== currentOrigin) {
+              console.info(
+                "Se utilizará la URL de redirección configurada para Auth0, que no coincide con el dominio actual.",
+                {
+                  redirectUri: config.redirectUri,
+                  currentOrigin,
+                }
+              );
+            }
+          } catch (error) {
+            console.warn(
+              "La URL de redirección configurada para Auth0 no es válida.",
+              error
+            );
+          }
+        }
+
         const { codeVerifier, codeChallenge, state } = await createPkceChallenge();
 
         persistPkceState({

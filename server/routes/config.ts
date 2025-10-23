@@ -31,6 +31,22 @@ const normalizeAuth0Domain = (value?: string | null): string | null => {
   return normalized.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 };
 
+const normalizeRedirectUri = (value?: string | null): string | null => {
+  const normalized = normalizeOptionalString(value);
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const url = new URL(normalized);
+    const sanitizedPath = url.pathname.replace(/\/+$/, "");
+    const sanitizedSearch = url.search?.trim() ?? "";
+    return `${url.origin}${sanitizedPath}${sanitizedSearch}`;
+  } catch (_error) {
+    return null;
+  }
+};
+
 export const handleGetAppConfig: RequestHandler = (req, res) => {
   const tenant = getTenantContext(req);
   const appName = normalizeAppName(resolveTenantEnv("NOMBRE_APP", tenant));
@@ -47,11 +63,15 @@ export const handleGetAuth0ClientConfig: RequestHandler = (req, res) => {
   const domain = normalizeAuth0Domain(resolveTenantEnv("AUTH0_DOMAIN", tenant));
   const clientId = normalizeOptionalString(resolveTenantEnv("AUTH0_CLIENT_ID", tenant));
   const audience = normalizeOptionalString(resolveTenantEnv("AUTH0_AUDIENCE", tenant));
+  const redirectUri = normalizeRedirectUri(
+    resolveTenantEnv("AUTH0_REDIRECT_URI", tenant)
+  );
 
   const payload: Auth0ClientConfigResponse = {
     domain,
     clientId,
     audience: audience ?? (domain ? `https://${domain}/api/v2/` : null),
+    redirectUri,
   };
 
   const tenantLabel = tenant
@@ -64,6 +84,7 @@ export const handleGetAuth0ClientConfig: RequestHandler = (req, res) => {
       domain: payload.domain ?? "No configurado",
       clientId: payload.clientId ?? "No configurado",
       audience: payload.audience ?? "No configurada",
+      redirectUri: payload.redirectUri ?? "No configurada",
     },
   );
 
