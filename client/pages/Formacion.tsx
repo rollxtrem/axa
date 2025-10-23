@@ -31,6 +31,9 @@ const COURSE_ACTIVATION_TITLE = "Información importante";
 const COURSE_ACTIVATION_MESSAGE =
   "Estimado asegurado, recuerda que este curso solo estará disponible para su aprendizaje por 30 días, después de la activación, espera el correo que llegara al siguiente día hábil y accede al curso";
 
+const DATA_TREATMENT_POLICY_URL =
+  "https://axabeneficios.axa-assistance.com.co/politica-de-tratamiento-de-datos.pdf";
+
 const isContactOfficeMessage = (value: string) => {
   const trimmedValue = value.trim();
 
@@ -173,6 +176,7 @@ export default function Formacion() {
   const [isConfirmationModalOpen, setIsConfirmationModalOpen] = useState(false);
   const [confirmationTitle, setConfirmationTitle] = useState<string | null>(null);
   const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const slidesPerView = 3;
   const totalSlides = Math.ceil(courses.length / slidesPerView);
 
@@ -240,6 +244,7 @@ export default function Formacion() {
         setPublicKey(null);
       }
       setLoadingKey(false);
+      setTermsAccepted(false);
       setIsModalOpen(true);
     };
 
@@ -255,6 +260,7 @@ export default function Formacion() {
     setPublicKey(null);
     setLoadingKey(false);
     setKeyError(null);
+    setTermsAccepted(false);
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -359,6 +365,11 @@ export default function Formacion() {
       return;
     }
 
+    if (!termsAccepted) {
+      setFormError("Debes aceptar los términos para continuar.");
+      return;
+    }
+
     setFormSubmitting(true);
     setFormError(null);
     setAlertMessage(null);
@@ -424,7 +435,7 @@ export default function Formacion() {
     }
   };
 
-  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError;
+  const isSubmitDisabled = formSubmitting || loadingKey || !!keyError || !termsAccepted;
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
@@ -804,6 +815,49 @@ export default function Formacion() {
               {formError && (
                 <p className="text-sm text-[#FF1721] font-['Source_Sans_Pro']">{formError}</p>
               )}
+
+              <div className="space-y-3 text-[11px] leading-[16px] text-[#4b4b4b] font-['Source_Sans_Pro']">
+                <p>
+                  Nota legal: Le informamos que los datos de carácter personal que usted nos proporcione al completar este
+                  formulario serán tratados conforme la normativa vigente en materia de protección de datos en Colombia,
+                  incluyendo la Ley 1581 de 2012, el Decreto Reglamentario 1377 de 2013 y demás normas aplicables.
+                </p>
+                <p>
+                  Asimismo, declara haber sido informado de sus derechos de acceso, rectificación, consulta, oposición y
+                  supresión, los cuales podrá ejercer conforme a lo establecido en nuestra
+                  {" "}
+                  <a
+                    href={DATA_TREATMENT_POLICY_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Política de Tratamiento de Datos
+                  </a>
+                  , documento que ha leído, entendido y aceptado. Declara que la información proporcionada es veraz,
+                  completa, exacta, actualizada y verificable.
+                </p>
+                <p>
+                  Finalmente, puede ejercer sus derechos en materia de protección de datos al correo
+                  {" "}
+                  <a href="mailto:dataprivacy@axa-assistance.com.co" className="underline">
+                    dataprivacy@axa-assistance.com.co
+                  </a>
+                  .
+                </p>
+              </div>
+
+              <label className="flex items-start gap-2 text-xs text-[#0e0e0e] font-['Source_Sans_Pro']">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(event) => setTermsAccepted(event.target.checked)}
+                  disabled={formSubmitting}
+                  required
+                  className="mt-0.5"
+                />
+                <span>He leído y acepto los términos.</span>
+              </label>
 
               {/* Buttons */}
               <div className="space-y-3 pt-6">
