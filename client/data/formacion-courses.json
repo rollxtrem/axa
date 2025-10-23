@@ -17,7 +17,7 @@
     "level": "Intermedio",
     "description": "Aprende a manejar tus finanzas personales, inversiones y planificación financiera.",
     "imageUrl": "/images/educacion_financiera.png",
-    "iconKey": "financial-education",
+    "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/7GKMa4G2_Hw",
     "isCertificate": true
   },
@@ -28,7 +28,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/WV-0tgqJ1eo",
     "isCertificate": true
   },
@@ -39,7 +39,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/xx68x2SACgE",
     "isCertificate": true
   },
@@ -50,7 +50,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "digital-skills",
     "urlCurso":"https://edutin.com/curso-de-introduccion-a-la-inteligencia-artificial-4243",
     "isCertificate": true
   },
@@ -61,7 +61,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "diploma-education",
     "urlCurso":"https://app.edutin.com/category",
     "isCertificate": true
   },
@@ -73,7 +73,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "diploma-education",
     "urlCurso":"https://app.edutin.com/category",
     "isCertificate": true
   },
@@ -85,7 +85,7 @@
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
     "imageUrl": "/images/marketing_digital.png",
-    "iconKey": "digital-marketing",
+    "iconKey": "diploma-education",
     "urlCurso":"https://app.edutin.com/category",
     "isCertificate": true
   }
