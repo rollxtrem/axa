@@ -9,7 +9,7 @@ const normalizePath = (path: string) => {
 const sanitizeUrlValue = (value: string) => value.replace(/\s+/g, "").replace(/\/+$/, "");
 
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto";
+  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
 
 const KNOWN_ERROR_TRANSLATIONS = new Map<string, string>([
   ["PQRS public key is not configured", "El servidor no tiene configurada la llave pública de PQRS (PQRS_PUBLIC_KEY)."],
@@ -58,6 +58,14 @@ const KNOWN_ERROR_TRANSLATIONS = new Map<string, string>([
   ],
   [
     "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto",
+    CONTACT_OFFICE_MESSAGE,
+  ],
+  [
+    "detalle: la respuesta de sia no es un json válido",
+    CONTACT_OFFICE_MESSAGE,
+  ],
+  [
+    "Detalle: la respuesta de sia no es un json válido",
     CONTACT_OFFICE_MESSAGE,
   ],
 ]);
