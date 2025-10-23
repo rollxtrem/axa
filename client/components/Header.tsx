@@ -539,13 +539,13 @@ export default function Header() {
 
       {/* Navigation bar - Exact Figma spacing */}
       <nav className="hidden lg:block w-full bg-[#0c0e45]">
-        <div className="flex justify-center items-center gap-8 px-4 pt-4 pb-0 lg:px-[513px] lg:pt-4 lg:pb-0">
+        <div className="flex justify-center items-center gap-8 px-4 py-4 lg:px-[513px] lg:py-4">
           {/* HOME Button */}
-          <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex py-[11px] items-center gap-2 self-stretch">
+          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
+            <div className="flex items-center gap-2">
               <Link
                 to="/"
-                className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 HOME
               </Link>
@@ -553,11 +553,11 @@ export default function Header() {
           </button>
 
           {/* BIENESTAR Button */}
-          <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex py-[11px] items-center gap-2 self-stretch">
+          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
+            <div className="flex items-center gap-2">
               <Link
                 to="/bienestar"
-                className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 Bienestar
               </Link>
@@ -565,11 +565,11 @@ export default function Header() {
           </button>
 
           {/* FORMACIÓN Button */}
-          <button className="flex h-[28px] px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex py-[11px] items-center gap-2 self-stretch">
+          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
+            <div className="flex items-center gap-2">
               <Link
                 to="/formacion"
-                className="text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-[36px] tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 Formación
               </Link>
