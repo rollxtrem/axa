@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { RequestHandler } from "express";
 import { z } from "zod";
 import { sendEmail } from "../services/email";
@@ -36,44 +39,75 @@ const pqrsFormSchema = z.object({
   description: z.string().min(1),
 });
 
-const buildEmailContent = (data: PqrsFormData) => {
-  const html = `
-    <h1>Nueva solicitud PQRS</h1>
-    <p>Se ha recibido una nueva solicitud PQRS a través del portal.</p>
-    <h2>Datos personales</h2>
-    <ul>
-      <li><strong>Nombre:</strong> ${escapeHtml(data.fullName)}</li>
-      <li><strong>Correo:</strong> ${escapeHtml(data.email)}</li>
-      <li><strong>Teléfono:</strong> ${escapeHtml(data.phone)}</li>
-      <li><strong>Tipo de documento:</strong> ${escapeHtml(data.documentType)}</li>
-      <li><strong>Número de documento:</strong> ${escapeHtml(data.documentNumber)}</li>
-    </ul>
-    <h2>Detalle de la solicitud</h2>
-    <ul>
-      <li><strong>Tipo:</strong> ${escapeHtml(data.requestType)}</li>
-      <li><strong>Asunto:</strong> ${escapeHtml(data.subject)}</li>
-    </ul>
-    <p><strong>Descripción:</strong></p>
-    <p>${escapeHtml(data.description).replace(/\n/g, "<br />")}</p>
-  `;
+const moduleDirname = path.dirname(fileURLToPath(import.meta.url));
+const templatesDir = path.resolve(moduleDirname, "../plantillas");
 
-  const text = [
-    "Nueva solicitud PQRS",
-    "",
-    "Datos personales:",
-    `Nombre: ${data.fullName}`,
-    `Correo: ${data.email}`,
-    `Teléfono: ${data.phone}`,
-    `Tipo de documento: ${data.documentType}`,
-    `Número de documento: ${data.documentNumber}`,
-    "",
-    "Detalle de la solicitud:",
-    `Tipo: ${data.requestType}`,
-    `Asunto: ${data.subject}`,
-    "",
-    "Descripción:",
-    data.description,
-  ].join("\n");
+const loadTemplate = (filename: string) => {
+  const templatePath = path.resolve(templatesDir, filename);
+  try {
+    return fs.readFileSync(templatePath, "utf8");
+  } catch (error) {
+    console.error(`Failed to load email template at ${templatePath}`, error);
+    throw new Error("Unable to load PQRS email template");
+  }
+};
+
+const pqrsHtmlTemplate = loadTemplate("pqrs.html");
+
+const pqrsTextTemplate = `Nueva solicitud PQRS
+
+Se ha recibido una nueva solicitud PQRS a través del portal.
+
+Datos personales
+Nombre: {{fullName}}
+Correo: {{email}}
+Teléfono: {{phone}}
+Tipo de documento: {{documentType}}
+Número de documento: {{documentNumber}}
+
+Detalle de la solicitud
+Tipo: {{requestType}}
+Asunto: {{subject}}
+
+Descripción
+{{descriptionText}}
+
+----------------------------------------
+Advertencia legal: El contenido de este mensaje, incluidos los ficheros adjuntos, es confidencial. Si usted ha recibido o accedido a este mensaje por error, le rogamos que nos comunique esta incidencia por la misma vía y proceda a destruir el mensaje de forma inmediata. Cualquier opinión contenida en este mensaje es responsabilidad de su autor y no representa necesariamente la opinión de AXA PARTNERS COLOMBIA. Su dirección de correo y demás datos de contacto se encuentran recogidos en nuestros ficheros con la finalidad de gestionar la relación contractual y/o mantenerlo informado. Entendemos que usted consiente el tratamiento de los citados datos con dicha finalidad, y estos serán tratados conforme a nuestra Política de Privacidad (https://www.axapartners.co/es/pagina/politica-de-privacidad). Puede ejercer sus derechos en materia de protección de datos de acuerdo con la Ley 1581 de 2012, dirigiéndose por escrito al correo electrónico: dataprivacy@axa-assistance.com.co. Tenga presente que cualquier uso de datos que no esté circunscrito a las finalidades descritas en las políticas, o que se realice sin el consentimiento previo de los titulares, está sujeto a las sanciones previstas en la normativa colombiana.`;
+
+const renderTemplate = (template: string, values: Record<string, string>) =>
+  Object.entries(values).reduce(
+    (acc, [key, value]) => acc.split(`{{${key}}}`).join(value),
+    template,
+  );
+
+const buildEmailContent = (data: PqrsFormData) => {
+  const htmlValues = {
+    fullName: escapeHtml(data.fullName),
+    email: escapeHtml(data.email),
+    phone: escapeHtml(data.phone),
+    documentType: escapeHtml(data.documentType),
+    documentNumber: escapeHtml(data.documentNumber),
+    requestType: escapeHtml(data.requestType),
+    subject: escapeHtml(data.subject),
+    descriptionHtml: escapeHtml(data.description).replace(/\n/g, "<br />"),
+  };
+
+  const textValues = {
+    fullName: data.fullName,
+    email: data.email,
+    phone: data.phone,
+    documentType: data.documentType,
+    documentNumber: data.documentNumber,
+    requestType: data.requestType,
+    subject: data.subject,
+    descriptionText: data.description,
+  };
+
+  const html = renderTemplate(pqrsHtmlTemplate, htmlValues);
+  const text = renderTemplate(pqrsTextTemplate, {
+    ...textValues,
+  });
 
   return { html, text };
 };
