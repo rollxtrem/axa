@@ -24,6 +24,7 @@ export interface Auth0ClientConfigResponse {
   domain: string | null;
   clientId: string | null;
   audience: string | null;
+  redirectUri: string | null;
 }
 
 export interface SendEmailRequestBody {

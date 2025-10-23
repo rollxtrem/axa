@@ -114,6 +114,17 @@ const extractAuth0Message = (body: unknown, fallback: string): string => {
 const normalizeDomain = (domain: string): string =>
   domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
 
+const normalizeRedirectUri = (redirectUri: string): string | null => {
+  try {
+    const url = new URL(redirectUri);
+    const sanitizedPath = url.pathname.replace(/\/+$/, "");
+    const sanitizedSearch = url.search?.trim() ?? "";
+    return `${url.origin}${sanitizedPath}${sanitizedSearch}`;
+  } catch (_error) {
+    return null;
+  }
+};
+
 export const getAuth0BaseConfig = (tenant?: TenantContext | null): Auth0BaseConfig => {
   const domain = resolveTenantEnv("AUTH0_DOMAIN", tenant);
   const audience = resolveTenantEnv("AUTH0_AUDIENCE", tenant);
@@ -478,6 +489,29 @@ export const exchangeAuthorizationCode = async (
   options: Auth0RequestOptions = {},
 ): Promise<LoginResponseBody> => {
   const config = getAuth0ClientConfig(options.tenant);
+  const configuredRedirect = resolveTenantEnv("AUTH0_REDIRECT_URI", options.tenant);
+  const normalizedRequestedRedirect = normalizeRedirectUri(redirectUri);
+
+  if (!normalizedRequestedRedirect) {
+    throw new Auth0ServiceError(
+      "La URL de redirección proporcionada no es válida.",
+      400
+    );
+  }
+
+  if (configuredRedirect) {
+    const normalizedConfiguredRedirect = normalizeRedirectUri(configuredRedirect);
+
+    if (
+      normalizedConfiguredRedirect &&
+      normalizedConfiguredRedirect !== normalizedRequestedRedirect
+    ) {
+      throw new Auth0ServiceError(
+        "La URL de redirección utilizada no coincide con la configurada para Auth0.",
+        400
+      );
+    }
+  }
 
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
@@ -487,7 +521,7 @@ export const exchangeAuthorizationCode = async (
       client_id: config.clientId,
       client_secret: config.clientSecret,
       code,
-      redirect_uri: redirectUri,
+      redirect_uri: normalizedRequestedRedirect,
       code_verifier: codeVerifier,
     }),
   });

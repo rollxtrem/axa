@@ -6,6 +6,7 @@ type Auth0ClientConfig = {
   domain?: string;
   clientId?: string;
   audience?: string;
+  redirectUri?: string;
 };
 
 const readEnvValue = (key: string): string | undefined => {
@@ -35,9 +36,31 @@ const sanitizeResponseValue = (value: unknown): string | undefined => {
 const normalizeDomain = (domain: string): string =>
   domain.replace(/^https?:\/\//i, "").replace(/\/$/, "");
 
+const sanitizeRedirectUri = (value: unknown): string | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    const sanitizedPath = url.pathname.replace(/\/+$/, "");
+    const sanitizedSearch = url.search?.trim() ?? "";
+    return `${url.origin}${sanitizedPath}${sanitizedSearch}`;
+  } catch (_error) {
+    return undefined;
+  }
+};
+
 const domain = readEnvValue("AUTH0_DOMAIN");
 const clientId = readEnvValue("AUTH0_CLIENT_ID");
 const audienceFromEnv = readEnvValue("AUTH0_AUDIENCE");
+const redirectUriFromEnv =
+  readEnvValue("AUTH0_REDIRECT_URI") ?? readEnvValue("VITE_AUTH0_REDIRECT_URI");
 
 const computedAudience = domain ? `https://${normalizeDomain(domain)}/api/v2/` : undefined;
 
@@ -45,6 +68,7 @@ const staticConfig: Auth0ClientConfig = {
   domain: domain ? normalizeDomain(domain) : undefined,
   clientId,
   audience: audienceFromEnv ?? computedAudience,
+  redirectUri: sanitizeRedirectUri(redirectUriFromEnv),
 };
 
 let runtimeConfig: Auth0ClientConfig | null = null;
@@ -54,13 +78,17 @@ const mergeConfig = (overrides?: Auth0ClientConfig | null): Auth0ClientConfig =>
   domain: overrides?.domain ?? staticConfig.domain,
   clientId: overrides?.clientId ?? staticConfig.clientId,
   audience: overrides?.audience ?? staticConfig.audience,
+  redirectUri: overrides?.redirectUri ?? staticConfig.redirectUri,
 });
 
 export const getAuth0ClientConfig = (): Auth0ClientConfig => mergeConfig(runtimeConfig);
 
 export const hasValidAuth0ClientConfig = (
   config: Auth0ClientConfig = getAuth0ClientConfig()
-): config is Required<Pick<Auth0ClientConfig, "domain" | "clientId">> & { audience?: string } =>
+): config is Required<Pick<Auth0ClientConfig, "domain" | "clientId">> & {
+  audience?: string;
+  redirectUri?: string;
+} =>
   typeof config.domain === "string" &&
   config.domain.length > 0 &&
   typeof config.clientId === "string" &&
@@ -90,6 +118,7 @@ export const loadAuth0ClientConfig = async (): Promise<Auth0ClientConfig> => {
           domain: sanitizeResponseValue(data.domain),
           clientId: sanitizeResponseValue(data.clientId),
           audience: sanitizeResponseValue(data.audience),
+          redirectUri: sanitizeRedirectUri(data.redirectUri),
         };
 
         return getAuth0ClientConfig();

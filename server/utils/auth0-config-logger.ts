@@ -14,6 +14,7 @@ type Auth0ConfigSummary = {
   clientId: ConfigValue;
   clientSecret: ConfigValue;
   dbConnection: ConfigValue;
+  redirectUri: ConfigValue;
   missingKeys: string[];
 };
 
@@ -24,6 +25,7 @@ const AUTH0_ENV_KEYS = [
   "AUTH0_CLIENT_SECRET",
   "AUTH0_AUDIENCE",
   "AUTH0_DB_CONNECTION",
+  "AUTH0_REDIRECT_URI",
 ] as const;
 
 const formatEnvKey = (baseKey: string, tenant: TenantContext | null): string =>
@@ -110,7 +112,8 @@ const hasAnyValue = (summary: Auth0ConfigSummary): boolean =>
       summary.audience.value ||
       summary.clientId.value ||
       summary.clientSecret.value ||
-      summary.dbConnection.value,
+      summary.dbConnection.value ||
+      summary.redirectUri.value,
   );
 
 const buildSummary = (tenant: TenantContext | null): Auth0ConfigSummary => {
@@ -121,6 +124,7 @@ const buildSummary = (tenant: TenantContext | null): Auth0ConfigSummary => {
   const clientId = resolveConfigValue("AUTH0_CLIENT_ID", tenant);
   const clientSecret = resolveConfigValue("AUTH0_CLIENT_SECRET", tenant);
   const dbConnection = resolveConfigValue("AUTH0_DB_CONNECTION", tenant);
+  const redirectUri = resolveConfigValue("AUTH0_REDIRECT_URI", tenant);
 
   const missingKeys: string[] = [];
 
@@ -145,6 +149,7 @@ const buildSummary = (tenant: TenantContext | null): Auth0ConfigSummary => {
     clientId,
     clientSecret,
     dbConnection,
+    redirectUri,
     missingKeys,
   };
 };
@@ -186,6 +191,7 @@ export const logAuth0ConfigSummary = (): Auth0ConfigSummary[] => {
     formatLine("Client ID", summary.clientId);
     formatLine("Client Secret", summary.clientSecret, maskSecret);
     formatLine("DB Connection", summary.dbConnection);
+    formatLine("Redirect URI", summary.redirectUri);
 
     if (summary.missingKeys.length > 0) {
       console.warn(
