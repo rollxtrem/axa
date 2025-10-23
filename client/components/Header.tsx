@@ -538,14 +538,14 @@ export default function Header() {
       </div>
 
       {/* Navigation bar - Exact Figma spacing */}
-      <nav className="hidden lg:block w-full bg-[#0c0e45]">
-        <div className="flex justify-center items-center gap-8 px-4 py-4 lg:px-[513px] lg:py-4">
+      <nav className="hidden lg:flex w-full bg-[#0c0e45]">
+        <div className="flex h-16 w-full items-center justify-center gap-8 px-4 lg:px-[513px]">
           {/* HOME Button */}
-          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex items-center gap-2">
+          <button className="flex h-12 items-center justify-center gap-4 rounded-[4px] px-4">
+            <div className="flex h-full items-center justify-center gap-2">
               <Link
                 to="/"
-                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex h-full items-center justify-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 HOME
               </Link>
@@ -553,11 +553,11 @@ export default function Header() {
           </button>
 
           {/* BIENESTAR Button */}
-          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex items-center gap-2">
+          <button className="flex h-12 items-center justify-center gap-4 rounded-[4px] px-4">
+            <div className="flex h-full items-center justify-center gap-2">
               <Link
                 to="/bienestar"
-                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex h-full items-center justify-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 Bienestar
               </Link>
@@ -565,11 +565,11 @@ export default function Header() {
           </button>
 
           {/* FORMACIÓN Button */}
-          <button className="flex h-12 px-4 items-center gap-4 rounded-[4px]">
-            <div className="flex items-center gap-2">
+          <button className="flex h-12 items-center justify-center gap-4 rounded-[4px] px-4">
+            <div className="flex h-full items-center justify-center gap-2">
               <Link
                 to="/formacion"
-                className="flex items-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold leading-none tracking-[1.25px] uppercase hover:underline transition-all duration-200"
+                className="flex h-full items-center justify-center text-white text-center font-['Source_Sans_Pro'] text-[14px] font-bold tracking-[1.25px] uppercase hover:underline transition-all duration-200"
               >
                 Formación
               </Link>
