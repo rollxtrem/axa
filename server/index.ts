@@ -20,9 +20,17 @@ import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/for
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
 import { handleRequestSiaToken, handleSiaFileAdd, handleSiaFileGet } from "./routes/sia";
 import { requireAuth } from "./middleware/require-auth";
+import { logAuth0ConfigSummary } from "./utils/auth0-config-logger";
+
+let hasLoggedAuth0Config = false;
 
 export function createServer() {
   const app = express();
+
+  if (!hasLoggedAuth0Config) {
+    logAuth0ConfigSummary();
+    hasLoggedAuth0Config = true;
+  }
 
   const moduleDirname = path.dirname(fileURLToPath(import.meta.url));
   const publicDir = path.resolve(moduleDirname, "../public");
