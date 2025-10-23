@@ -6,6 +6,8 @@ const spaDir = path.resolve(rootDir, "dist", "spa");
 const distDir = path.resolve(rootDir, "dist");
 const serverDir = path.join(distDir, "server");
 const targetSpaDir = path.join(serverDir, "spa");
+const templatesDir = path.resolve(rootDir, "server", "plantillas");
+const distTemplatesDir = path.join(distDir, "plantillas");
 
 if (!fs.existsSync(spaDir)) {
   console.error(
@@ -26,6 +28,17 @@ if (fs.existsSync(targetSpaDir)) {
 }
 
 fs.cpSync(spaDir, targetSpaDir, { recursive: true });
+
+if (fs.existsSync(templatesDir)) {
+  if (fs.existsSync(distTemplatesDir)) {
+    fs.rmSync(distTemplatesDir, { recursive: true, force: true });
+  }
+
+  fs.cpSync(templatesDir, distTemplatesDir, { recursive: true });
+  console.log("✅ Plantillas del servidor copiadas en dist/plantillas");
+} else {
+  console.warn("⚠️ No se encontró el directorio server/plantillas; no se copiaron plantillas");
+}
 
 // Además de copiar los archivos para el bundle del servidor, duplicamos la SPA
 // en la raíz de dist/ para que plataformas de hosting estático (como Azure
