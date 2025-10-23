@@ -54,5 +54,18 @@ export const handleGetAuth0ClientConfig: RequestHandler = (req, res) => {
     audience: audience ?? (domain ? `https://${domain}/api/v2/` : null),
   };
 
+  const tenantLabel = tenant
+    ? `${tenant.id} (${tenant.host})`
+    : "predeterminado";
+
+  console.info(
+    `[Auth0] Configuración de cliente resuelta para el tenant ${tenantLabel}:`,
+    {
+      domain: payload.domain ?? "No configurado",
+      clientId: payload.clientId ?? "No configurado",
+      audience: payload.audience ?? "No configurada",
+    },
+  );
+
   res.json(payload);
 };
