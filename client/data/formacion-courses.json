@@ -8,7 +8,7 @@
     "imageUrl": "/images/educacion_digital.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/W5BXXZmbZiE",
-    "isCertificate": false
+    "isCertificate": true
   },
   {
     "id": "educacion-financiera",
@@ -19,7 +19,7 @@
     "imageUrl": "/images/educacion_financiera.png",
     "iconKey": "financial-education",
     "urlCurso":"https://youtu.be/7GKMa4G2_Hw",
-    "isCertificate": false
+    "isCertificate": true
   },
   {
     "id": "marketing-digital",
@@ -30,7 +30,7 @@
     "imageUrl": "/images/marketing_digital.png",
     "iconKey": "digital-marketing",
     "urlCurso":"https://youtu.be/WV-0tgqJ1eo",
-    "isCertificate": false
+    "isCertificate": true
   },
   {
     "id": "marketing-digital",
@@ -41,7 +41,7 @@
     "imageUrl": "/images/marketing_digital.png",
     "iconKey": "digital-marketing",
     "urlCurso":"https://youtu.be/xx68x2SACgE",
-    "isCertificate": false
+    "isCertificate": true
   },
   {
     "id": "marketing-digital",
