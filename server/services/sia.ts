@@ -6,9 +6,11 @@ import type {
   SiaFileAddResponse,
   SiaFileAddPayload,
 } from "@shared/api";
+import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
 
-const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
-const SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
+const DEFAULT_SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
+const DEFAULT_SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
+const DEFAULT_SIA_FILE_GET_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet";
 
 type SiaTokenApiResponse = {
   access_token?: unknown;
@@ -72,12 +74,32 @@ type SiaConfig = {
   username: string;
   password: string;
   dz: string;
+  grantType: string;
+  endpoints: SiaEndpoints;
 };
 
-const getSiaConfig = (): SiaConfig => {
-  const username = process.env.SIA_USERNAME?.trim();
-  const password = process.env.SIA_PASSWORD?.trim();
-  const dz = process.env.SIA_DZ?.toString().trim() || "";
+type SiaEndpoints = {
+  tokenUrl: string;
+  fileAddUrl: string;
+  fileGetUrl: string;
+};
+
+type SiaServiceOptions = {
+  tenant?: TenantContext | null;
+};
+
+const getSiaEndpoints = (tenant?: TenantContext | null): SiaEndpoints => ({
+  tokenUrl: resolveTenantEnv("SIA_TOKEN_URL", tenant) ?? DEFAULT_SIA_TOKEN_URL,
+  fileAddUrl: resolveTenantEnv("SIA_FILE_ADD_URL", tenant) ?? DEFAULT_SIA_FILE_ADD_URL,
+  fileGetUrl: resolveTenantEnv("SIA_FILE_GET_URL", tenant) ?? DEFAULT_SIA_FILE_GET_URL,
+});
+
+const getSiaConfig = (tenant?: TenantContext | null): SiaConfig => {
+  const username = resolveTenantEnv("SIA_USERNAME", tenant);
+  const password = resolveTenantEnv("SIA_PASSWORD", tenant);
+  const dz = resolveTenantEnv("SIA_DZ", tenant);
+  const grantType = resolveTenantEnv("SIA_GRANT_TYPE", tenant) ?? "password";
+  const endpoints = getSiaEndpoints(tenant);
 
   if (!username || !password || !dz) {
     throw new SiaServiceError(
@@ -86,7 +108,7 @@ const getSiaConfig = (): SiaConfig => {
     );
   }
 
-  return { username, password, dz };
+  return { username, password, dz, grantType, endpoints };
 };
 
 const parseSiaResponse = (body: unknown): SiaTokenResponse => {
@@ -142,18 +164,24 @@ const parseSiaResponse = (body: unknown): SiaTokenResponse => {
   };
 };
 
-export const requestSiaToken = async (): Promise<SiaTokenResponse> => {
-  const { username, password, dz } = getSiaConfig();
+type RequestSiaTokenOptions = {
+  tenant?: TenantContext | null;
+};
+
+export const requestSiaToken = async (
+  options: RequestSiaTokenOptions = {}
+): Promise<SiaTokenResponse> => {
+  const { username, password, dz, grantType, endpoints } = getSiaConfig(options.tenant);
 
   let response: Response;
   try {
-    response = await fetch(SIA_TOKEN_URL, {
+    response = await fetch(endpoints.tokenUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: "password",
+        grant_type: grantType,
         username,
         password,
         DZ: dz,
@@ -227,15 +255,19 @@ const parseSiaFileGetResponse = (payload: unknown): SiaFileGetResponseItem[] => 
   });
 };
 
-export const FileGet = async ({
-  sia_token,
-  sia_dz,
-  sia_consumer_key,
-  user_identification,
-}: SiaFileGetRequestBody): Promise<SiaFileGetResponseItem[]> => {
+export const FileGet = async (
+  {
+    sia_token,
+    sia_dz,
+    sia_consumer_key,
+    user_identification,
+  }: SiaFileGetRequestBody,
+  options: SiaServiceOptions = {}
+): Promise<SiaFileGetResponseItem[]> => {
+  const { fileGetUrl } = getSiaEndpoints(options.tenant);
   let response: Response;
   try {
-    response = await fetch("https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet", {
+    response = await fetch(fileGetUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -318,7 +350,10 @@ const parseSiaFileAddResponse = (payload: unknown): SiaFileAddResponse => {
   return { Success, Code, Message, File };
 };
 
-export const FileAdd = async (request: SiaFileAddRequestBody): Promise<SiaFileAddResponse> => {
+export const FileAdd = async (
+  request: SiaFileAddRequestBody,
+  options: SiaServiceOptions = {}
+): Promise<SiaFileAddResponse> => {
   const {
     sia_token,
     sia_dz,
@@ -337,6 +372,8 @@ export const FileAdd = async (request: SiaFileAddRequestBody): Promise<SiaFileAd
   if (!trimmedToken) {
     throw new SiaServiceError("El token de autenticación para FileAdd es obligatorio.", 400);
   }
+
+  const { fileAddUrl } = getSiaEndpoints(options.tenant);
 
   const nowIsoString = new Date().toISOString();
   const formattedStartDate = formatDateTimeForSia(nowIsoString);
@@ -460,7 +497,7 @@ export const FileAdd = async (request: SiaFileAddRequestBody): Promise<SiaFileAd
 
   let response: Response;
   try {
-    response = await fetch(SIA_FILE_ADD_URL, {
+    response = await fetch(fileAddUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
