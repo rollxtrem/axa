@@ -18,12 +18,14 @@ import type {
   BienestarSubmissionRequest,
   BienestarSubmissionResponse,
   EncryptedSubmissionRequest,
+  SiaFileAddPayload,
   SiaFileAddRequestBody,
   SiaFileAddResponse,
   SiaFileGetResponseItem,
 } from "@shared/api";
 import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
 import { getTenantContext, resolveTenantEnv } from "../utils/tenant-env";
+import { buildSiaFileAddPayloadFromTemplate } from "../sia/file-add-template";
 
 const bienestarFormSchema = z.object({
   fullName: z.string().min(1),
@@ -487,7 +489,29 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   const now_datetime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 
 
+  let templatePayload: SiaFileAddPayload;
+  try {
+    templatePayload = await buildSiaFileAddPayloadFromTemplate({
+      tenant,
+      replacements: {
+        sia_dz: siaToken.dz,
+        sia_consumer_key: siaToken.consumerKey,
+        user_identification: formData.identification,
+        form_code_service: serviceCatalog,
+        user_name: userFullName,
+        user_email: formData.email,
+        user_mobile: formData.phone,
+        form_date: formDate,
+        form_hora: formTime,
+      },
+    });
+  } catch (error) {
+    handleSiaErrorResponse(res, error, "Ocurrió un error al preparar la solicitud de SIA.");
+    return;
+  }
+
   const fileAddPayload: SiaFileAddRequestBody = {
+    ...templatePayload,
     sia_token: siaToken.access_token,
     sia_dz: siaToken.dz,
     sia_consumer_key: siaToken.consumerKey,
@@ -500,56 +524,21 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     form_hora: formTime,
     dz: siaToken.dz,
     consumerKey: siaToken.consumerKey,
-    idCatalogCountry: "CO",
-    contract: "4430010",
     policy: formData.identification,
-    vip: false,
-    statusPolicy: "VIGENTE",
-    startDatePolicy: now_datetime,
-    endDatePolicy: now_datetime,
-    idCatalogTypeAssistance: "3",
-    idCatalogFile: "989",
-    idCatalogDiagnostic: "058",
     idCatalogServices: serviceCatalog,
     idCatalogClassification: serviceCatalog,
     idCatalogRequiredService: serviceCatalog,
-    idCatalogSinisterCode: "000",
-    idCatalogServiceCode: "000",
-    idCatalogProblem: "173",
-    idCatalogSecondCall: "11",
-    idCatalogTransfer: "L",
-    idCatalogAssignmentType: "16",
-    idCatalogServiceCondition: "13",
     name: userFullName,
     lastname: userFullName,
     beneficiaryName: userFullName,
     beneficiaryLastname: userFullName,
-    gender: "M",
-    age: 30,
     email: formData.email,
     mobile: formData.phone,
-    latitudeOrigin: 4.6874253,
-    lengthOrigin: -74.0507687,
-    addressOrigin: "CL. 102 # 17A-61",
-    idCityCallOrigin: "18",
-    cityCallOrigin: "BOGOTA",
-    stateCallOrigin: "BOGOTA",
-    latitudeDestiny: 4.6874253,
-    lengthDestiny: -74.0507687,
-    addressDestiny: "CL. 102 # 17A-61",
-    idCityCallDestiny: "18",
-    stateCallDestiny: "BOGOTA",
-    idStateCallDestiny: "01",
     carPlates: formData.identification,
-    carBrand: "NA",
-    carModel: "NA",
-    carYear: "9999",
-    carColor: "NA",
-    scheduleService: "true",
     scheduleDate: formDate,
     scheduleHour: formTime,
-    reasonCalled: "reasonCalled",
-    comment: "comment",
+    startDatePolicy: now_datetime,
+    endDatePolicy: now_datetime,
   };
 
   let fileAddResponse: SiaFileAddResponse;
