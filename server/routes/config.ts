@@ -1,4 +1,4 @@
-import type { RequestHandler } from "express";
+import type { Request, RequestHandler } from "express";
 
 import { getTenantContext, resolveTenantEnv } from "../utils/tenant-env";
 
@@ -47,6 +47,44 @@ const normalizeRedirectUri = (value?: string | null): string | null => {
   }
 };
 
+const readHeaderValue = (value: string | string[] | undefined): string | null => {
+  if (Array.isArray(value)) {
+    const candidate = value.find((item) => item && item.trim().length > 0);
+    return candidate ? candidate.split(",")[0]?.trim() ?? null : null;
+  }
+
+  if (typeof value === "string") {
+    const [first] = value.split(",");
+    const trimmed = first?.trim();
+    return trimmed && trimmed.length > 0 ? trimmed : null;
+  }
+
+  return null;
+};
+
+const inferRedirectUriFromRequest = (req: Request): string | null => {
+  const forwardedProto = readHeaderValue(req.headers["x-forwarded-proto"]);
+  const forwardedHost = readHeaderValue(req.headers["x-forwarded-host"]);
+  const headerHost = readHeaderValue(req.headers.host);
+
+  const host = forwardedHost ?? headerHost ?? req.hostname ?? null;
+  if (!host) {
+    return null;
+  }
+
+  const protocolCandidate = forwardedProto ?? req.protocol ?? "";
+  const protocol = protocolCandidate.replace(/:.*/, "").trim().toLowerCase() || "http";
+
+  try {
+    const url = new URL(`${protocol}://${host.replace(/\/+$/, "")}/callback`);
+    const sanitizedPath = url.pathname.replace(/\/+$/, "");
+    const sanitizedSearch = url.search?.trim() ?? "";
+    return `${url.origin}${sanitizedPath}${sanitizedSearch}`;
+  } catch (_error) {
+    return null;
+  }
+};
+
 export const handleGetAppConfig: RequestHandler = (req, res) => {
   const tenant = getTenantContext(req);
   const appName = normalizeAppName(resolveTenantEnv("NOMBRE_APP", tenant));
@@ -63,9 +101,20 @@ export const handleGetAuth0ClientConfig: RequestHandler = (req, res) => {
   const domain = normalizeAuth0Domain(resolveTenantEnv("AUTH0_DOMAIN", tenant));
   const clientId = normalizeOptionalString(resolveTenantEnv("AUTH0_CLIENT_ID", tenant));
   const audience = normalizeOptionalString(resolveTenantEnv("AUTH0_AUDIENCE", tenant));
-  const redirectUri = normalizeRedirectUri(
+  const configuredRedirect = normalizeRedirectUri(
     resolveTenantEnv("AUTH0_REDIRECT_URI", tenant)
   );
+
+  let redirectUri = configuredRedirect;
+  let redirectSource: "configured" | "inferred" | "missing" = "missing";
+
+  if (redirectUri) {
+    redirectSource = "configured";
+  } else {
+    const inferredRedirect = inferRedirectUriFromRequest(req);
+    redirectUri = normalizeRedirectUri(inferredRedirect) ?? null;
+    redirectSource = redirectUri ? "inferred" : "missing";
+  }
 
   const payload: Auth0ClientConfigResponse = {
     domain,
@@ -84,7 +133,11 @@ export const handleGetAuth0ClientConfig: RequestHandler = (req, res) => {
       domain: payload.domain ?? "No configurado",
       clientId: payload.clientId ?? "No configurado",
       audience: payload.audience ?? "No configurada",
-      redirectUri: payload.redirectUri ?? "No configurada",
+      redirectUri:
+        payload.redirectUri ??
+        (redirectSource === "inferred"
+          ? "Inferida automáticamente"
+          : "No configurada"),
     },
   );
 
