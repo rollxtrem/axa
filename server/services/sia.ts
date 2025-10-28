@@ -11,6 +11,8 @@ import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
 const DEFAULT_SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
 const DEFAULT_SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
 const DEFAULT_SIA_FILE_GET_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet";
+const DEFAULT_SIA_FILE_GET_CONTRACT =
+  "{'contrato':'4430010', 'IdCliente': '01544', 'IdPlan': '01586'}";
 
 type SiaTokenApiResponse = {
   access_token?: unknown;
@@ -109,6 +111,20 @@ const getSiaConfig = (tenant?: TenantContext | null): SiaConfig => {
   }
 
   return { username, password, dz, grantType, endpoints };
+};
+
+const getSiaFileGetContract = (tenant?: TenantContext | null): string => {
+  const contract = resolveTenantEnv("SIA_FILE_GET_CONTRACT", tenant);
+  const normalized = (contract ?? DEFAULT_SIA_FILE_GET_CONTRACT).trim();
+
+  if (!normalized) {
+    throw new SiaServiceError(
+      "La configuración del contrato para FileGet de SIA está vacía.",
+      500
+    );
+  }
+
+  return normalized;
 };
 
 const parseSiaResponse = (body: unknown): SiaTokenResponse => {
@@ -265,6 +281,7 @@ export const FileGet = async (
   options: SiaServiceOptions = {}
 ): Promise<SiaFileGetResponseItem[]> => {
   const { fileGetUrl } = getSiaEndpoints(options.tenant);
+  const contract = getSiaFileGetContract(options.tenant);
   let response: Response;
   try {
     response = await fetch(fileGetUrl, {
@@ -277,7 +294,7 @@ export const FileGet = async (
         dz: sia_dz,
         consumerKey: sia_consumer_key,
         operationType: "4",
-        contract: "{'contrato':'4430010', 'IdCliente': '01544', 'IdPlan': '01586'}",
+        contract,
         serviceTypeCode: "",
         Plates: user_identification,
         validationType: "1",
