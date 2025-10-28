@@ -8,6 +8,42 @@ import {
 } from "@/lib/auth0-config";
 import { createPkceChallenge, persistPkceState } from "@/lib/pkce";
 
+const isSupportedIssuerProtocol = (protocol: string) =>
+  protocol === "https:" || protocol === "http:";
+
+const maybeRedirectToIssuer = (location: Location): boolean => {
+  try {
+    const currentUrl = new URL(location.href);
+    const issuerParam = currentUrl.searchParams.get("iss");
+
+    if (!issuerParam) {
+      return false;
+    }
+
+    const issuerUrl = new URL(issuerParam);
+
+    if (!isSupportedIssuerProtocol(issuerUrl.protocol)) {
+      console.warn("Se ignoró el parámetro iss debido a un protocolo no soportado.");
+      return false;
+    }
+
+    if (issuerUrl.origin === location.origin) {
+      return false;
+    }
+
+    currentUrl.searchParams.delete("iss");
+    const remainingSearch = currentUrl.searchParams.toString();
+    const search = remainingSearch ? `?${remainingSearch}` : "";
+    const hash = location.hash || "";
+
+    location.replace(`${issuerUrl.origin}${location.pathname}${search}${hash}`);
+    return true;
+  } catch (error) {
+    console.warn("No se pudo procesar el parámetro iss de la URL de login.", error);
+    return false;
+  }
+};
+
 export default function Login() {
   const redirectAttemptedRef = useRef(false);
 
@@ -36,16 +72,20 @@ export default function Login() {
   };
 
   useEffect(() => {
-    if (redirectAttemptedRef.current) {
-      return;
-    }
-
-    redirectAttemptedRef.current = true;
-
     if (typeof window === "undefined") {
       console.error("Este entorno no soporta redirecciones de autenticación.");
       return;
     }
+
+    if (redirectAttemptedRef.current) {
+      return;
+    }
+
+    if (maybeRedirectToIssuer(window.location)) {
+      return;
+    }
+
+    redirectAttemptedRef.current = true;
 
     const redirectToAuth0 = async () => {
       try {
