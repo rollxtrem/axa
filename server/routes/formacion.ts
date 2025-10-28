@@ -249,12 +249,15 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
   }
 
   try {
-    const fileGetItems = await FileGet({
-      sia_token: siaToken.access_token,
-      sia_dz: siaToken.dz,
-      sia_consumer_key: siaToken.consumerKey,
-      user_identification: formData.identification,
-    });
+    const fileGetItems = await FileGet(
+      {
+        sia_token: siaToken.access_token,
+        sia_dz: siaToken.dz,
+        sia_consumer_key: siaToken.consumerKey,
+        user_identification: formData.identification,
+      },
+      { tenant }
+    );
 
     if (!Array.isArray(fileGetItems) || fileGetItems.length === 0) {
       console.warn("SIA FileGet returned no products for formación", {

@@ -214,8 +214,10 @@ export const handleSiaFileGet: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
   }
 
+  const tenant = getTenantContext(req);
+
   try {
-    const response: SiaFileGetResponse = await FileGet(body);
+    const response: SiaFileGetResponse = await FileGet(body, { tenant });
     res.json(response);
   } catch (error) {
     if (error instanceof SiaServiceError) {
@@ -244,8 +246,10 @@ export const handleSiaFileAdd: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
   }
 
+  const tenant = getTenantContext(req);
+
   try {
-    const response: SiaFileAddResponse = await FileAdd(body);
+    const response: SiaFileAddResponse = await FileAdd(body, { tenant });
     res.json(response);
   } catch (error) {
     if (error instanceof SiaServiceError) {

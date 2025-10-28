@@ -351,12 +351,15 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   let fileGetItems: SiaFileGetResponseItem[];
   try {
-    fileGetItems = await FileGet({
-      sia_token: siaToken.access_token,
-      sia_dz: siaToken.dz,
-      sia_consumer_key: siaToken.consumerKey,
-      user_identification: formData.identification,
-    });
+    fileGetItems = await FileGet(
+      {
+        sia_token: siaToken.access_token,
+        sia_dz: siaToken.dz,
+        sia_consumer_key: siaToken.consumerKey,
+        user_identification: formData.identification,
+      },
+      { tenant }
+    );
 
     logJson("SIA FileGet response", fileGetItems);
 
@@ -552,7 +555,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   let fileAddResponse: SiaFileAddResponse;
   try {
     logJson("SIA FileAdd request", fileAddPayload);
-    fileAddResponse = await FileAdd(fileAddPayload);
+    fileAddResponse = await FileAdd(fileAddPayload, { tenant });
     logJson("SIA FileAdd response", fileAddResponse);
   } catch (error) {
     handleSiaErrorResponse(res, error, "Ocurrió un error al registrar la solicitud en SIA.");
