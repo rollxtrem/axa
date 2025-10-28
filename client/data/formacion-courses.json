@@ -1,7 +1,7 @@
 [
   {
     "id": "educacion-digital",
-    "title": "Business  Intellingence con Power BI",
+    "title": "Business  Intelligence con Power BI",
     "duration": "",
     "level": "Intermedio",
     "description": "Aprende a tu ritmo con herramientas y cursos online que potencian tus habilidades digitales.",
@@ -12,7 +12,7 @@
   },
   {
     "id": "educacion-financiera",
-    "title": "Curso Emprendimiento tipo prototipo",
+    "title": "Curso Emprendimiento Tipo Prototipo",
     "duration": "",
     "level": "Intermedio",
     "description": "Aprende a manejar tus finanzas personales, inversiones y planificación financiera.",
@@ -34,7 +34,7 @@
   },
   {
     "id": "marketing-digital",
-    "title": "Curso de presentaciones efectivas",
+    "title": "Curso de Presentaciones Efectivas",
     "duration": "",
     "level": "Intermedio",
     "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
