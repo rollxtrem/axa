@@ -6,6 +6,7 @@ import type {
   SiaFileAddResponse,
   SiaFileAddPayload,
 } from "@shared/api";
+import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
 
 const SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
 const SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
@@ -72,12 +73,14 @@ type SiaConfig = {
   username: string;
   password: string;
   dz: string;
+  grantType: string;
 };
 
-const getSiaConfig = (): SiaConfig => {
-  const username = process.env.SIA_USERNAME?.trim();
-  const password = process.env.SIA_PASSWORD?.trim();
-  const dz = process.env.SIA_DZ?.toString().trim() || "";
+const getSiaConfig = (tenant?: TenantContext | null): SiaConfig => {
+  const username = resolveTenantEnv("SIA_USERNAME", tenant);
+  const password = resolveTenantEnv("SIA_PASSWORD", tenant);
+  const dz = resolveTenantEnv("SIA_DZ", tenant);
+  const grantType = resolveTenantEnv("SIA_GRANT_TYPE", tenant) ?? "password";
 
   if (!username || !password || !dz) {
     throw new SiaServiceError(
@@ -86,7 +89,7 @@ const getSiaConfig = (): SiaConfig => {
     );
   }
 
-  return { username, password, dz };
+  return { username, password, dz, grantType };
 };
 
 const parseSiaResponse = (body: unknown): SiaTokenResponse => {
@@ -142,8 +145,14 @@ const parseSiaResponse = (body: unknown): SiaTokenResponse => {
   };
 };
 
-export const requestSiaToken = async (): Promise<SiaTokenResponse> => {
-  const { username, password, dz } = getSiaConfig();
+type RequestSiaTokenOptions = {
+  tenant?: TenantContext | null;
+};
+
+export const requestSiaToken = async (
+  options: RequestSiaTokenOptions = {}
+): Promise<SiaTokenResponse> => {
+  const { username, password, dz, grantType } = getSiaConfig(options.tenant);
 
   let response: Response;
   try {
@@ -153,7 +162,7 @@ export const requestSiaToken = async (): Promise<SiaTokenResponse> => {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: "password",
+        grant_type: grantType,
         username,
         password,
         DZ: dz,
