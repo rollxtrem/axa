@@ -9,6 +9,7 @@ import type {
   SiaTokenResponse,
 } from "@shared/api";
 import { FileAdd, FileGet, requestSiaToken, SiaServiceError } from "../services/sia";
+import { getTenantContext } from "../utils/tenant-env";
 
 const sanitizeSiaFileGetBody = (body: unknown): SiaFileGetRequestBody => {
   if (typeof body !== "object" || body === null) {
@@ -181,9 +182,10 @@ const sanitizeSiaFileAddBody = (body: unknown): SiaFileAddRequestBody => {
   return parsed;
 };
 
-export const handleRequestSiaToken: RequestHandler = async (_req, res) => {
+export const handleRequestSiaToken: RequestHandler = async (req, res) => {
   try {
-    const response: SiaTokenResponse = await requestSiaToken();
+    const tenant = getTenantContext(req);
+    const response: SiaTokenResponse = await requestSiaToken({ tenant });
     res.json(response);
   } catch (error) {
     if (error instanceof SiaServiceError) {
@@ -212,8 +214,10 @@ export const handleSiaFileGet: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
   }
 
+  const tenant = getTenantContext(req);
+
   try {
-    const response: SiaFileGetResponse = await FileGet(body);
+    const response: SiaFileGetResponse = await FileGet(body, { tenant });
     res.json(response);
   } catch (error) {
     if (error instanceof SiaServiceError) {
@@ -242,8 +246,10 @@ export const handleSiaFileAdd: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "El cuerpo de la solicitud es inválido." });
   }
 
+  const tenant = getTenantContext(req);
+
   try {
-    const response: SiaFileAddResponse = await FileAdd(body);
+    const response: SiaFileAddResponse = await FileAdd(body, { tenant });
     res.json(response);
   } catch (error) {
     if (error instanceof SiaServiceError) {
