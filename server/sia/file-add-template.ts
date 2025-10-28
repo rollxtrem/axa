@@ -6,9 +6,24 @@ import type { SiaFileAddPayload } from "@shared/api";
 
 import type { TenantContext } from "../utils/tenant-env";
 
+import defaultTemplateData from "./file-add.default.json" with { type: "json" };
+
 const moduleFilename = fileURLToPath(import.meta.url);
 const moduleDirname = path.dirname(moduleFilename);
 const templatesDir = moduleDirname;
+
+const templateDirectories = Array.from(
+  new Set([
+    templatesDir,
+    path.join(templatesDir, "sia"),
+    path.resolve(process.cwd(), "server", "sia"),
+    path.resolve(process.cwd(), "server", "plantillas"),
+    path.resolve(process.cwd(), "dist", "server", "sia"),
+    path.resolve(process.cwd(), "dist", "plantillas"),
+  ]),
+);
+
+const builtInDefaultTemplate = defaultTemplateData as SiaFileAddPayload;
 
 const DEFAULT_TEMPLATE_FILENAME = "file-add.default.json";
 
@@ -47,19 +62,29 @@ const applyReplacements = (value: unknown, replacements: ReplacementMap): unknow
 };
 
 const readTemplateFile = async (filename: string): Promise<SiaFileAddPayload | null> => {
-  try {
-    const filePath = path.join(templatesDir, filename);
-    const fileContents = await fs.readFile(filePath, "utf8");
-    const parsed = JSON.parse(fileContents) as SiaFileAddPayload;
-    templateCache.set(filename, parsed);
-    return parsed;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return null;
-    }
+  for (const directory of templateDirectories) {
+    const filePath = path.join(directory, filename);
 
-    throw error;
+    try {
+      const fileContents = await fs.readFile(filePath, "utf8");
+      const parsed = JSON.parse(fileContents) as SiaFileAddPayload;
+      templateCache.set(filename, parsed);
+      return parsed;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        continue;
+      }
+
+      throw error;
+    }
   }
+
+  if (filename === DEFAULT_TEMPLATE_FILENAME) {
+    templateCache.set(filename, builtInDefaultTemplate);
+    return builtInDefaultTemplate;
+  }
+
+  return null;
 };
 
 const loadTemplate = async (tenant?: TenantContext | null): Promise<SiaFileAddPayload> => {
