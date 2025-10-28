@@ -316,7 +316,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   let siaToken: { access_token: string; consumerKey: string; dz: string } | null = null;
   try {
-    const tokenResponse = await requestSiaToken();
+    const tokenResponse = await requestSiaToken({ tenant });
     const consumerKey = tokenResponse.consumerKey?.trim();
     const dz = tokenResponse.dz?.trim();
 
@@ -437,7 +437,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
 
   try {
-    const tokenResponse = await requestSiaToken();
+    const tokenResponse = await requestSiaToken({ tenant });
     const consumerKey = tokenResponse.consumerKey?.trim();
     const dz = tokenResponse.dz?.trim();
 

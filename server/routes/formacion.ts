@@ -222,7 +222,7 @@ export const handleSubmitFormacion: RequestHandler = async (req, res) => {
 
   let siaToken: { access_token: string; consumerKey: string; dz: string };
   try {
-    const tokenResponse = await requestSiaToken();
+    const tokenResponse = await requestSiaToken({ tenant });
     const consumerKey = tokenResponse.consumerKey?.trim();
     const dz = tokenResponse.dz?.trim();
 
