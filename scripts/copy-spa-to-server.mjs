@@ -38,10 +38,16 @@ const templateSourceDir = templateSourceCandidates.find((candidate) => fs.exists
 if (templateSourceDir) {
   const templateEntries = fs
     .readdirSync(templateSourceDir, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"));
+    .filter((entry) => {
+      if (!entry.isFile()) {
+        return false;
+      }
+
+      return [".json", ".html"].some((extension) => entry.name.endsWith(extension));
+    });
 
   if (templateEntries.length === 0) {
-    console.warn("⚠️ No se encontraron archivos .json de plantillas para copiar");
+    console.warn("⚠️ No se encontraron archivos .json o .html de plantillas para copiar");
   } else {
     const copyTemplatesTo = (targetDir) => {
       if (fs.existsSync(targetDir)) {
