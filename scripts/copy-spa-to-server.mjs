@@ -6,8 +6,12 @@ const spaDir = path.resolve(rootDir, "dist", "spa");
 const distDir = path.resolve(rootDir, "dist");
 const serverDir = path.join(distDir, "server");
 const targetSpaDir = path.join(serverDir, "spa");
-const templatesDir = path.resolve(rootDir, "server", "plantillas");
+const templateSourceCandidates = [
+  path.resolve(rootDir, "server", "plantillas"),
+  path.resolve(rootDir, "server", "sia"),
+];
 const distTemplatesDir = path.join(distDir, "plantillas");
+const distServerTemplatesDir = path.join(serverDir, "sia");
 
 if (!fs.existsSync(spaDir)) {
   console.error(
@@ -29,15 +33,40 @@ if (fs.existsSync(targetSpaDir)) {
 
 fs.cpSync(spaDir, targetSpaDir, { recursive: true });
 
-if (fs.existsSync(templatesDir)) {
-  if (fs.existsSync(distTemplatesDir)) {
-    fs.rmSync(distTemplatesDir, { recursive: true, force: true });
-  }
+const templateSourceDir = templateSourceCandidates.find((candidate) => fs.existsSync(candidate));
 
-  fs.cpSync(templatesDir, distTemplatesDir, { recursive: true });
-  console.log("✅ Plantillas del servidor copiadas en dist/plantillas");
+if (templateSourceDir) {
+  const templateEntries = fs
+    .readdirSync(templateSourceDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith(".json"));
+
+  if (templateEntries.length === 0) {
+    console.warn("⚠️ No se encontraron archivos .json de plantillas para copiar");
+  } else {
+    const copyTemplatesTo = (targetDir) => {
+      if (fs.existsSync(targetDir)) {
+        fs.rmSync(targetDir, { recursive: true, force: true });
+      }
+
+      fs.mkdirSync(targetDir, { recursive: true });
+
+      for (const entry of templateEntries) {
+        const sourcePath = path.join(templateSourceDir, entry.name);
+        const targetPath = path.join(targetDir, entry.name);
+        fs.copyFileSync(sourcePath, targetPath);
+      }
+    };
+
+    copyTemplatesTo(distTemplatesDir);
+    copyTemplatesTo(distServerTemplatesDir);
+
+    console.log("✅ Plantillas del servidor copiadas en dist/plantillas");
+    console.log("✅ Plantillas del servidor disponibles en dist/server/sia");
+  }
 } else {
-  console.warn("⚠️ No se encontró el directorio server/plantillas; no se copiaron plantillas");
+  console.warn(
+    "⚠️ No se encontraron directorios de plantillas en server/plantillas ni server/sia; no se copiaron plantillas",
+  );
 }
 
 // Además de copiar los archivos para el bundle del servidor, duplicamos la SPA
