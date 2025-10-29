@@ -50,12 +50,12 @@ export default function Home() {
     <div className="min-h-screen bg-[#F0F0F0]">
       {/* Hero Banner */}
       <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
-        <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
+        <div className="relative w-full max-w-[1440px] mx-auto">
           {/* Background Images */}
           <img
             src="/images/background_overlay.png"
             alt="Background overlay"
-            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
+            className="absolute inset-0 object-cover"
           />
 
           {/* Blue angled overlay */}
@@ -70,7 +70,7 @@ export default function Home() {
               style={{ marginLeft: "-3px" }}
             />
           </svg>
-
+          
           {/* Hero Content */}
           <div className="absolute right-4 md:left-[759px] top-[30px] md:top-[51px] w-full max-w-[350px] md:w-[470px] text-center md:text-right text-white px-4 md:px-0">
             <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
