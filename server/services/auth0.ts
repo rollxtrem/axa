@@ -19,10 +19,15 @@ type Auth0BaseConfig = {
 
 type Auth0ClientConfig = Auth0BaseConfig & {
   clientId: string;
+  clientSecret?: string;
+};
+
+type Auth0ClientConfigWithSecret = Auth0BaseConfig & {
+  clientId: string;
   clientSecret: string;
 };
 
-type Auth0DbConfig = Auth0ClientConfig & {
+type Auth0DbConfig = Auth0ClientConfigWithSecret & {
   dbConnection: string;
 };
 
@@ -142,12 +147,37 @@ export const getAuth0BaseConfig = (tenant?: TenantContext | null): Auth0BaseConf
   };
 };
 
-const getAuth0ClientConfig = (tenant?: TenantContext | null): Auth0ClientConfig => {
+type Auth0ClientConfigOptions = {
+  requireSecret?: boolean;
+};
+
+function getAuth0ClientConfig(
+  tenant?: TenantContext | null,
+  options?: { requireSecret?: false },
+): Auth0ClientConfig;
+
+function getAuth0ClientConfig(
+  tenant: TenantContext | null | undefined,
+  options: { requireSecret: true },
+): Auth0ClientConfigWithSecret;
+
+function getAuth0ClientConfig(
+  tenant?: TenantContext | null,
+  { requireSecret = false }: Auth0ClientConfigOptions = {},
+): Auth0ClientConfig {
   const baseConfig = getAuth0BaseConfig(tenant);
   const clientId = resolveTenantEnv("AUTH0_CLIENT_ID", tenant);
+
+  if (!clientId) {
+    throw new Auth0ServiceError(
+      "Configuración de Auth0 incompleta. Falta la variable AUTH0_CLIENT_ID.",
+      500,
+    );
+  }
+
   const clientSecret = resolveTenantEnv("AUTH0_CLIENT_SECRET", tenant);
 
-  if (!clientId || !clientSecret) {
+  if (requireSecret && !clientSecret) {
     throw new Auth0ServiceError(
       "Configuración de Auth0 incompleta. Verifica tus variables de entorno.",
       500
@@ -157,12 +187,12 @@ const getAuth0ClientConfig = (tenant?: TenantContext | null): Auth0ClientConfig 
   return {
     ...baseConfig,
     clientId,
-    clientSecret,
+    clientSecret: clientSecret ?? undefined,
   };
-};
+}
 
 const getAuth0DbConfig = (tenant?: TenantContext | null): Auth0DbConfig => {
-  const clientConfig = getAuth0ClientConfig(tenant);
+  const clientConfig = getAuth0ClientConfig(tenant, { requireSecret: true });
   const dbConnection = resolveTenantEnv("AUTH0_DB_CONNECTION", tenant);
 
   if (!dbConnection) {
@@ -342,7 +372,7 @@ export const finishWebAuthnLogin = async (
   payload: WebAuthnLoginFinishRequest,
   options: Auth0RequestOptions = {},
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0ClientConfig(options.tenant);
+  const config = getAuth0ClientConfig(options.tenant, { requireSecret: true });
 
   const response = await fetch(`https://${config.domain}/webauthn/login/finish`, {
     method: "POST",
@@ -513,17 +543,22 @@ export const exchangeAuthorizationCode = async (
     }
   }
 
+  const tokenPayload: Record<string, string> = {
+    grant_type: "authorization_code",
+    client_id: config.clientId,
+    code,
+    redirect_uri: normalizedRequestedRedirect,
+    code_verifier: codeVerifier,
+  };
+
+  if (config.clientSecret) {
+    tokenPayload.client_secret = config.clientSecret;
+  }
+
   const response = await fetch(`https://${config.domain}/oauth/token`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      grant_type: "authorization_code",
-      client_id: config.clientId,
-      client_secret: config.clientSecret,
-      code,
-      redirect_uri: normalizedRequestedRedirect,
-      code_verifier: codeVerifier,
-    }),
+    body: JSON.stringify(tokenPayload),
   });
 
   const body = await parseJson<Auth0TokenResponse>(response);
