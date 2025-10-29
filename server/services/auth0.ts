@@ -122,7 +122,7 @@ const normalizeDomain = (domain: string): string =>
 const normalizeRedirectUri = (redirectUri: string): string | null => {
   try {
     const url = new URL(redirectUri);
-    const sanitizedPath = url.pathname.replace(/\/+$/, "");
+    const sanitizedPath = url.pathname.replace(/\/+$/, "") || "/";
     const sanitizedSearch = url.search?.trim() ?? "";
     return `${url.origin}${sanitizedPath}${sanitizedSearch}`;
   } catch (_error) {
@@ -518,94 +518,104 @@ export const exchangeAuthorizationCode = async (
   },
   options: Auth0RequestOptions = {},
 ): Promise<LoginResponseBody> => {
-  const config = getAuth0ClientConfig(options.tenant);
-  const configuredRedirect = resolveTenantEnv("AUTH0_REDIRECT_URI", options.tenant);
-  const normalizedRequestedRedirect = normalizeRedirectUri(redirectUri);
+  try {
+    const config = getAuth0ClientConfig(options.tenant);
+    const configuredRedirect = resolveTenantEnv("AUTH0_REDIRECT_URI", options.tenant);
+    const normalizedRequestedRedirect = normalizeRedirectUri(redirectUri);
 
-  if (!normalizedRequestedRedirect) {
-    throw new Auth0ServiceError(
-      "La URL de redirección proporcionada no es válida.",
-      400
-    );
-  }
-
-  if (configuredRedirect) {
-    const normalizedConfiguredRedirect = normalizeRedirectUri(configuredRedirect);
-
-    if (
-      normalizedConfiguredRedirect &&
-      normalizedConfiguredRedirect !== normalizedRequestedRedirect
-    ) {
+    if (!normalizedRequestedRedirect) {
       throw new Auth0ServiceError(
-        "La URL de redirección utilizada no coincide con la configurada para Auth0.",
+        "La URL de redirección proporcionada no es válida.",
         400
       );
     }
+
+    if (configuredRedirect) {
+      const normalizedConfiguredRedirect = normalizeRedirectUri(configuredRedirect);
+
+      if (
+        normalizedConfiguredRedirect &&
+        normalizedConfiguredRedirect !== normalizedRequestedRedirect
+      ) {
+        throw new Auth0ServiceError(
+          "La URL de redirección utilizada no coincide con la configurada para Auth0.",
+          400
+        );
+      }
+    }
+
+    const tokenPayload: Record<string, string> = {
+      grant_type: "authorization_code",
+      client_id: config.clientId,
+      code,
+      redirect_uri: normalizedRequestedRedirect,
+      code_verifier: codeVerifier,
+    };
+
+    if (config.clientSecret) {
+      tokenPayload.client_secret = config.clientSecret;
+    }
+
+    const response = await fetch(`https://${config.domain}/oauth/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tokenPayload),
+    });
+
+    const body = await parseJson<Auth0TokenResponse>(response);
+
+    if (!response.ok || !body?.access_token) {
+      const message = extractAuth0Message(
+        body,
+        "No se pudo completar el inicio de sesión con Auth0."
+      );
+
+      throw new Auth0ServiceError(
+        message,
+        response.status || 500,
+        body
+      );
+    }
+
+    const profileResponse = await fetch(`https://${config.domain}/userinfo`, {
+      headers: {
+        Authorization: `Bearer ${body.access_token}`,
+      },
+    });
+
+    const profile = await parseJson<Auth0UserProfile>(profileResponse);
+
+    if (!profileResponse.ok || !profile) {
+      throw new Auth0ServiceError(
+        extractAuth0Message(
+          profile,
+          "No se pudo recuperar el perfil del usuario tras autenticarse."
+        ),
+        profileResponse.status || 500,
+        profile
+      );
+    }
+
+    const tokens: AuthTokens = {
+      accessToken: body.access_token,
+      idToken: body.id_token,
+      refreshToken: body.refresh_token,
+      expiresIn: body.expires_in,
+      tokenType: body.token_type,
+      scope: body.scope,
+    };
+
+    return {
+      tokens,
+      user: profile,
+    };
+  } catch (error) {
+    console.error("Error al intercambiar el código de autorización con Auth0", error);
+
+    if (error && typeof error === "object") {
+      Object.assign(error as { __logged?: boolean }, { __logged: true });
+    }
+
+    throw error;
   }
-
-  const tokenPayload: Record<string, string> = {
-    grant_type: "authorization_code",
-    client_id: config.clientId,
-    code,
-    redirect_uri: normalizedRequestedRedirect,
-    code_verifier: codeVerifier,
-  };
-
-  if (config.clientSecret) {
-    tokenPayload.client_secret = config.clientSecret;
-  }
-
-  const response = await fetch(`https://${config.domain}/oauth/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(tokenPayload),
-  });
-
-  const body = await parseJson<Auth0TokenResponse>(response);
-
-  if (!response.ok || !body?.access_token) {
-    const message = extractAuth0Message(
-      body,
-      "No se pudo completar el inicio de sesión con Auth0."
-    );
-
-    throw new Auth0ServiceError(
-      message,
-      response.status || 500,
-      body
-    );
-  }
-
-  const profileResponse = await fetch(`https://${config.domain}/userinfo`, {
-    headers: {
-      Authorization: `Bearer ${body.access_token}`,
-    },
-  });
-
-  const profile = await parseJson<Auth0UserProfile>(profileResponse);
-
-  if (!profileResponse.ok || !profile) {
-    throw new Auth0ServiceError(
-      extractAuth0Message(
-        profile,
-        "No se pudo recuperar el perfil del usuario tras autenticarse."
-      ),
-      profileResponse.status || 500,
-      profile
-    );
-  }
-
-  const tokens: AuthTokens = {
-    accessToken: body.access_token,
-    idToken: body.id_token,
-    refreshToken: body.refresh_token,
-    expiresIn: body.expires_in,
-    tokenType: body.token_type,
-    scope: body.scope,
-  };
-
-  return {
-    tokens,
-    user: profile,
-  };
 };

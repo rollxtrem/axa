@@ -227,7 +227,12 @@ export const handleAuthCallback: RequestHandler = async (req, res) => {
     const normalizedStatus =
       status === 401 || status === 403 ? status : Math.max(400, status);
 
-    console.error("Error al completar el inicio de sesión con Auth0", error);
+    const alreadyLogged =
+      error && typeof error === "object" && "__logged" in error && Boolean((error as { __logged?: boolean }).__logged);
+
+    if (!alreadyLogged) {
+      console.error("Error al completar el inicio de sesión con Auth0", error);
+    }
 
     return res.status(normalizedStatus).json(serviceError);
   }
