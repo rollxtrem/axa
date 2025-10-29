@@ -59,6 +59,7 @@ export default function Home() {
           />
 
           {/* Blue angled overlay */}
+          
           <svg
             className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[466px] fill-[#0c0e45]"
             viewBox="0 0 957 435"
