@@ -77,7 +77,7 @@ export default function Home() {
               <h4 className="inline">
                 <div>
                   <p>
-                    Descubrelas asistencias disponibles en cualquier momento
+                    Descubre las asistencias disponibles en cualquier momento
                   </p>
                 </div>
                 <br />

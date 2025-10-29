@@ -60,7 +60,7 @@ const domain = readEnvValue("AUTH0_DOMAIN");
 const clientId = readEnvValue("AUTH0_CLIENT_ID");
 const audienceFromEnv = readEnvValue("AUTH0_AUDIENCE");
 const redirectUriFromEnv =
-  readEnvValue("AUTH0_REDIRECT_URI") ?? readEnvValue("VITE_AUTH0_REDIRECT_URI");
+  readEnvValue("AUTH0_REDIRECT_URI");
 
 const computedAudience = domain ? `https://${normalizeDomain(domain)}/api/v2/` : undefined;
 
