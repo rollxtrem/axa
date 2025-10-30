@@ -648,45 +648,44 @@ export default function Bienestar() {
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
       {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
-        <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
+        <div className="relative w-full max-w-[1440px] mx-auto md:px-8 flex flex-col md:block">
+          
           {/* Hero Image */}
-          <img
-            src="/images/servicios_asistencia.png"
-            alt="Servicios de asistencia"
-            className="absolute right-0 md:left-[548px] top-[-12px] w-[600px] md:w-[1180px] h-[320px] md:h-[466px] object-cover"
-          />
-
-          {/* Blue angled overlay */}
-          <svg
-            className="absolute left-[-100px] md:left-[-287px] top-0 w-[600px] md:w-[1213px] h-[300px] md:h-[466px] fill-[#0c0e45]"
-            viewBox="0 0 921 435"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M921 0L574.145 459H-374L-25.9521 0H921Z"
-              fill="#0C0E45"
-              style={{
-                marginRight: "5px",
-                paddingRight: "14px",
-              }}
+          <div className="relative w-full">
+            <img
+              src="/images/servicios_asistencia.png"
+              alt="Servicios de asistencia"
+              className="w-full h-[260px] md:absolute md:left-[548px] md:top-[-12px] md:w-[1180px] md:h-[466px] object-cover"
             />
-          </svg>
+
+            {/* Blue angled overlay (solo visible en desktop) */}
+            <svg
+              className="hidden md:block absolute left-[-287px] top-0 w-[1213px] h-[466px] fill-[#0c0e45]"
+              viewBox="0 0 921 435"
+              preserveAspectRatio="none"
+            >
+              <path d="M921 0L574.145 459H-374L-25.9521 0H921Z" fill="#0C0E45" />
+            </svg>
+          </div>
 
           {/* Hero Content */}
-          <div className="absolute left-4 md:left-[113px] top-[50px] md:top-[95px] w-full max-w-[350px] md:w-[536px] flex flex-col gap-4 md:gap-6 px-4 md:px-0">
+          <div className="relative text-center md:absolute md:left-[113px] md:top-[95px] mt-6 md:mt-0 w-full max-w-[350px] md:w-[536px] flex flex-col gap-4 md:gap-6 px-4 md:px-0 z-10">
+            
             <h1 className="text-white font-['Publico_Text_Web'] text-[28px] md:text-[48px] leading-[32px] md:leading-[50px] w-full md:w-[475px]">
-              Servicios de <br />
-              asistencia <br />
+              Servicios de 
+              asistencia 
               especializada
             </h1>
-            <p className="text-white font-['Source_Sans_Pro'] text-[16px] md:text-[20px] leading-[24px] md:leading-8 tracking-[0.25px] w-full md:w-[403px]">
+            <p className="text-white text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
               Accede a orientación profesional en seguridad informática,
               finanzas y bienestar personal.
             </p>
+            <br />
           </div>
         </div>
       </section>
+
 
       {/* Breadcrumbs */}
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-[140px] py-[18px]"></div>

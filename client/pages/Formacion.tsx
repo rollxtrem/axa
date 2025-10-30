@@ -439,50 +439,45 @@ export default function Formacion() {
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-[300px] md:h-[425px]">
-        <div className="relative w-full max-w-[1440px] mx-auto px-4 md:px-8">
-          {/* Hero Image */}
-          <img
-            src="/images/formacion_desarrollo.png"
-            alt="Formación y desarrollo"
-            className="absolute left-[-100px] md:left-[-214px] top-[0px] w-[600px] md:w-[1012px] h-[250px] md:h-[466px] object-cover"
+    {/* Hero Banner */}
+    <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
+      <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block">
+        {/* Background Images */}
+        <img
+          src="/images/formacion_desarrollo.png"
+          alt="Formación y desarrollo"
+          className="inset-0 object-cover md:absolute md:inset-0"
+        />
+
+        {/* Blue angled overlay (solo visible en escritorio) */}
+        <svg
+          className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
+          viewBox="0 0 957 435"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M1295 -8L948.145 451H0L348.048 -8H1295Z"
+            fill="#0C0E45"
+            style={{ marginLeft: "-3px" }}
           />
+        </svg>
 
-          {/* Blue angled overlay */}
-          <svg
-            className="absolute left-[200px] md:left-[436px] top-[-7px] w-[600px] md:w-[973px] h-[280px] md:h-[466px] fill-[#0c0e45]"
-            viewBox="0 0 957 435"
-            preserveAspectRatio="none"
-          >
-            <path
-              d="M1295 -10L948.145 449H0L348.048 -10H1295Z"
-              fill="#0C0E45"
-              style={{
-                margin: "-1px -1px -1px 5px",
-                padding: "40px 0 0 34px",
-              }}
-            />
-          </svg>
-
-          {/* Hero Con tent */}
-          <div className="absolute right-4 md:left-[759px] top-[30px] md:top-[51px] w-full max-w-[350px] md:w-[470px] text-center md:text-right text-white px-4 md:px-0">
-            <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
-              <h4 className="inline">
-                <div>
-                  <p>
-                    Aprende, crece y alcanza nuevas metas
-                  </p>
-                </div>
-                <br />
-              </h4>
-            </div>
-            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
-              Desarrolla nuevas habilidades con nuestros cursos especializados.
-            </p>
+        {/* Hero Content */}
+        <div className="relative md:absolute md:left-[759px] md:top-[51px] w-full md:max-w-[470px] text-center md:text-right text-white p-6 md:p-0 bg-[#0C0E45] md:bg-transparent">
+          <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
+            <h4 className="inline">
+              <div>
+                <p>Aprende, crece y alcanza nuevas metas</p>
+              </div>
+              <br />
+            </h4>
           </div>
+          <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
+            Desarrolla nuevas habilidades con nuestros cursos especializados.
+          </p>
         </div>
-      </section>
+      </div>
+    </section>
 
       {/* Courses Section */}
       <section className="w-full max-w-[990px] mx-auto py-8 md:py-14 px-4 md:px-8">
