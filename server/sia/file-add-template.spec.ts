@@ -6,6 +6,7 @@ import type { TenantContext } from "../utils/tenant-env";
 import {
   __resetSiaFileAddTemplateCacheForTesting,
   buildSiaFileAddPayloadFromTemplate,
+  buildSiaFileAddPayloadWithMetadata,
 } from "./file-add-template";
 import tenantDemoTemplate from "./file-add.TF.DEMO_WDT_COM.json" with { type: "json" };
 import tenantFallbackTemplate from "./file-add.TF.default.json" with { type: "json" };
@@ -163,5 +164,39 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
 
     expectCommonTemplateValues(payload, replacements);
     expectTemplateDrivenValues(payload, GLOBAL_FALLBACK_TEMPLATE, replacements);
+  });
+});
+
+describe("buildSiaFileAddPayloadWithMetadata", () => {
+  beforeEach(() => {
+    __resetSiaFileAddTemplateCacheForTesting();
+  });
+
+  it("returns the filename of the resolved template", async () => {
+    const tenant = buildTenant("demo.wdt.com");
+    const replacements = buildReplacements("TF");
+
+    const { payload, templateFilename } = await buildSiaFileAddPayloadWithMetadata({
+      tenant,
+      formCodeService: replacements.form_code_service,
+      replacements,
+    });
+
+    expect(templateFilename).toBe("file-add.TF.DEMO_WDT_COM.json");
+    expectCommonTemplateValues(payload, replacements);
+  });
+
+  it("indicates when the global fallback template is used", async () => {
+    const tenant = buildTenant("demo.wdt.com");
+    const replacements = buildReplacements("UNKNOWN");
+
+    const { payload, templateFilename } = await buildSiaFileAddPayloadWithMetadata({
+      tenant,
+      formCodeService: replacements.form_code_service,
+      replacements,
+    });
+
+    expect(templateFilename).toBe("file-add.default.json");
+    expectCommonTemplateValues(payload, replacements);
   });
 });

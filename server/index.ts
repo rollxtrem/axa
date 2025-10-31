@@ -18,7 +18,12 @@ import { handleGetAppConfig, handleGetAuth0ClientConfig } from "./routes/config"
 import { handleGetPqrsPublicKey, handleSubmitPqrs } from "./routes/pqrs";
 import { handleGetFormacionPublicKey, handleSubmitFormacion } from "./routes/formacion";
 import { handleGetBienestarPublicKey, handleSubmitBienestar } from "./routes/bienestar";
-import { handleRequestSiaToken, handleSiaFileAdd, handleSiaFileGet } from "./routes/sia";
+import {
+  handleRequestSiaToken,
+  handleSiaFileAdd,
+  handleSiaFileGet,
+  handleSiaProcess,
+} from "./routes/sia";
 import { requireAuth } from "./middleware/require-auth";
 import { logAuth0ConfigSummary } from "./utils/auth0-config-logger";
 
@@ -83,6 +88,7 @@ export function createServer() {
   app.post("/api/sia/token", handleRequestSiaToken);
   app.post("/api/sia/file-get", handleSiaFileGet);
   app.post("/api/sia/file-add", handleSiaFileAdd);
+  app.post("/api/sia/process", handleSiaProcess);
   app.post("/api/auth/register", handleAuthRegister);
   app.post("/api/auth/login", handleAuthLogin);
   app.post("/api/auth/callback", handleAuthCallback);

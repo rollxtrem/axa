@@ -8,9 +8,12 @@ import type {
 } from "@shared/api";
 import { resolveTenantEnv, type TenantContext } from "../utils/tenant-env";
 
-const DEFAULT_SIA_TOKEN_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
-const DEFAULT_SIA_FILE_ADD_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
-const DEFAULT_SIA_FILE_GET_URL = "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet";
+export const DEFAULT_SIA_TOKEN_URL =
+  "https://sia8-uat-services.axa-assistance.com.mx/CMServices/token";
+export const DEFAULT_SIA_FILE_ADD_URL =
+  "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileAdd";
+export const DEFAULT_SIA_FILE_GET_URL =
+  "https://sia8-uat-services.axa-assistance.com.mx/CMServices/FileGet";
 const DEFAULT_SIA_FILE_GET_CONTRACT =
   "{'contrato':'4430010', 'IdCliente': '01544', 'IdPlan': '01586'}";
 
@@ -90,7 +93,7 @@ type SiaServiceOptions = {
   tenant?: TenantContext | null;
 };
 
-const getSiaEndpoints = (tenant?: TenantContext | null): SiaEndpoints => ({
+export const getSiaEndpoints = (tenant?: TenantContext | null): SiaEndpoints => ({
   tokenUrl: resolveTenantEnv("SIA_TOKEN_URL", tenant) ?? DEFAULT_SIA_TOKEN_URL,
   fileAddUrl: resolveTenantEnv("SIA_FILE_ADD_URL", tenant) ?? DEFAULT_SIA_FILE_ADD_URL,
   fileGetUrl: resolveTenantEnv("SIA_FILE_GET_URL", tenant) ?? DEFAULT_SIA_FILE_GET_URL,
@@ -367,10 +370,24 @@ const parseSiaFileAddResponse = (payload: unknown): SiaFileAddResponse => {
   return { Success, Code, Message, File };
 };
 
-export const FileAdd = async (
+const formatTenantForLogs = (tenant?: TenantContext | null): string => {
+  if (!tenant) {
+    return "default";
+  }
+
+  return tenant.host ? `${tenant.id} (${tenant.host})` : tenant.id;
+};
+
+export interface PreparedSiaFileAddRequest {
+  token: string;
+  payload: SiaFileAddPayload;
+}
+
+export const prepareSiaFileAddRequest = (
   request: SiaFileAddRequestBody,
-  options: SiaServiceOptions = {}
-): Promise<SiaFileAddResponse> => {
+  _options: SiaServiceOptions = {},
+  context: { now?: Date } = {},
+): PreparedSiaFileAddRequest => {
   const {
     sia_token,
     sia_dz,
@@ -390,9 +407,8 @@ export const FileAdd = async (
     throw new SiaServiceError("El token de autenticación para FileAdd es obligatorio.", 400);
   }
 
-  const { fileAddUrl } = getSiaEndpoints(options.tenant);
-
-  const nowIsoString = new Date().toISOString();
+  const referenceDate = context.now ?? new Date();
+  const nowIsoString = referenceDate.toISOString();
   const formattedStartDate = formatDateTimeForSia(nowIsoString);
   const formattedEndDate = formatDateTimeForSia(nowIsoString);
 
@@ -451,7 +467,7 @@ export const FileAdd = async (
     );
   }
 
-  const body: SiaFileAddPayload = {
+  const payload: SiaFileAddPayload = {
     dz: pickString(overrides.dz, defaultDz),
     consumerKey: pickString(overrides.consumerKey, defaultConsumerKey),
     idCatalogCountry: pickString(overrides.idCatalogCountry, "CO"),
@@ -506,10 +522,22 @@ export const FileAdd = async (
     comment: pickString(overrides.comment, "comment"),
   };
 
+  return { token: trimmedToken, payload };
+};
+
+export const FileAdd = async (
+  request: SiaFileAddRequestBody,
+  options: SiaServiceOptions = {},
+  preparedRequest?: PreparedSiaFileAddRequest,
+): Promise<SiaFileAddResponse> => {
+  const prepared = preparedRequest ?? prepareSiaFileAddRequest(request, options);
+  const { fileAddUrl } = getSiaEndpoints(options.tenant);
+  const tenantLabel = formatTenantForLogs(options.tenant);
+
   try {
-    console.log("[SIA] FileAdd request:", JSON.stringify(body));
+    console.log(`[SIA] FileAdd tenant=${tenantLabel} request:`, JSON.stringify(prepared.payload));
   } catch (error) {
-    console.log("[SIA] FileAdd request:", body);
+    console.log(`[SIA] FileAdd tenant=${tenantLabel} request:`, prepared.payload);
   }
 
   let response: Response;
@@ -518,9 +546,9 @@ export const FileAdd = async (
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${trimmedToken}`,
+        Authorization: `Bearer ${prepared.token}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(prepared.payload),
     });
   } catch (error) {
     throw new SiaServiceError("No se pudo conectar con el servicio FileAdd de SIA.", 502, error);
@@ -540,17 +568,26 @@ export const FileAdd = async (
   if (!response.ok) {
     try {
       console.error(
-        `[SIA] FileAdd response error (${response.status}):`,
+        `[SIA] FileAdd tenant=${tenantLabel} response error (${response.status}):`,
         JSON.stringify(payload)
       );
     } catch (error) {
-      console.error(`[SIA] FileAdd response error (${response.status}):`, payload);
+      console.error(
+        `[SIA] FileAdd tenant=${tenantLabel} response error (${response.status}):`,
+        payload
+      );
     }
     throw new SiaServiceError(
       "El servicio FileAdd de SIA respondió con un error.",
       response.status || 500,
       payload
     );
+  }
+
+  try {
+    console.log(`[SIA] FileAdd tenant=${tenantLabel} response:`, JSON.stringify(payload));
+  } catch (error) {
+    console.log(`[SIA] FileAdd tenant=${tenantLabel} response:`, payload);
   }
 
   return parseSiaFileAddResponse(payload);
