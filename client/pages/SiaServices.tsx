@@ -1,447 +1,252 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 
 import type {
-  SiaFileAddRequestBody,
-  SiaFileAddResponse,
-  SiaFileGetRequestBody,
-  SiaFileGetResponse,
-  SiaTokenResponse,
+  SiaProcessRequestBody,
+  SiaProcessResponseBody,
+  SiaProcessStepResult,
+  TenantSummary,
 } from "@shared/api";
 
-const initialFormValues: SiaFileGetRequestBody = {
-  sia_token: "",
-  sia_dz: "",
-  sia_consumer_key: "",
-  user_identification: "",
+const initialFormValues: SiaProcessRequestBody = {
+  identification: "",
+  name: "",
+  phone: "",
+  email: "",
+  serviceDate: "",
+  serviceTime: "",
+  serviceCode: "",
 };
 
-const initialFileAddValues: SiaFileAddRequestBody = {
-  sia_token: "",
-  sia_dz: "",
-  sia_consumer_key: "",
-  user_identification: "",
-  form_code_service: "",
-  user_name: "",
-  user_email: "",
-  user_mobile: "",
-  form_date: "",
-  form_hora: "",
+const STEP_LABELS: Record<SiaProcessStepResult["name"], string> = {
+  token: "GetTicket",
+  fileGet: "FileGet",
+  fileAdd: "FileAdd",
 };
 
-const formatJson = (data: unknown) => JSON.stringify(data, null, 2);
+const formatJson = (value: unknown) => JSON.stringify(value, null, 2);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const normalizeTenantSummary = (value: unknown): TenantSummary | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const id = typeof value.id === "string" ? value.id : null;
+  const host = typeof value.host === "string" ? value.host : null;
+
+  if (!id || !host) {
+    return null;
+  }
+
+  return { id, host };
+};
+
+const normalizeSteps = (value: unknown): SiaProcessStepResult[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (!isRecord(item)) {
+        return null;
+      }
+
+      const name = item.name;
+      if (name !== "token" && name !== "fileGet" && name !== "fileAdd") {
+        return null;
+      }
+
+      return {
+        name,
+        request: item.request,
+        response: item.response,
+      } satisfies SiaProcessStepResult;
+    })
+    .filter((step): step is SiaProcessStepResult => step !== null);
+};
+
+const normalizeTemplateFilename = (value: unknown): string | null => {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const filename = value.filename;
+  return typeof filename === "string" && filename.trim() ? filename : null;
+};
 
 const SiaServices = () => {
-  const [tokenData, setTokenData] = useState<SiaTokenResponse | null>(null);
-  const [tokenError, setTokenError] = useState<string | null>(null);
-  const [isRequestingToken, setIsRequestingToken] = useState(false);
+  const [formValues, setFormValues] = useState<SiaProcessRequestBody>(initialFormValues);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<SiaProcessResponseBody | null>(null);
+  const [submittedPayload, setSubmittedPayload] = useState<SiaProcessRequestBody | null>(null);
 
-  const [formValues, setFormValues] = useState<SiaFileGetRequestBody>(initialFormValues);
-  const [fileGetData, setFileGetData] = useState<SiaFileGetResponse | null>(null);
-  const [fileGetError, setFileGetError] = useState<string | null>(null);
-  const [isSubmittingFileGet, setIsSubmittingFileGet] = useState(false);
-
-  const [fileAddValues, setFileAddValues] = useState<SiaFileAddRequestBody>(initialFileAddValues);
-  const [fileAddData, setFileAddData] = useState<SiaFileAddResponse | null>(null);
-  const [fileAddError, setFileAddError] = useState<string | null>(null);
-  const [isSubmittingFileAdd, setIsSubmittingFileAdd] = useState(false);
-
-  const fetchSiaToken = async (): Promise<SiaTokenResponse> => {
-    const response = await fetch("/api/sia/token", { method: "POST" });
-
-    if (!response.ok) {
-      const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-      const message = errorPayload?.error ?? "No se pudo obtener el token de SIA.";
-      throw new Error(message);
-    }
-
-    return (await response.json()) as SiaTokenResponse;
-  };
-
-  const handleRequestToken = async () => {
-    setIsRequestingToken(true);
-    setTokenError(null);
-
-    try {
-      const data = await fetchSiaToken();
-      setTokenData(data);
-      setFormValues((previous) => ({
-        ...previous,
-        sia_token: data.access_token ?? previous.sia_token,
-        sia_dz: data.dz ?? previous.sia_dz,
-        sia_consumer_key: data.consumerKey ?? previous.sia_consumer_key,
-      }));
-      setFileAddValues((previous) => ({
-        ...previous,
-        sia_token: data.access_token ?? previous.sia_token,
-        sia_dz: data.dz ?? previous.sia_dz,
-        sia_consumer_key: data.consumerKey ?? previous.sia_consumer_key,
-      }));
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Ocurrió un error al obtener el token de SIA.";
-      setTokenError(message);
-      setTokenData(null);
-    } finally {
-      setIsRequestingToken(false);
-    }
-  };
-
-  const handleChange = (field: keyof SiaFileGetRequestBody) =>
+  const handleChange = (field: keyof SiaProcessRequestBody) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value;
       setFormValues((previous) => ({ ...previous, [field]: value }));
     };
 
-  const handleSubmitFileGet = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmittingFileGet(true);
-    setFileGetError(null);
-    setFileGetData(null);
+    setIsSubmitting(true);
+    setError(null);
+    setResult(null);
 
-    try {
-      const payload: SiaFileGetRequestBody = {
-        sia_token: formValues.sia_token.trim(),
-        sia_dz: formValues.sia_dz.trim(),
-        sia_consumer_key: formValues.sia_consumer_key.trim(),
-        user_identification: formValues.user_identification.trim(),
-      };
-
-      const response = await fetch("/api/sia/file-get", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-        const message = errorPayload?.error ?? "No se pudo consultar FileGet.";
-        throw new Error(message);
-      }
-
-      const data: SiaFileGetResponse = await response.json();
-      setFileGetData(data);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Ocurrió un error al consultar FileGet de SIA.";
-      setFileGetError(message);
-      setFileGetData(null);
-    } finally {
-      setIsSubmittingFileGet(false);
-    }
-  };
-
-  const handleFileAddChange = (field: keyof SiaFileAddRequestBody) =>
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value;
-      setFileAddValues((previous) => ({ ...previous, [field]: value }));
+    const payload: SiaProcessRequestBody = {
+      identification: formValues.identification.trim(),
+      name: formValues.name.trim(),
+      phone: formValues.phone.trim(),
+      email: formValues.email.trim(),
+      serviceDate: formValues.serviceDate.trim(),
+      serviceTime: formValues.serviceTime.trim(),
+      serviceCode: formValues.serviceCode.trim(),
     };
 
-  const handleSubmitFileAdd = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmittingFileAdd(true);
-    setFileAddError(null);
-    setFileAddData(null);
+    setSubmittedPayload(payload);
 
     try {
-      const token = await fetchSiaToken();
-      setTokenData(token);
-      setTokenError(null);
-
-      const nextSiaToken = token.access_token ? token.access_token.trim() : fileAddValues.sia_token.trim();
-      const nextSiaDz = token.dz ? token.dz.trim() : fileAddValues.sia_dz.trim();
-      const nextConsumerKey = token.consumerKey
-        ? token.consumerKey.trim()
-        : fileAddValues.sia_consumer_key.trim();
-
-      setFormValues((previous) => ({
-        ...previous,
-        sia_token: nextSiaToken,
-        sia_dz: nextSiaDz,
-        sia_consumer_key: nextConsumerKey,
-      }));
-      setFileAddValues((previous) => ({
-        ...previous,
-        sia_token: nextSiaToken,
-        sia_dz: nextSiaDz,
-        sia_consumer_key: nextConsumerKey,
-      }));
-
-      const payload: SiaFileAddRequestBody = {
-        sia_token: nextSiaToken,
-        sia_dz: nextSiaDz,
-        sia_consumer_key: nextConsumerKey,
-        user_identification: fileAddValues.user_identification.trim(),
-        form_code_service: fileAddValues.form_code_service.trim(),
-        user_name: fileAddValues.user_name.trim(),
-        user_email: fileAddValues.user_email.trim(),
-        user_mobile: fileAddValues.user_mobile.trim(),
-        form_date: fileAddValues.form_date.trim(),
-        form_hora: fileAddValues.form_hora.trim(),
-      };
-
-      if (fileAddValues.startDatePolicy?.trim()) {
-        payload.startDatePolicy = fileAddValues.startDatePolicy.trim();
-      }
-
-      if (fileAddValues.endDatePolicy?.trim()) {
-        payload.endDatePolicy = fileAddValues.endDatePolicy.trim();
-      }
-
-      const response = await fetch("/api/sia/file-add", {
+      const response = await fetch("/api/sia/process", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        const errorPayload = (await response.json().catch(() => null)) as { error?: string } | null;
-        const message = errorPayload?.error ?? "No se pudo invocar FileAdd.";
-        throw new Error(message);
+        const errorPayload = (await response.json().catch(() => null)) as unknown;
+        const message =
+          isRecord(errorPayload) && typeof errorPayload.error === "string"
+            ? errorPayload.error
+            : "Ocurrió un error al ejecutar el proceso de SIA.";
+
+        const tenant = normalizeTenantSummary(
+          isRecord(errorPayload) ? errorPayload.tenant : null,
+        );
+        const steps = normalizeSteps(isRecord(errorPayload) ? errorPayload.steps : null);
+        const templateFilename = normalizeTemplateFilename(
+          isRecord(errorPayload) ? errorPayload.template : null,
+        );
+
+        if (tenant || steps.length > 0 || templateFilename) {
+          setResult({
+            tenant: tenant ?? null,
+            template: { filename: templateFilename },
+            steps,
+          });
+        }
+
+        setError(message);
+        return;
       }
 
-      const data: SiaFileAddResponse = await response.json();
-      setFileAddData(data);
-    } catch (error) {
+      const data = (await response.json()) as SiaProcessResponseBody;
+      setResult(data);
+    } catch (submissionError) {
       const message =
-        error instanceof Error ? error.message : "Ocurrió un error al invocar FileAdd de SIA.";
-      setFileAddError(message);
-      setFileAddData(null);
+        submissionError instanceof Error
+          ? submissionError.message
+          : "Ocurrió un error inesperado al procesar la solicitud.";
+      setError(message);
     } finally {
-      setIsSubmittingFileAdd(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 py-10 px-4">
-      <div className="max-w-4xl mx-auto space-y-10">
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+      <div className="mx-auto flex max-w-4xl flex-col gap-8">
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <header className="space-y-1">
-            <h1 className="text-2xl font-semibold text-slate-900">Servicios SIA</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">Proceso SIA8</h1>
             <p className="text-sm text-slate-600">
-              Obtén un token de SIA y realiza una consulta al servicio FileGet utilizando los datos
-              proporcionados.
+              Ingresa los datos requeridos para ejecutar el flujo de SIA8 (GetTicket, FileGet y
+              FileAdd). Debajo verás el detalle de las solicitudes y respuestas enviadas.
             </p>
           </header>
 
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={handleRequestToken}
-              className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-60"
-              disabled={isRequestingToken}
-            >
-              {isRequestingToken ? "Solicitando token..." : "Obtener token de SIA"}
-            </button>
-            {tokenError ? (
-              <p className="text-sm text-red-600">{tokenError}</p>
-            ) : null}
-            {tokenData ? (
-              <pre className="mt-2 max-h-64 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
-                {formatJson(tokenData)}
-              </pre>
-            ) : null}
-          </div>
-        </section>
-
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
-          <header className="space-y-1">
-            <h2 className="text-xl font-semibold text-slate-900">Consulta FileGet</h2>
-            <p className="text-sm text-slate-600">
-              Completa el formulario con los datos requeridos y envíalo para consultar la información
-              disponible en SIA.
-            </p>
-          </header>
-
-          <form className="space-y-4" onSubmit={handleSubmitFileGet}>
+          <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_token</span>
+                <span>Identificación</span>
                 <input
                   type="text"
-                  value={formValues.sia_token}
-                  onChange={handleChange("sia_token")}
+                  value={formValues.identification}
+                  onChange={handleChange("identification")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="ABC123"
                   required
                 />
               </label>
 
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_dz</span>
+                <span>Nombre completo</span>
                 <input
                   type="text"
-                  value={formValues.sia_dz}
-                  onChange={handleChange("sia_dz")}
+                  value={formValues.name}
+                  onChange={handleChange("name")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Juan Pérez"
                   required
                 />
               </label>
 
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_consumer_key</span>
-                <input
-                  type="text"
-                  value={formValues.sia_consumer_key}
-                  onChange={handleChange("sia_consumer_key")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_identification</span>
-                <input
-                  type="text"
-                  value={formValues.user_identification}
-                  onChange={handleChange("user_identification")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-60"
-                disabled={isSubmittingFileGet}
-              >
-                {isSubmittingFileGet ? "Consultando..." : "Consultar FileGet"}
-              </button>
-              {fileGetError ? (
-                <p className="text-sm text-red-600">{fileGetError}</p>
-              ) : null}
-            </div>
-          </form>
-
-          {fileGetData !== null ? (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-800">Respuesta</h3>
-              <pre className="max-h-72 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
-                {formatJson(fileGetData)}
-              </pre>
-            </div>
-          ) : null}
-        </section>
-
-        <section className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-6">
-          <header className="space-y-1">
-            <h2 className="text-xl font-semibold text-slate-900">Registrar servicio con FileAdd</h2>
-            <p className="text-sm text-slate-600">
-              Ingresa los datos del servicio a registrar y envía el formulario para llamar al
-              servicio FileAdd de SIA.
-            </p>
-          </header>
-
-          <form className="space-y-4" onSubmit={handleSubmitFileAdd}>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_token</span>
-                <input
-                  type="text"
-                  value={fileAddValues.sia_token}
-                  onChange={handleFileAddChange("sia_token")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_dz</span>
-                <input
-                  type="text"
-                  value={fileAddValues.sia_dz}
-                  onChange={handleFileAddChange("sia_dz")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>sia_consumer_key</span>
-                <input
-                  type="text"
-                  value={fileAddValues.sia_consumer_key}
-                  onChange={handleFileAddChange("sia_consumer_key")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_identification</span>
-                <input
-                  type="text"
-                  value={fileAddValues.user_identification}
-                  onChange={handleFileAddChange("user_identification")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>form_code_service</span>
-                <input
-                  type="text"
-                  value={fileAddValues.form_code_service}
-                  onChange={handleFileAddChange("form_code_service")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_name</span>
-                <input
-                  type="text"
-                  value={fileAddValues.user_name}
-                  onChange={handleFileAddChange("user_name")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_email</span>
-                <input
-                  type="email"
-                  value={fileAddValues.user_email}
-                  onChange={handleFileAddChange("user_email")}
-                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  required
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>user_mobile</span>
+                <span>Teléfono</span>
                 <input
                   type="tel"
-                  value={fileAddValues.user_mobile}
-                  onChange={handleFileAddChange("user_mobile")}
+                  value={formValues.phone}
+                  onChange={handleChange("phone")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="3001234567"
                   required
                 />
               </label>
 
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>form_date</span>
+                <span>Correo electrónico</span>
+                <input
+                  type="email"
+                  value={formValues.email}
+                  onChange={handleChange("email")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="correo@ejemplo.com"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>Fecha</span>
                 <input
                   type="date"
-                  value={fileAddValues.form_date}
-                  onChange={handleFileAddChange("form_date")}
+                  value={formValues.serviceDate}
+                  onChange={handleChange("serviceDate")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   required
                 />
               </label>
 
               <label className="flex flex-col gap-2 text-sm text-slate-700">
-                <span>form_hora</span>
+                <span>Hora</span>
                 <input
                   type="time"
-                  value={fileAddValues.form_hora}
-                  onChange={handleFileAddChange("form_hora")}
+                  value={formValues.serviceTime}
+                  onChange={handleChange("serviceTime")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>Código de servicio</span>
+                <input
+                  type="text"
+                  value={formValues.serviceCode}
+                  onChange={handleChange("serviceCode")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="FT"
                   required
                 />
               </label>
@@ -450,24 +255,88 @@ const SiaServices = () => {
             <div className="flex flex-col gap-2">
               <button
                 type="submit"
-                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-60"
-                disabled={isSubmittingFileAdd}
+                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+                disabled={isSubmitting}
               >
-                {isSubmittingFileAdd ? "Registrando servicio..." : "Invocar FileAdd"}
+                {isSubmitting ? "Ejecutando proceso..." : "Ejecutar proceso"}
               </button>
-              {fileAddError ? <p className="text-sm text-red-600">{fileAddError}</p> : null}
+
+              {error ? <p className="text-sm text-red-600">{error}</p> : null}
             </div>
           </form>
-
-          {fileAddData ? (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-slate-800">Respuesta</h3>
-              <pre className="max-h-72 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
-                {formatJson(fileAddData)}
-              </pre>
-            </div>
-          ) : null}
         </section>
+
+        {submittedPayload ? (
+          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <header className="space-y-1">
+              <h2 className="text-lg font-semibold text-slate-900">Solicitud enviada</h2>
+              <p className="text-sm text-slate-600">
+                Este es el cuerpo enviado al endpoint interno <code>/api/sia/process</code>.
+              </p>
+            </header>
+            <pre className="mt-4 max-h-64 overflow-auto rounded-md bg-slate-900 p-4 text-xs text-slate-100">
+              {formatJson(submittedPayload)}
+            </pre>
+          </section>
+        ) : null}
+
+        {result ? (
+          <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <header className="space-y-2">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <h2 className="text-lg font-semibold text-slate-900">Resultado del proceso</h2>
+                <div className="flex flex-col gap-1 text-xs text-slate-600 md:text-right">
+                  <span>
+                    Tenant: {result.tenant ? `${result.tenant.id} (${result.tenant.host})` : "No disponible"}
+                  </span>
+                  <span>
+                    Plantilla seleccionada: {result.template.filename ?? "No disponible"}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">
+                A continuación se muestran los request y response enviados a cada servicio de SIA.
+              </p>
+            </header>
+
+            <div className="mt-6 space-y-6">
+              {result.steps.length === 0 ? (
+                <p className="text-sm text-slate-600">
+                  No hay información disponible de los pasos ejecutados.
+                </p>
+              ) : (
+                result.steps.map((step, index) => (
+                  <article
+                    key={`${step.name}-${index}`}
+                    className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
+                  >
+                    <h3 className="text-sm font-semibold text-slate-800">
+                      Paso {index + 1}: {STEP_LABELS[step.name] ?? step.name}
+                    </h3>
+                    <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                          Request
+                        </span>
+                        <pre className="max-h-60 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-100">
+                          {formatJson(step.request)}
+                        </pre>
+                      </div>
+                      <div className="space-y-2">
+                        <span className="text-xs font-medium uppercase tracking-wide text-slate-600">
+                          Response
+                        </span>
+                        <pre className="max-h-60 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-100">
+                          {formatJson(step.response)}
+                        </pre>
+                      </div>
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+        ) : null}
       </div>
     </div>
   );
