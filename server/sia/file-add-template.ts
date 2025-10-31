@@ -114,10 +114,15 @@ const sanitizeTemplateKey = (value?: string | null): string | null => {
   return trimmed.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
 };
 
+type LoadedTemplate = {
+  filename: string;
+  template: SiaFileAddPayload;
+};
+
 const loadTemplate = async (
   tenant?: TenantContext | null,
   formCodeService?: string | null,
-): Promise<SiaFileAddPayload> => {
+): Promise<LoadedTemplate> => {
   const tenantKey = sanitizeTemplateKey(tenant?.id ?? null);
   const serviceKey = sanitizeTemplateKey(formCodeService ?? null);
 
@@ -133,12 +138,12 @@ const loadTemplate = async (
   for (const filename of uniqueFilenames) {
     const cached = templateCache.get(filename);
     if (cached) {
-      return cloneTemplate(cached);
+      return { filename, template: cloneTemplate(cached) };
     }
 
     const template = await readTemplateFile(filename);
     if (template) {
-      return cloneTemplate(template);
+      return { filename, template: cloneTemplate(template) };
     }
   }
 
@@ -151,11 +156,24 @@ interface BuildTemplatePayloadOptions {
   formCodeService?: string | null;
 }
 
+export interface SiaFileAddTemplateMetadata {
+  payload: SiaFileAddPayload;
+  templateFilename: string;
+}
+
+export const buildSiaFileAddPayloadWithMetadata = async (
+  options: BuildTemplatePayloadOptions,
+): Promise<SiaFileAddTemplateMetadata> => {
+  const { filename, template } = await loadTemplate(options.tenant, options.formCodeService);
+  const payload = applyReplacements(template as unknown, options.replacements) as SiaFileAddPayload;
+  return { payload, templateFilename: filename };
+};
+
 export const buildSiaFileAddPayloadFromTemplate = async (
   options: BuildTemplatePayloadOptions,
 ): Promise<SiaFileAddPayload> => {
-  const template = await loadTemplate(options.tenant, options.formCodeService);
-  return applyReplacements(template as unknown, options.replacements) as SiaFileAddPayload;
+  const { payload } = await buildSiaFileAddPayloadWithMetadata(options);
+  return payload;
 };
 
 export const __resetSiaFileAddTemplateCacheForTesting = () => {
