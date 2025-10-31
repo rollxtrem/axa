@@ -328,3 +328,31 @@ export interface SiaFileAddResponse {
   File: string;
 }
 
+export interface TenantSummary {
+  id: string;
+  host: string;
+}
+
+export type SiaProcessStepName = "token" | "fileGet" | "fileAdd";
+
+export interface SiaProcessRequestBody {
+  identification: string;
+  serviceDate: string;
+  serviceTime: string;
+  serviceCode: string;
+}
+
+export interface SiaProcessStepResult {
+  name: SiaProcessStepName;
+  request: unknown;
+  response: unknown;
+}
+
+export interface SiaProcessResponseBody {
+  tenant: TenantSummary | null;
+  template: {
+    filename: string | null;
+  };
+  steps: SiaProcessStepResult[];
+}
+
