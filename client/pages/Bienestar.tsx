@@ -4,11 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import bienestarServicesData from "@/data/bienestar-services.json";
 import { builderPublicKey, encodedBuilderPublicKey } from "@/lib/builder";
 import { apiFetch, formatApiError, readJsonResponse, translateApiErrorMessage } from "@/lib/api-client";
-import {
-  encryptJsonWithPublicKey,
-  importRsaPublicKey,
-  type EncryptedJsonPayload,
-} from "@/lib/crypto";
+import { encryptJsonWithPublicKey, importRsaPublicKey } from "@/lib/crypto";
 import { useAuth } from "@/context/AuthContext";
 import {
   readProfileSessionData,
@@ -306,12 +302,9 @@ export default function Bienestar() {
       return;
     }
 
-    let submissionPayload: BienestarFormData | null = null;
-    let encryptedSubmissionPayload: EncryptedJsonPayload | null = null;
-
     try {
       setFormSubmitting(true);
-      submissionPayload = {
+      const payload: BienestarFormData = {
         fullName: formData.name.trim(),
         identification: formData.identification.trim(),
         email: formData.email.trim(),
@@ -322,13 +315,13 @@ export default function Bienestar() {
         preferredTime: formData.time.trim(),
       };
 
-      encryptedSubmissionPayload = await encryptJsonWithPublicKey(publicKey, submissionPayload);
+      const encryptedPayload = await encryptJsonWithPublicKey(publicKey, payload);
       const response = await apiFetch("/api/bienestar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(encryptedSubmissionPayload),
+        body: JSON.stringify(encryptedPayload),
       });
 
       const { data, errorMessage } = await readJsonResponse<BienestarSubmissionResponse | null>(response);
@@ -379,36 +372,9 @@ export default function Bienestar() {
       setSelectedCalendarDate(null);
       setCurrentDate(new Date());
     } catch (error) {
+      console.error("Failed to submit bienestar form", error);
       const fallback = "No pudimos enviar tu solicitud.";
       const formattedError = formatApiError(error, fallback);
-      const errorDetail =
-        error instanceof Error
-          ? error.message
-          : typeof error === "string"
-            ? error
-            : JSON.stringify(error);
-      const payloadJson = (() => {
-        if (!submissionPayload) {
-          return null;
-        }
-
-        try {
-          return JSON.stringify(submissionPayload);
-        } catch (stringifyError) {
-          console.warn("No se pudo serializar el payload de Bienestar", stringifyError);
-          return null;
-        }
-      })();
-
-      console.error(
-        `Failed to submit bienestar form Error: ${formattedError}. Detalle: ${errorDetail}`,
-        {
-          detalleOriginal: error,
-          payloadArmado: submissionPayload,
-          payloadArmadoJson: payloadJson,
-          payloadEncriptado: encryptedSubmissionPayload,
-        },
-      );
       const isSiaIntegrationError =
         Boolean(error) &&
         typeof error === "object" &&
