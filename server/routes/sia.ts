@@ -403,36 +403,52 @@ export const handleSiaProcess: RequestHandler = async (req, res) => {
     form_hora: serviceTime,
   };
 
-  try {
+  const grantType = resolveTenantEnv("SIA_GRANT_TYPE", tenant) ?? "password";
+
+  const buildTokenStepRequest = (context: string) => ({
+    method: "POST",
+    url: endpoints.tokenUrl,
+    body: {
+      grant_type: grantType,
+      username: "[PROTEGIDO]",
+      password: "[PROTEGIDO]",
+      DZ: "[PROTEGIDO]",
+    },
+    context,
+  });
+
+  const requestAndRecordToken = async (context: string) => {
     const token = await requestSiaToken({ tenant });
-    const grantType = resolveTenantEnv("SIA_GRANT_TYPE", tenant) ?? "password";
 
     steps.push({
       name: "token",
-      request: {
-        method: "POST",
-        url: endpoints.tokenUrl,
-        body: {
-          grant_type: grantType,
-          username: "[PROTEGIDO]",
-          password: "[PROTEGIDO]",
-          DZ: "[PROTEGIDO]",
-        },
-      },
+      request: buildTokenStepRequest(context),
       response: token,
     });
 
-    const accessToken = requireTokenField(token.access_token, "access_token");
-    const dz = requireTokenField(token.dz, "dz");
-    const consumerKey = requireTokenField(token.consumerKey, "consumerKey");
+    return token;
+  };
 
-    replacements.sia_dz = dz;
-    replacements.sia_consumer_key = consumerKey;
+  try {
+    const tokenForFileGet = await requestAndRecordToken("Token inicial para FileGet");
+
+    const accessTokenForFileGet = requireTokenField(
+      tokenForFileGet.access_token,
+      "access_token",
+    );
+    const dzForFileGet = requireTokenField(tokenForFileGet.dz, "dz");
+    const consumerKeyForFileGet = requireTokenField(
+      tokenForFileGet.consumerKey,
+      "consumerKey",
+    );
+
+    replacements.sia_dz = dzForFileGet;
+    replacements.sia_consumer_key = consumerKeyForFileGet;
 
     const fileGetRequest: SiaFileGetRequestBody = {
-      sia_token: accessToken,
-      sia_dz: dz,
-      sia_consumer_key: consumerKey,
+      sia_token: accessTokenForFileGet,
+      sia_dz: dzForFileGet,
+      sia_consumer_key: consumerKeyForFileGet,
       user_identification: identification,
     };
 
@@ -448,6 +464,23 @@ export const handleSiaProcess: RequestHandler = async (req, res) => {
       response: fileGetResponse,
     });
 
+    const tokenForFileAdd = await requestAndRecordToken(
+      "Token actualizado para FileAdd",
+    );
+
+    const accessTokenForFileAdd = requireTokenField(
+      tokenForFileAdd.access_token,
+      "access_token",
+    );
+    const dzForFileAdd = requireTokenField(tokenForFileAdd.dz, "dz");
+    const consumerKeyForFileAdd = requireTokenField(
+      tokenForFileAdd.consumerKey,
+      "consumerKey",
+    );
+
+    replacements.sia_dz = dzForFileAdd;
+    replacements.sia_consumer_key = consumerKeyForFileAdd;
+
     const template = await buildSiaFileAddPayloadWithMetadata({
       tenant,
       formCodeService: serviceCode,
@@ -458,9 +491,9 @@ export const handleSiaProcess: RequestHandler = async (req, res) => {
 
     const fileAddRequest: SiaFileAddRequestBody = {
       ...template.payload,
-      sia_token: accessToken,
-      sia_dz: dz,
-      sia_consumer_key: consumerKey,
+      sia_token: accessTokenForFileAdd,
+      sia_dz: dzForFileAdd,
+      sia_consumer_key: consumerKeyForFileAdd,
       user_identification: identification,
       form_code_service: serviceCode,
       user_name: userName,

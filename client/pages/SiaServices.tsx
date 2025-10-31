@@ -305,13 +305,13 @@ const SiaServices = () => {
                   No hay información disponible de los pasos ejecutados.
                 </p>
               ) : (
-                result.steps.map((step) => (
+                result.steps.map((step, index) => (
                   <article
-                    key={step.name}
+                    key={`${step.name}-${index}`}
                     className="rounded-lg border border-slate-200 bg-slate-50 p-4 shadow-sm"
                   >
                     <h3 className="text-sm font-semibold text-slate-800">
-                      Paso: {STEP_LABELS[step.name] ?? step.name}
+                      Paso {index + 1}: {STEP_LABELS[step.name] ?? step.name}
                     </h3>
                     <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
