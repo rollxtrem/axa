@@ -201,6 +201,9 @@ const sanitizeSiaProcessBody = (body: unknown): SiaProcessRequestBody => {
 
   const requiredFields: (keyof SiaProcessRequestBody)[] = [
     "identification",
+    "name",
+    "phone",
+    "email",
     "serviceDate",
     "serviceTime",
     "serviceCode",
@@ -377,22 +380,25 @@ export const handleSiaProcess: RequestHandler = async (req, res) => {
   let templateFilename: string | null = null;
 
   const identification = body.identification;
+  const providedName = body.name;
+  const providedEmail = body.email;
+  const providedPhone = body.phone;
   const serviceDate = body.serviceDate;
   const serviceTime = body.serviceTime;
   const serviceCode = body.serviceCode.toUpperCase();
 
-  const fallbackName = identification;
-  const fallbackEmail = buildFallbackEmail(identification);
-  const fallbackMobile = buildFallbackMobile(identification);
+  const userName = providedName || identification;
+  const userEmail = providedEmail || buildFallbackEmail(identification);
+  const userMobile = providedPhone || buildFallbackMobile(identification);
 
   const replacements = {
     sia_dz: "",
     sia_consumer_key: "",
     user_identification: identification,
     form_code_service: serviceCode,
-    user_name: fallbackName,
-    user_email: fallbackEmail,
-    user_mobile: fallbackMobile,
+    user_name: userName,
+    user_email: userEmail,
+    user_mobile: userMobile,
     form_date: serviceDate,
     form_hora: serviceTime,
   };
@@ -457,9 +463,9 @@ export const handleSiaProcess: RequestHandler = async (req, res) => {
       sia_consumer_key: consumerKey,
       user_identification: identification,
       form_code_service: serviceCode,
-      user_name: fallbackName,
-      user_email: fallbackEmail,
-      user_mobile: fallbackMobile,
+      user_name: userName,
+      user_email: userEmail,
+      user_mobile: userMobile,
       form_date: serviceDate,
       form_hora: serviceTime,
     };

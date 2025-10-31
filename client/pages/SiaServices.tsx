@@ -9,6 +9,9 @@ import type {
 
 const initialFormValues: SiaProcessRequestBody = {
   identification: "",
+  name: "",
+  phone: "",
+  email: "",
   serviceDate: "",
   serviceTime: "",
   serviceCode: "",
@@ -95,6 +98,9 @@ const SiaServices = () => {
 
     const payload: SiaProcessRequestBody = {
       identification: formValues.identification.trim(),
+      name: formValues.name.trim(),
+      phone: formValues.phone.trim(),
+      email: formValues.email.trim(),
       serviceDate: formValues.serviceDate.trim(),
       serviceTime: formValues.serviceTime.trim(),
       serviceCode: formValues.serviceCode.trim(),
@@ -171,6 +177,42 @@ const SiaServices = () => {
                   onChange={handleChange("identification")}
                   className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   placeholder="ABC123"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>Nombre completo</span>
+                <input
+                  type="text"
+                  value={formValues.name}
+                  onChange={handleChange("name")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Juan Pérez"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>Teléfono</span>
+                <input
+                  type="tel"
+                  value={formValues.phone}
+                  onChange={handleChange("phone")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="3001234567"
+                  required
+                />
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm text-slate-700">
+                <span>Correo electrónico</span>
+                <input
+                  type="email"
+                  value={formValues.email}
+                  onChange={handleChange("email")}
+                  className="rounded-md border border-slate-300 px-3 py-2 text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder="correo@ejemplo.com"
                   required
                 />
               </label>

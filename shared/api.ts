@@ -337,6 +337,9 @@ export type SiaProcessStepName = "token" | "fileGet" | "fileAdd";
 
 export interface SiaProcessRequestBody {
   identification: string;
+  name: string;
+  phone: string;
+  email: string;
   serviceDate: string;
   serviceTime: string;
   serviceCode: string;
