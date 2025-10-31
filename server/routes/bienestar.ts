@@ -493,6 +493,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
   try {
     templatePayload = await buildSiaFileAddPayloadFromTemplate({
       tenant,
+      formCodeService: serviceCatalog,
       replacements: {
         sia_dz: siaToken.dz,
         sia_consumer_key: siaToken.consumerKey,
@@ -525,9 +526,6 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     dz: siaToken.dz,
     consumerKey: siaToken.consumerKey,
     policy: formData.identification,
-    idCatalogServices: serviceCatalog,
-    idCatalogClassification: serviceCatalog === "TF" ? "ASF" :    serviceCatalog === "FI" ? "ASE" :    serviceCatalog,
-    idCatalogRequiredService: serviceCatalog,
     name: userFullName,
     lastname: userFullName,
     beneficiaryName: userFullName,

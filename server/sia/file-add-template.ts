@@ -36,18 +36,32 @@ type ReplacementMap = Record<string, string>;
 const cloneTemplate = (template: SiaFileAddPayload): SiaFileAddPayload =>
   JSON.parse(JSON.stringify(template));
 
-const applyReplacements = (value: unknown, replacements: ReplacementMap): unknown => {
+const SKIP_REPLACEMENT_KEYS = new Set([
+  "idCatalogServices",
+  "idCatalogClassification",
+  "idCatalogRequiredService",
+]);
+
+const applyReplacements = (
+  value: unknown,
+  replacements: ReplacementMap,
+  currentKey?: string,
+): unknown => {
   if (Array.isArray(value)) {
     return value.map((item) => applyReplacements(item, replacements));
   }
 
   if (value && typeof value === "object") {
     return Object.fromEntries(
-      Object.entries(value).map(([key, val]) => [key, applyReplacements(val, replacements)]),
+      Object.entries(value).map(([key, val]) => [key, applyReplacements(val, replacements, key)]),
     );
   }
 
   if (typeof value === "string") {
+    if (currentKey && SKIP_REPLACEMENT_KEYS.has(currentKey)) {
+      return value;
+    }
+
     const match = PLACEHOLDER_PATTERN.exec(value);
     if (!match) {
       return value;
@@ -87,13 +101,36 @@ const readTemplateFile = async (filename: string): Promise<SiaFileAddPayload | n
   return null;
 };
 
-const loadTemplate = async (tenant?: TenantContext | null): Promise<SiaFileAddPayload> => {
-  const tenantFilename = tenant?.id ? `file-add.${tenant.id}.json` : null;
-  const filenames = tenantFilename
-    ? [tenantFilename, DEFAULT_TEMPLATE_FILENAME]
-    : [DEFAULT_TEMPLATE_FILENAME];
+const sanitizeTemplateKey = (value?: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
 
-  for (const filename of filenames) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+};
+
+const loadTemplate = async (
+  tenant?: TenantContext | null,
+  formCodeService?: string | null,
+): Promise<SiaFileAddPayload> => {
+  const tenantKey = sanitizeTemplateKey(tenant?.id ?? null);
+  const serviceKey = sanitizeTemplateKey(formCodeService ?? null);
+
+  const filenames = [
+    serviceKey && tenantKey ? `file-add.${serviceKey}.${tenantKey}.json` : null,
+    serviceKey ? `file-add.${serviceKey}.default.json` : null,
+    tenantKey ? `file-add.${tenantKey}.json` : null,
+    DEFAULT_TEMPLATE_FILENAME,
+  ].filter((filename): filename is string => Boolean(filename));
+
+  const uniqueFilenames = [...new Set(filenames)];
+
+  for (const filename of uniqueFilenames) {
     const cached = templateCache.get(filename);
     if (cached) {
       return cloneTemplate(cached);
@@ -111,12 +148,13 @@ const loadTemplate = async (tenant?: TenantContext | null): Promise<SiaFileAddPa
 interface BuildTemplatePayloadOptions {
   tenant?: TenantContext | null;
   replacements: ReplacementMap;
+  formCodeService?: string | null;
 }
 
 export const buildSiaFileAddPayloadFromTemplate = async (
   options: BuildTemplatePayloadOptions,
 ): Promise<SiaFileAddPayload> => {
-  const template = await loadTemplate(options.tenant);
+  const template = await loadTemplate(options.tenant, options.formCodeService);
   return applyReplacements(template as unknown, options.replacements) as SiaFileAddPayload;
 };
 
