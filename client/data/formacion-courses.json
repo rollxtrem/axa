@@ -1,77 +1,66 @@
 [
   {
-    "id": "educacion-digital",
+    "id": "educacion-business",
     "title": "Business  Intelligence con Power BI",
     "duration": "",
     "level": "Intermedio",
-    "description": "Aprende a tu ritmo con herramientas y cursos online que potencian tus habilidades digitales.",
+    "description": "Toma decisiones más inteligentes basadas en datos. Aprende los fundamentos necesarios.",
     "imageUrl": "/images/business_intelligence_con_power_bi.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/W5BXXZmbZiE",
-    "isCertificate": true
+    "isCertificate": false
   },
   {
-    "id": "educacion-financiera",
+    "id": "educacion-emprendimiento",
     "title": "Curso Emprendimiento Tipo Prototipo",
     "duration": "",
     "level": "Intermedio",
-    "description": "Aprende a manejar tus finanzas personales, inversiones y planificación financiera.",
+    "description": "Aprende a desarrollar nuevas habilidades como emprendedor.",
     "imageUrl": "/images/curso_emprendimiento_tipo_prototipo.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/7GKMa4G2_Hw",
-    "isCertificate": true
+    "isCertificate": false
   },
   {
-    "id": "marketing-digital",
+    "id": "educacion-gpt",
     "title": "Curso de Chat-GPT",
     "duration": "",
     "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
+    "description": "Domina el uso de ChatGPT para optimizar tus tareas.",
     "imageUrl": "/images/curso_de_chat_gpt.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/WV-0tgqJ1eo",
-    "isCertificate": true
+    "isCertificate": false
   },
   {
-    "id": "marketing-digital",
+    "id": "educacion-presentaciones",
     "title": "Curso de Presentaciones Efectivas",
     "duration": "",
     "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
+    "description": "Desarrolla habilidades para crear presentaciones efectivas que transmitan tus ideas con claridad, impacto y confianza.",
     "imageUrl": "/images/curso_de_presentaciones_efectivas.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://youtu.be/xx68x2SACgE",
-    "isCertificate": true
+    "isCertificate": false
   },
   {
-    "id": "marketing-digital",
+    "id": "educacion-introia",
     "title": "Introducción a la IA",
     "duration": "",
     "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
+    "description": "Descubre el mundo de la IA y aprende sobre los fundamentos de las tecnologías mas revolucionarias.",
     "imageUrl": "/images/introduccion_de_la_ia.png",
     "iconKey": "digital-skills",
     "urlCurso":"https://edutin.com/curso-de-introduccion-a-la-inteligencia-artificial-4243",
-    "isCertificate": true
-  },
-   {
-    "id": "marketing-digital",
-    "title": "Curso Ingles B2",
-    "duration": "",
-    "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
-    "imageUrl": "/images/curso_ingles_b2.png",
-    "iconKey": "diploma-education",
-    "urlCurso":"https://app.edutin.com/category",
-    "isCertificate": true
+    "isCertificate": false
   },
   
    {
-    "id": "marketing-digital",
+    "id": "educacion-neuromarketing",
     "title": "Neuromarketing",
     "duration": "",
     "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
+    "description": "Potencia tus estrategias con herramientas de Neuromarketing y logra campañas más efectivas y memorables.",
     "imageUrl": "/images/neuromarketing.png",
     "iconKey": "diploma-education",
     "urlCurso":"https://app.edutin.com/category",
@@ -79,12 +68,23 @@
   },
   
    {
-    "id": "marketing-digital",
+    "id": "educacion-programacion",
     "title": " Curso de Programación",
     "duration": "",
     "level": "Intermedio",
-    "description": "Domina las estrategias de marketing digital y redes sociales para hacer crecer tu negocio.",
+    "description": "Aprende a programar y potencia tu carrera con las habilidades que más valoran las empresas.",
     "imageUrl": "/images/curso_de_programacion.png",
+    "iconKey": "diploma-education",
+    "urlCurso":"https://app.edutin.com/category",
+    "isCertificate": true
+  },
+  {
+    "id": "educacion-ingles",
+    "title": "Curso Ingles B2",
+    "duration": "",
+    "level": "Intermedio",
+    "description": "Mejora tu inglés y alcanza el nivel B2.",
+    "imageUrl": "/images/curso_ingles_b2.png",
     "iconKey": "diploma-education",
     "urlCurso":"https://app.edutin.com/category",
     "isCertificate": true

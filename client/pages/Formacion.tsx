@@ -29,7 +29,7 @@ const CONTACT_OFFICE_DETAIL_TRIGGER = "detalle: la respuesta de sia no es un jso
 const ALERT_TITLE = "¡Alerta!";
 const COURSE_ACTIVATION_TITLE = "Información importante";
 const COURSE_ACTIVATION_MESSAGE =
-  "Estimado asegurado, recuerda que este curso solo estará disponible para su aprendizaje por 30 días, después de la activación, espera el correo que llegara al siguiente día hábil y accede al curso";
+  "Estimado asegurado, recuerda que este curso solo estará disponible para tu aprendizaje por 30 días, después de la activación, espera el correo que llegara al siguiente día hábil y accede al curso";
 
 const DATA_TREATMENT_POLICY_URL =
   "https://axabeneficios.axa-assistance.com.co/politica-de-tratamiento-de-datos.pdf";
@@ -439,45 +439,45 @@ export default function Formacion() {
 
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
-    {/* Hero Banner */}
-    <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
-      <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block">
-        {/* Background Images */}
-        <img
-          src="/images/formacion_desarrollo.png"
-          alt="Formación y desarrollo"
-          className="inset-0 object-cover md:absolute md:inset-0"
-        />
-
-        {/* Blue angled overlay (solo visible en escritorio) */}
-        <svg
-          className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
-          viewBox="0 0 957 435"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M1295 -8L948.145 451H0L348.048 -8H1295Z"
-            fill="#0C0E45"
-            style={{ marginLeft: "-3px" }}
+      {/* Hero Banner */}
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
+        <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block">
+          {/* Background Images */}
+          <img
+            src="/images/formacion_desarrollo.png"
+            alt="Formación y desarrollo"
+            className="inset-0 object-cover md:absolute md:inset-0"
           />
-        </svg>
 
-        {/* Hero Content */}
-        <div className="relative md:absolute md:left-[759px] md:top-[51px] w-full md:max-w-[470px] text-center md:text-right text-white p-6 md:p-0 bg-[#0C0E45] md:bg-transparent">
-          <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
-            <h4 className="inline">
-              <div>
-                <p>Aprende, crece y alcanza nuevas metas</p>
-              </div>
-              <br />
-            </h4>
+          {/* Blue angled overlay (solo visible en escritorio) */}
+          <svg
+            className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
+            viewBox="0 0 957 435"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M1295 -8L948.145 451H0L348.048 -8H1295Z"
+              fill="#0C0E45"
+              style={{ marginLeft: "-3px" }}
+            />
+          </svg>
+
+          {/* Hero Content */}
+          <div className="relative md:absolute md:left-[759px] md:top-[51px] w-full md:max-w-[470px] text-center md:text-right text-white p-6 md:p-0 bg-[#0C0E45] md:bg-transparent">
+            <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
+              <h4 className="inline">
+                <div>
+                  <p>Aprende, crece y alcanza nuevas metas</p>
+                </div>
+                <br />
+              </h4>
+            </div>
+            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
+              Desarrolla nuevas habilidades con nuestros cursos especializados.
+            </p>
           </div>
-          <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
-            Desarrolla nuevas habilidades con nuestros cursos especializados.
-          </p>
         </div>
-      </div>
-    </section>
+      </section>
 
       {/* Courses Section */}
       <section className="w-full max-w-[990px] mx-auto py-8 md:py-14 px-4 md:px-8">
@@ -627,8 +627,7 @@ export default function Formacion() {
                 Selecciona tu curso
               </h3>
               <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[16px] md:text-[20px] leading-6 md:leading-8 tracking-[0.25px] w-full md:w-[288px]">
-                Elige el curso que más te interese de nuestra plataforma
-                educativa
+                Elige la formación  que más te interese de nuestra plataforma educativa.
               </p>
             </div>
 
@@ -641,7 +640,7 @@ export default function Formacion() {
                 Completa la inscripción
               </h3>
               <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[16px] md:text-[20px] leading-6 md:leading-8 tracking-[0.25px] w-full md:w-[260px]">
-                Llena el formulario con tus datos y agenda tu inscripción
+                Diligencia el formulario con tus datos personales.
               </p>
             </div>
 
@@ -654,7 +653,7 @@ export default function Formacion() {
                 Recibe confirmación
               </h3>
               <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[16px] md:text-[20px] leading-6 md:leading-8 tracking-[0.25px] w-full md:w-[298px]">
-                Nuestro equipo te contactará para confirmar tu inscripción
+                ¡Ya casi comienzas! . Revisa tu correo y da inicio a tu programa formativo.
               </p>
             </div>
           </div>

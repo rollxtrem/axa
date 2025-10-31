@@ -105,7 +105,7 @@ const buildCertificateNotice = (course?: CourseDefinition) => {
   }
 
   if (course.isCertificate) {
-    const message = "su solicitud fue recibida espere indicaciones de acceso por este medio";
+    const message = "Tu solicitud fue recibida espera indicaciones de acceso por este medio";
     return {
       html: `<p>${escapeHtml(message)}</p>`,
       text: message,
@@ -116,12 +116,11 @@ const buildCertificateNotice = (course?: CourseDefinition) => {
   const escapedUrl = courseUrl ? escapeHtml(courseUrl) : null;
 
   const htmlMessage = courseUrl
-    ? `Este curso no genera certificado y puede acceder al siguiente link <a href="${escapedUrl}" target="_blank" rel="noopener noreferrer">${escapedUrl}</a>`
-    : "Este curso no genera certificado.";
+    ? "Estimado asegurado, Recuerda que tienes hasta 30 días para realizar y completar el curso"
+    : "Estimado asegurado, Recuerda que tienes hasta 30 días para realizar y completar el curso";
 
   const textMessage = courseUrl
-    ? `Este curso no genera certificado y puede acceder al siguiente link ${courseUrl}`
-    : "Este curso no genera certificado.";
+    ? "Estimado asegurado, Recuerda que tienes hasta 30 días para realizar y completar el curso" : "Estimado asegurado, Recuerda que tienes hasta 30 días para realizar y completar el curso";
 
   return {
     html: `<p>${htmlMessage}</p>`,

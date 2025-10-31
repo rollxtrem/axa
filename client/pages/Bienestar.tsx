@@ -67,7 +67,7 @@ type ConfirmationState = {
 const DEFAULT_CONFIRMATION_TITLE = "¡Confirmación de solicitud!";
 const ALERT_TITLE = "¡Alerta!";
 const CONTACT_OFFICE_MESSAGE =
-  "Señor usuario, por favor póngase en contacto con la oficina donde adquirió su producto.";
+  "Te invitamos a verificar los datos y la vigencia de tu producto para continuar con el proceso";
 
 const SIA_ERROR_KEYWORDS = ["SIA", "Error al solicitar el servicio"];
 
@@ -673,19 +673,17 @@ export default function Bienestar() {
           <div className="relative text-center md:absolute md:left-[113px] md:top-[95px] mt-6 md:mt-0 w-full max-w-[350px] md:w-[536px] flex flex-col gap-4 md:gap-6 px-4 md:px-0 z-10">
             
             <h1 className="text-white font-['Publico_Text_Web'] text-[28px] md:text-[48px] leading-[32px] md:leading-[50px] w-full md:w-[475px]">
-              Servicios de 
-              asistencia 
-              especializada
+              Soluciones
+              especializadas
+              para ti.
             </h1>
             <p className="text-white text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
-              Accede a orientación profesional en seguridad informática,
-              finanzas y bienestar personal.
+              Accede a orientación profesional con especialistas en cada área.
             </p>
             <br />
           </div>
         </div>
       </section>
-
 
       {/* Breadcrumbs */}
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 lg:px-[140px] py-[18px]"></div>
@@ -795,7 +793,7 @@ export default function Bienestar() {
                 Selecciona el servicio
               </h3>
               <p className="text-[#0e0e0e] font-['Source_Sans_Pro'] text-[16px] md:text-[20px] leading-6 md:leading-8 tracking-[0.25px]">
-                Elige el tipo de asistencia que necesitas
+                Elige el tipo de beneficio que necesitas
               </p>
             </div>
 
@@ -860,7 +858,7 @@ export default function Bienestar() {
                   Aviso de Privacidad
                 </a>
               </nav>
-              <div className="flex items-center gap-3 opacity-90">
+              {/* <div className="flex items-center gap-3 opacity-90">
                 <svg
                   width="18"
                   height="18"
@@ -885,7 +883,7 @@ export default function Bienestar() {
                     fill="#fff"
                   />
                 </svg>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

@@ -526,7 +526,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
     consumerKey: siaToken.consumerKey,
     policy: formData.identification,
     idCatalogServices: serviceCatalog,
-    idCatalogClassification: serviceCatalog,
+    idCatalogClassification: serviceCatalog === "TF" ? "ASF" :    serviceCatalog === "FI" ? "ASE" :    serviceCatalog,
     idCatalogRequiredService: serviceCatalog,
     name: userFullName,
     lastname: userFullName,
@@ -553,7 +553,7 @@ export const handleSubmitBienestar: RequestHandler = async (req, res) => {
 
   const expedienteRaw = fileAddResponse.File;
   const expediente = expedienteRaw.trim() || expedienteRaw;
-  const confirmationMessage = `Estimado cliente, su solicitud ha sido radicada bajo el expediente ${expediente}. Por favor, esté atento a su línea telefónica donde le estaremos informando sobre la prestación de su servicio.`;
+  const confirmationMessage = `Estimado cliente, tu solicitud ha sido radicada bajo el expediente ${expediente}. Por favor, estar atento a tu línea telefónica donde te estaremos informando sobre la prestación de su servicio.`;
   const { html: userHtml, text: userText } = buildUserConfirmationContent(confirmationMessage);
 
   try {

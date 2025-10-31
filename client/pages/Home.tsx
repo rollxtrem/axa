@@ -48,48 +48,47 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F0F0F0]">
-    {/* Hero Banner */}
-    <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
-      <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block">
-        {/* Background Images */}
-        <img
-          src="/images/background_overlay.png"
-          alt="Background overlay"
-          className="inset-0 object-cover md:absolute md:inset-0"
-        />
-
-        {/* Blue angled overlay (solo visible en escritorio) */}
-        <svg
-          className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
-          viewBox="0 0 957 435"
-          preserveAspectRatio="none"
-        >
-          <path
-            d="M1295 -8L948.145 451H0L348.048 -8H1295Z"
-            fill="#0C0E45"
-            style={{ marginLeft: "-3px" }}
+      {/* Hero Banner */}
+      <section className="relative overflow-hidden bg-[#0C0E45] rounded-b-[20px] md:rounded-b-[50px] h-auto md:h-[425px]">
+        <div className="relative w-full max-w-[1440px] mx-auto flex flex-col md:block">
+          {/* Background Images */}
+          <img
+            src="/images/background_overlay.png"
+            alt="Background overlay"
+            className="inset-0 object-cover md:absolute md:inset-0"
           />
-        </svg>
 
-        {/* Hero Content */}
-        <div className="relative md:absolute md:left-[759px] md:top-[51px] w-full md:max-w-[470px] text-center md:text-right text-white p-6 md:p-0 bg-[#0C0E45] md:bg-transparent">
-          <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
-            <h4 className="inline">
-              <div>
-                <p>Descubre las asistencias disponibles en cualquier momento</p>
-              </div>
-              <br />
-            </h4>
+          {/* Blue angled overlay (solo visible en escritorio) */}
+          <svg
+            className="hidden md:block absolute left-[436px] top-[-7px] w-[973px] h-[466px] fill-[#0c0e45]"
+            viewBox="0 0 957 435"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M1295 -8L948.145 451H0L348.048 -8H1295Z"
+              fill="#0C0E45"
+              style={{ marginLeft: "-3px" }}
+            />
+          </svg>
+
+          {/* Hero Content */}
+          <div className="relative md:absolute md:left-[759px] md:top-[51px] w-full md:max-w-[470px] text-center md:text-right text-white p-6 md:p-0 bg-[#0C0E45] md:bg-transparent">
+            <div className="text-[24px] md:text-[48px] leading-[28px] md:leading-[50px] font-['Publico_Text_Web'] w-full md:w-[471px] md:ml-auto">
+              <h4 className="inline">
+                <div>
+                  <p>Descubre los servicios disponibles en cualquier momento</p>
+                </div>
+                <br />
+              </h4>
+            </div>
+            <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
+              Bienvenido a{" "}
+              <span className="font-semibold">{displayAppName}</span>, Descubre y accede 
+              a los servicios que tenemos preparados para ti.
+            </p>
           </div>
-          <p className="text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] tracking-[0.25px] w-full md:w-[480px] md:ml-auto font-['Source_Sans_Pro'] mt-2 md:mt-0">
-            Bienvenido a{" "}
-            <span className="font-semibold">{displayAppName}</span>, accede a las
-            diferentes asistencias que tenemos diseñadas para ti.
-          </p>
         </div>
-      </div>
-    </section>
-
+      </section>
 
       {/* Benefits Section */}
       <section className="py-12">
@@ -99,8 +98,7 @@ export default function Home() {
               Beneficios
             </h2>
             <p className="text-[#0E0E0E] font-['Source_Sans_Pro'] text-[20px] leading-[32px] tracking-[0.25px]">
-              Encuentra la asistencia que necesitas y aprovecha todas las
-              ventajas que tenemos para ti.
+              Accede al servicio que necesitas y aprovecha todas las ventajas que tenemos para ti.
             </p>
           </div>
           <div className="w-[177px] h-[2px] bg-[#6574F8]"></div>
