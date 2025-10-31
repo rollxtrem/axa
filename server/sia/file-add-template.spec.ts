@@ -1,10 +1,21 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
+import type { SiaFileAddPayload } from "@shared/api";
+
 import type { TenantContext } from "../utils/tenant-env";
 import {
   __resetSiaFileAddTemplateCacheForTesting,
   buildSiaFileAddPayloadFromTemplate,
 } from "./file-add-template";
+import tenantDemoTemplate from "./file-add.TF.DEMO_WDT_COM.json" with { type: "json" };
+import tenantFallbackTemplate from "./file-add.TF.default.json" with { type: "json" };
+import serviceFallbackTemplate from "./file-add.FT.default.json" with { type: "json" };
+import globalFallbackTemplate from "./file-add.default.json" with { type: "json" };
+
+const TENANT_SPECIFIC_TEMPLATE = tenantDemoTemplate as SiaFileAddPayload;
+const TENANT_FALLBACK_TEMPLATE = tenantFallbackTemplate as SiaFileAddPayload;
+const SERVICE_FALLBACK_TEMPLATE = serviceFallbackTemplate as SiaFileAddPayload;
+const GLOBAL_FALLBACK_TEMPLATE = globalFallbackTemplate as SiaFileAddPayload;
 
 const baseReplacements = {
   sia_dz: "DZ_VALUE",
@@ -26,6 +37,63 @@ const buildTenant = (host: string): TenantContext => ({
   host,
   id: host.toUpperCase().replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, ""),
 });
+
+const resolveTemplateValue = (
+  template: SiaFileAddPayload,
+  key: keyof Pick<
+    SiaFileAddPayload,
+    | "idCatalogServices"
+    | "idCatalogClassification"
+    | "idCatalogRequiredService"
+    | "reasonCalled"
+    | "comment"
+  >,
+  replacements: ReturnType<typeof buildReplacements>,
+) => {
+  const rawValue = template[key];
+
+  if (typeof rawValue !== "string") {
+    return rawValue;
+  }
+
+  const skipReplacementKeys = new Set([
+    "idCatalogServices",
+    "idCatalogClassification",
+    "idCatalogRequiredService",
+  ] as const);
+
+  if (skipReplacementKeys.has(key)) {
+    return rawValue;
+  }
+
+  const match = rawValue.match(/^\{\{\s*([a-zA-Z0-9_]+)\s*\}\}$/);
+  if (!match) {
+    return rawValue;
+  }
+
+  const replacementKey = match[1] as keyof typeof replacements;
+  return replacements[replacementKey] ?? "";
+};
+
+const expectTemplateDrivenValues = (
+  payload: Awaited<ReturnType<typeof buildSiaFileAddPayloadFromTemplate>>,
+  template: SiaFileAddPayload,
+  replacements: ReturnType<typeof buildReplacements>,
+) => {
+  expect(payload.idCatalogServices).toBe(
+    resolveTemplateValue(template, "idCatalogServices", replacements),
+  );
+  expect(payload.idCatalogClassification).toBe(
+    resolveTemplateValue(template, "idCatalogClassification", replacements),
+  );
+  expect(payload.idCatalogRequiredService).toBe(
+    resolveTemplateValue(template, "idCatalogRequiredService", replacements),
+  );
+  expect(payload.reasonCalled).toBe(
+    resolveTemplateValue(template, "reasonCalled", replacements),
+  );
+  expect(payload.comment).toBe(resolveTemplateValue(template, "comment", replacements));
+};
 
 const expectCommonTemplateValues = (
   payload: Awaited<ReturnType<typeof buildSiaFileAddPayloadFromTemplate>>,
@@ -56,11 +124,7 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
     });
 
     expectCommonTemplateValues(payload, replacements);
-    expect(payload.idCatalogServices).toBe("TF");
-    expect(payload.idCatalogClassification).toBe("ASF");
-    expect(payload.idCatalogRequiredService).toBe("TF");
-    expect(payload.reasonCalled).toBe("reasonCalled");
-    expect(payload.comment).toBe("comment");
+    expectTemplateDrivenValues(payload, TENANT_SPECIFIC_TEMPLATE, replacements);
   });
 
   it("falls back to the default template when no tenant is provided", async () => {
@@ -72,11 +136,7 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
     });
 
     expectCommonTemplateValues(payload, replacements);
-    expect(payload.idCatalogServices).toBe("FT");
-    expect(payload.idCatalogClassification).toBe("FT");
-    expect(payload.idCatalogRequiredService).toBe("FT");
-    expect(payload.reasonCalled).toBe("TELEFONICA reasonCalled");
-    expect(payload.comment).toBe("TELEFONICA comment");
+    expectTemplateDrivenValues(payload, SERVICE_FALLBACK_TEMPLATE, replacements);
   });
 
   it("falls back to the default template when a tenant template is missing", async () => {
@@ -89,11 +149,7 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
     });
 
     expectCommonTemplateValues(payload, replacements);
-    expect(payload.idCatalogServices).toBe("TF");
-    expect(payload.idCatalogClassification).toBe("ASF");
-    expect(payload.idCatalogRequiredService).toBe("TF");
-    expect(payload.reasonCalled).toBe("TELEFONICA reasonCalled");
-    expect(payload.comment).toBe("TELEFONICA comment");
+    expectTemplateDrivenValues(payload, TENANT_FALLBACK_TEMPLATE, replacements);
   });
 
   it("uses the global default template when the service-specific template is unavailable", async () => {
@@ -106,10 +162,6 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
     });
 
     expectCommonTemplateValues(payload, replacements);
-    expect(payload.idCatalogServices).toBe("{{form_code_service}}");
-    expect(payload.idCatalogClassification).toBe("{{form_code_service}}");
-    expect(payload.idCatalogRequiredService).toBe("{{form_code_service}}");
-    expect(payload.reasonCalled).toBe("TELEFONICA reasonCalled");
-    expect(payload.comment).toBe("TELEFONICA comment");
+    expectTemplateDrivenValues(payload, GLOBAL_FALLBACK_TEMPLATE, replacements);
   });
 });
