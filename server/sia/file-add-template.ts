@@ -126,25 +126,45 @@ const loadTemplate = async (
   const tenantKey = sanitizeTemplateKey(tenant?.id ?? null);
   const serviceKey = sanitizeTemplateKey(formCodeService ?? null);
 
-  const filenames = [
-    serviceKey && tenantKey ? `file-add.${serviceKey}.${tenantKey}.json` : null,
-    serviceKey ? `file-add.${serviceKey}.default.json` : null,
-    tenantKey ? `file-add.${tenantKey}.json` : null,
-    DEFAULT_TEMPLATE_FILENAME,
-  ].filter((filename): filename is string => Boolean(filename));
+  const specificTemplateFilename =
+    serviceKey && tenantKey ? `file-add.${serviceKey}.${tenantKey}.json` : null;
+  const serviceFallbackFilename = serviceKey ? `file-add.${serviceKey}.default.json` : null;
 
-  const uniqueFilenames = [...new Set(filenames)];
-
-  for (const filename of uniqueFilenames) {
+  const tryLoadTemplate = async (filename: string): Promise<SiaFileAddPayload | null> => {
     const cached = templateCache.get(filename);
     if (cached) {
-      return { filename, template: cloneTemplate(cached) };
+      return cloneTemplate(cached);
     }
 
     const template = await readTemplateFile(filename);
     if (template) {
-      return { filename, template: cloneTemplate(template) };
+      return cloneTemplate(template);
     }
+
+    return null;
+  };
+
+  if (specificTemplateFilename) {
+    const template = await tryLoadTemplate(specificTemplateFilename);
+    if (template) {
+      return { filename: specificTemplateFilename, template };
+    }
+  }
+
+  if (serviceFallbackFilename) {
+    const template = await tryLoadTemplate(serviceFallbackFilename);
+    if (template) {
+      return { filename: serviceFallbackFilename, template };
+    }
+  }
+
+  if (specificTemplateFilename && serviceFallbackFilename) {
+    console.error(`No existe la plantilla ${specificTemplateFilename}`);
+  }
+
+  const defaultTemplate = await tryLoadTemplate(DEFAULT_TEMPLATE_FILENAME);
+  if (defaultTemplate) {
+    return { filename: DEFAULT_TEMPLATE_FILENAME, template: defaultTemplate };
   }
 
   throw new Error("No se encontró ninguna plantilla de FileAdd para SIA.");
