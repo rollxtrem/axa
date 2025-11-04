@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SiaFileAddPayload } from "@shared/api";
 
@@ -112,6 +112,7 @@ const expectCommonTemplateValues = (
 
 describe("buildSiaFileAddPayloadFromTemplate", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     __resetSiaFileAddTemplateCacheForTesting();
   });
 
@@ -156,6 +157,7 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
   it("uses the global default template when the service-specific template is unavailable", async () => {
     const tenant = buildTenant("demo.wdt.com");
     const replacements = buildReplacements("UNKNOWN");
+    const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const payload = await buildSiaFileAddPayloadFromTemplate({
       tenant,
       formCodeService: replacements.form_code_service,
@@ -164,11 +166,15 @@ describe("buildSiaFileAddPayloadFromTemplate", () => {
 
     expectCommonTemplateValues(payload, replacements);
     expectTemplateDrivenValues(payload, GLOBAL_FALLBACK_TEMPLATE, replacements);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "No existe la plantilla file-add.UNKNOWN.DEMO_WDT_COM.json",
+    );
   });
 });
 
 describe("buildSiaFileAddPayloadWithMetadata", () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     __resetSiaFileAddTemplateCacheForTesting();
   });
 
