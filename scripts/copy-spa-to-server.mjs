@@ -33,18 +33,37 @@ if (fs.existsSync(targetSpaDir)) {
 
 fs.cpSync(spaDir, targetSpaDir, { recursive: true });
 
-const templateSourceDir = templateSourceCandidates.find((candidate) => fs.existsSync(candidate));
+const templateSourceDirs = templateSourceCandidates.filter((candidate) => fs.existsSync(candidate));
 
-if (templateSourceDir) {
-  const templateEntries = fs
-    .readdirSync(templateSourceDir, { withFileTypes: true })
-    .filter((entry) => {
-      if (!entry.isFile()) {
-        return false;
+if (templateSourceDirs.length > 0) {
+  const collectTemplateEntries = (sourceDir) => {
+    const entries = [];
+
+    const walk = (currentDir, relativeDir = "") => {
+      for (const entry of fs.readdirSync(currentDir, { withFileTypes: true })) {
+        const entryRelativePath = path.join(relativeDir, entry.name);
+        const entryFullPath = path.join(currentDir, entry.name);
+
+        if (entry.isDirectory()) {
+          walk(entryFullPath, entryRelativePath);
+          continue;
+        }
+
+        if ([".json", ".html"].some((extension) => entry.name.endsWith(extension))) {
+          entries.push({
+            sourcePath: entryFullPath,
+            relativePath: entryRelativePath,
+          });
+        }
       }
+    };
 
-      return [".json", ".html"].some((extension) => entry.name.endsWith(extension));
-    });
+    walk(sourceDir);
+
+    return entries;
+  };
+
+  const templateEntries = templateSourceDirs.flatMap(collectTemplateEntries);
 
   if (templateEntries.length === 0) {
     console.warn("⚠️ No se encontraron archivos .json o .html de plantillas para copiar");
@@ -57,9 +76,9 @@ if (templateSourceDir) {
       fs.mkdirSync(targetDir, { recursive: true });
 
       for (const entry of templateEntries) {
-        const sourcePath = path.join(templateSourceDir, entry.name);
-        const targetPath = path.join(targetDir, entry.name);
-        fs.copyFileSync(sourcePath, targetPath);
+        const targetPath = path.join(targetDir, entry.relativePath);
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+        fs.copyFileSync(entry.sourcePath, targetPath);
       }
     };
 
